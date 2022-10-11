@@ -1,3 +1,5 @@
+.env
+
 *.aux
 *.fdb_latexmk
 *.toc
