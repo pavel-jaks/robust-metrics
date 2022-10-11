@@ -1,0 +1,72 @@
+\documentclass[czech]{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{babel}
+
+\usepackage[x11names]{xcolor}
+\usepackage{framed}
+\usepackage{quoting}
+
+\selectlanguage{czech}
+
+\author{Pavel Jakš}
+\title{Vzdálenostní metriky používané pro měření vzdáleností mezi obrázky}
+
+\begin{document}
+
+\maketitle
+
+\section*{Úvod}
+
+Pod pojmem metrika na prostoru $X$ si každý matematik představí zobrazení $\rho : X \times X \rightarrow [0, + \infty)$
+splňující
+\begin{enumerate}
+    \item $\rho(x, y) = 0 \iff x = y \quad \forall x, y \in X$,
+    \item $\rho(x, y) = \rho(y, x) \quad \forall x, y \in X$,
+    \item $\rho(x, z) \leq \rho(x, y) + \rho(y, z) \quad \forall x, y, z \in X$.
+\end{enumerate}
+
+Taková metrika může být na lineárním prostoru $V$ nad číselným tělesem (pro naše účely zůstaňme nad $\mathbb{R}$
+snadno zadána pomocí normy,
+která je buď indukována skalárním součinem v případě pre-Hilbertových prostorů,
+nebo dána vlastnostmi, že se jedná o zobrazení $\|.\| : V \rightarrow [0, + \infty)$
+a splňuje:
+\begin{enumerate}
+    \item $\|x\| = 0 \iff x = 0 \quad \forall x \in V$,
+    \item $\|\alpha x\| = |\alpha| \cdot \|x\| \quad \forall \alpha \in \mathbb{R}, \forall x \in V$,
+    \item $\|x + y\| \leq \|x\| + \|y\| \quad \forall x, y \in V$.
+\end{enumerate}
+S metrikami, které jsou tzv. indukované normami se setkáme.
+
+
+\section{Metriky indukované $l_p$ normami}
+
+Vzhledem k tomu, že obrázky, které jsou středem naší pozornosti,
+lze reprezentovat jako tenzory standardně o rozměrech $C \times W \times H$,
+kde $C$ značí počet kanálů (nejčastěji kanály po řadě pro červenou, zelenou a modrou barvu),
+$W$ označuje šířku a $H$ výšku, tak lze na tyto tenzory vpustit $L^p$ normy.
+Pro $p \in [1, + \infty)$ je $L^p$ norma z $f \in L_p(X, \mu )$
+definována vztahem:
+\begin{equation*}
+    \|f\|_p = \left(\int_X |f|^p \mathrm{d} \mu \right)^{\frac{1}{p}}.
+\end{equation*}
+
+Pro naše obrázky lze za $X$ vzít $\{1, ... C\} \times \{1, ..., W\} \times \{1, ..., H\}$ a za $\mu$ \emph{počítací míru}.
+Potom naše $L^p$ norma přejde v $l_p$ normu, která má pro naše obrázky, tedy tenzory $x \in \mathbb{R}^{C \times W \times H}$, tvar:
+\begin{equation}
+    \|x\|_p = \left( \sum_{i=1}^{C} \sum_{j=1}^{W} \sum_{k=1}^{H} |x_{i, j, k}|^p \right)^{\frac{1}{p}}.
+\end{equation}
+
+Trochu mimo stojí $l_{\infty}$ norma, která má tvar pro tenzor $x \in \mathbb{R}^{C \times W \times H}$:
+\begin{equation}
+    \|x\|_\infty = \max_{i \in \{1, ..., C\}} \max_{j \in \{1, ..., W\}} \max_{k \in \{1, ..., H\}} |x_{i, j, k}|.
+\end{equation}
+
+A úplně mimo stojí $L_0$ norma, která svou povahou \emph{není} norma ve smyslu výše uvedené definice,
+ale pro účely porovnávání obrázků se používá rozdíl obrázků v této pseudo-normě, proto ji zde zmiňuji:
+\begin{equation}
+    \|x\|_0 = |\{x_{i, j, k} \neq 0\}|.
+\end{equation}
+
+\end{document}
