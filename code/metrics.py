@@ -206,3 +206,25 @@ class RootMeanSquaredError(Metric):
 
     def compute(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         return ((x - y) ** 2).mean(dim=tuple(range(1, x.ndim))) ** (1 / 2)
+
+
+class PeakSignalToNoiseRatio(Metric):
+    def __init__(self, transform: Union[Transform, None] = None):
+        super().__init__(transform)
+        self.linf_norm = LinfNorm()
+        self.rmse = RootMeanSquaredError()
+
+    def compute(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        out = 20 * torch.log10(self.linf_norm(x) / self.rmse(x, y))
+        return out
+
+
+class StructuralSimilarityIndexMeasure(Metric):
+    def __init__(self, transform: Union[Transform, None] = None, window_size=100, k_1=1e-2, k_2=3e-2, l=255):
+        super().__init__(transform)
+        self.window_size = window_size
+        self.c_1 = (k_1 * l) ** 2
+        self.c_2 = (k_2 * l) ** 2
+
+    def compute(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError()

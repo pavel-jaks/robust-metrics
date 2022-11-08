@@ -111,7 +111,7 @@ Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operator
 Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
 se rozumí následující vzdálenost:
 \begin{equation}
-    \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x} + C_1})(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
+    \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x}} + C_1)(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
 \end{equation}
 kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
 $\sigma_{x \tilde{x}}$ je nestranný odhad kovariance mezi $x$ a $\tilde{x}$,
