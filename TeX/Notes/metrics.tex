@@ -27,7 +27,7 @@ splňující
     \item $\rho(x, z) \leq \rho(x, y) + \rho(y, z) \quad \forall x, y, z \in X$.
 \end{enumerate}
 
-Taková metrika může být na lineárním prostoru $V$ nad číselným tělesem (pro naše účely zůstaňme nad $\mathbb{R}$
+Taková metrika může být na lineárním prostoru $V$ nad číselným tělesem (pro naše účely zůstaňme nad $\mathbb{R}$)
 snadno zadána pomocí normy,
 která je buď indukována skalárním součinem v případě pre-Hilbertových prostorů,
 nebo dána vlastnostmi, že se jedná o zobrazení $\|.\| : V \rightarrow [0, + \infty)$
@@ -68,5 +68,67 @@ ale pro účely porovnávání obrázků se používá rozdíl obrázků v této
 \begin{equation}
     \|x\|_0 = |\{x_{i, j, k} \neq 0\}|.
 \end{equation}
+
+\section{MSE a RMSE}
+
+Vzdálenosti, které mají blízko k metrikám indukovaným $l_2$ normou, jsou \emph{MSE} (z anglického \emph{Mean Squared Error})
+a \emph{RMSE} (z anglického \emph{Root Mean Squared Error}).
+Pro tenzory $x, \tilde{x} \in \mathbb{R}^{C \times W \times H}$ mají definici:
+\begin{align}
+    \operatorname{MSE}(x, \tilde{x}) &= \frac{1}{C W H} \sum_{i=1}^C \sum_{j=1}^W \sum_{k=1}^H | x_{i, j, k} - \tilde{x}_{i, j, k} |^2 \\
+    \operatorname{RMSE}(x, \tilde{x}) &= \left(\frac{1}{C W H} \sum_{i=1}^C \sum_{j=1}^W \sum_{k=1}^H | x_{i, j, k} - \tilde{x}_{i, j, k} |^2 \right)^{\frac{1}{2}}
+\end{align}
+
+\section{Wassersteinova vzdálenost}
+
+Buď $(M, d)$ metrický prostor, který je zároveň \emph{Radonův}. Zvolme $p \in [1, + \infty)$.
+Potom máme \emph{Wassersteinovu $p$-vzdálenost} mezi dvěma pravděpodobnostními mírami $\mu$ a $\nu$ na $M$,
+které mají konečné $p$-té momenty,
+jako:
+\begin{equation}
+    W_p (\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} \operatorname{d}(x, y)^p \right)^{\frac{1}{p}},
+\end{equation}
+kde $\Gamma(\mu, \nu)$ je množina všech sdružených pravděpodobnostních měr na $M \times M$,
+které mají po řadě $\mu$ a $\nu$ za marginální pravděpodobnostní míry \cite{vaserstejn}.
+
+Jak to souvisí s obrázky?
+Přes doprvní problém.
+
+\section{PSNR}
+
+Vzdálenost označená zkratkou \emph{PSNR} z anglického \emph{Peak Signal-to-Noise Ratio}
+vyjadřuje vztah mezi obrázkem $x \in \mathbb{R}^{C \times W \times H}$
+a jeho pokažením $\tilde{x} \in \mathbb{R}^{C \times W \times H}$ za přidání šumu.
+Definice je následující:
+\begin{align}
+    \operatorname{PSNR}(x, \tilde{x}) &= 10 \cdot \operatorname{log}_{10} \left( \frac{\|x\|_{\infty}^2}{\operatorname{MSE}(x, \tilde{x})} \right), \\
+    &= 20 \cdot \operatorname{log}_{10} \left( \frac{\|x\|_{\infty}}{\operatorname{RMSE}(x, \tilde{x})} \right).
+\end{align}
+Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operatorname{PSNR}$, tato vzdálenost tedy není metrická.
+
+\section{SSIM}
+
+Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
+se rozumí následující vzdálenost:
+\begin{equation}
+    \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x} + C_1})(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
+\end{equation}
+kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
+$\sigma_{x \tilde{x}}$ je nestranný odhad kovariance mezi $x$ a $\tilde{x}$,
+$\sigma^2$ je nestranný odhad rozptylu $x$, resp. $\tilde{x}$
+a $C_1, C_2$ jsou konstanty pro stabilitu dělení volené přímo úměrně dynamickému rozsahu.
+
+Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
+To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
+
+
+\begin{thebibliography}{1}
+	\addcontentsline{toc}{chapter}{Literatura}
+
+\bibitem{vaserstejn} L. Vaserstein,
+\emph{Markov processes over denumerable products of spaces, describing large systems of automata}.
+Problemy Peredači Informacii 5, 1969.
+
+\end{thebibliography}
 
 \end{document}
