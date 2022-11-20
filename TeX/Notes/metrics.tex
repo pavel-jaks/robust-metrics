@@ -86,13 +86,51 @@ Potom máme \emph{Wassersteinovu $p$-vzdálenost} mezi dvěma pravděpodobnostn�
 které mají konečné $p$-té momenty,
 jako:
 \begin{equation}
-    W_p (\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} \operatorname{d}(x, y)^p \right)^{\frac{1}{p}},
+    W_p (\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} d(x, y)^p \right)^{\frac{1}{p}},
 \end{equation}
 kde $\Gamma(\mu, \nu)$ je množina všech sdružených pravděpodobnostních měr na $M \times M$,
 které mají po řadě $\mu$ a $\nu$ za marginální pravděpodobnostní míry \cite{vaserstejn}.
 
 Jak to souvisí s obrázky?
-Přes doprvní problém.
+Přes dopravní problém.
+Pod pravděpodobnostní distribucí $\mu$ či $\nu$ na $X$ si lze představit rozložení jakési hmoty
+o celkové hmotnosti $1$.
+Sdružená rozdělení $\gamma \in \Gamma(\mu, \nu)$ potom odpovídají transportnímu plánu,
+kde $\gamma(x, y) \operatorname{d}x \operatorname{d}y$
+vyjadřuje, kolik hmoty se přesune z $x$ do $y$.
+Tomu lze přiřadit nějakou cenu $C$,
+totiž kolik stojí přesun jednotkové hmoty z $x$ do $y$: $C(x, y)$.
+V případě \emph{Wassersteinovy vzdálenosti}
+za cenu dosadíme $C(x, y) = d(x, y)^p$,
+tedy $p$-tou mocninu vzdálenosti mezi $x$ a $y$.
+Potom cena celkového dopravního problému s transportním plánem $\gamma$ bude:
+\begin{align}
+    C_\gamma &= \int C(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
+    &= \int C(x, y) \operatorname{d} \gamma(x, y)
+\end{align}
+a optimální cena bude:
+\begin{equation}
+    C = \inf_{\gamma \in \Gamma(\mu, \nu)} C_\gamma.
+\end{equation}
+Po dosazení:
+\begin{align}
+    C &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int C(x, y) \operatorname{d} \gamma(x, y) \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int C(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} C(x, y) \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} d(x, y)^p \\
+    &= W_p (\mu, \nu)^p
+\end{align}
+Dostáváme tedy interpretaci, že $p$-tá mocnina \emph{Wassersteinovy vzdálenosti}
+odpovídá ceně dopravního problému.
+
+Pro obrázky má tato konstrukce následující uplatnění:
+Obrázky je třeba chápat jako diskrétní pravděpodobnostní rozdělení,
+proto je třeba je normalizovat,
+aby součet prvků tenzoru obrázku byl roven $1$.
+Pak střední hodnota v definici Wassersteinovy vzdálenosti přejde ve váženou sumu cen,
+tedy $p$-tých mocnin vzdáleností mezi jednotlivými pixely.
+
+Jak je to barevnými obrázky?
 
 \section{PSNR}
 
@@ -121,6 +159,7 @@ a $C_1, C_2$ jsou konstanty pro stabilitu dělení volené přímo úměrně dyn
 Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
 To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
 
+Jak volíme celkový SSIM pro barevné obrázky?
 
 \begin{thebibliography}{1}
 	\addcontentsline{toc}{chapter}{Literatura}
