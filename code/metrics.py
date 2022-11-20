@@ -1,5 +1,6 @@
 from typing import Union
 from abc import abstractmethod
+import itertools
 
 import torch
 import torch.nn as nn
@@ -73,7 +74,7 @@ class LpNorm(Norm):
         """
         super().__init__()
         if p < 1:
-            raise ValueError("p must be greater than 0")
+            raise ValueError("p must be greater than 1")
         self.p = p
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -227,4 +228,83 @@ class StructuralSimilarityIndexMeasure(Metric):
         self.c_2 = (k_2 * l) ** 2
 
     def compute(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError()
+        if x.ndim != 4 or y.ndim != 4:
+            raise ValueError("Not an image")
+        if x.shape != y.shape:
+            raise ValueError("Given images of different shapes")
+        
+        batch = x.shape[0]
+        channels = x.shape[1]
+        width = x.shape[2]
+        height = x.shape[3]
+
+        num_width_windows = width - self.window_size + 1 if width > self.window_size else 1
+        num_height_windows = height - self.window_size + 1 if height > self.window_size else 1
+
+        windows_indexes = [
+            [
+                range(i_w_start, min(i_w_start + width, i_w_start + self.window_size)),
+                range(i_h_start, min(i_h_start + height, i_h_start + self.window_size))
+            ]
+            for i_w_start, i_h_start in itertools.product(range(num_width_windows), range(num_height_windows))
+        ]
+
+        x_windows = torch.zeros(len(windows_indexes), batch, channels, min(self.window_size, width), min(self.window_size, height))
+        y_windows = torch.zeros(len(windows_indexes), batch, channels, min(self.window_size, width), min(self.window_size, height))
+        for i, indexes in enumerate(windows_indexes):
+            torch.index_select(torch.index_select(x, 2, torch.tensor(indexes[0], dtype=torch.int)), 3, torch.tensor(indexes[1], dtype=torch.int), out=x_windows[i, :, :, :, :])
+            torch.index_select(torch.index_select(y, 2, torch.tensor(indexes[0], dtype=torch.int)), 3, torch.tensor(indexes[1], dtype=torch.int), out=y_windows[i, :, :, :, :])
+        
+        x_means = x_windows.mean(dim=(3, 4))
+        y_means = y_windows.mean(dim=(3, 4))
+        x_variances = x_windows.var(dim=(3, 4), unbiased=True)
+        y_variances = y_windows.var(dim=(3, 4), unbiased=True)
+        x_means_expanded = x_means \
+            .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) \
+            .expand(num_width_windows * num_height_windows, batch, channels, min(window_size, width), min(window_size, height))
+        y_means_expanded = y_means \
+            .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) \
+            .expand(num_width_windows * num_height_windows, batch, channels, min(window_size, width), min(window_size, height))
+        bessel = (min(window_size, width) * min(window_size, height))
+        bessel = bessel / (bessel - 1)
+        cov = bessel * ((x_windows - x_means_expanded) * (y_windows - y_means_expanded)).mean(dim=(3, 4))
+
+        out = (2 * x_means * y_means + self.c_1) * (2 * cov + self.c_2) \
+            / ((x_means ** 2 + y_means ** 2 + self.c_1) * (x_variances ** 2 + y_variances ** 2 + self.c_1))
+        return out.mean(dim=(0, 2))
+
+
+if __name__ == '__main__':
+    batch = 20
+    channels = 3
+    width = 28
+    height = 28
+    window_size = 10
+    # num_width_windows = width - window_size + 1 if width >= window_size else 1
+    # num_height_windows = height - window_size + 1 if height >= window_size else 1
+
+    # x = torch.randn(batch, channels, width, height)
+    # windows_indexes = [
+    #         [
+    #             range(i_w_start, min(i_w_start + width, i_w_start + window_size)),
+    #             range(i_h_start, min(i_h_start + height, i_h_start + window_size))
+    #         ]
+    #         for i_w_start, i_h_start in itertools.product(range(num_width_windows), range(num_height_windows))
+    #     ]
+    # x_windows = torch.zeros(len(windows_indexes), batch, channels, min(window_size, width), min(window_size, height))
+    
+    # for i, indexes in enumerate(windows_indexes):
+    #     torch.index_select(torch.index_select(x, 2, torch.tensor(indexes[1])), 3, torch.tensor(indexes[1]), out=x_windows[i, ...])
+    # print(x_windows.shape)
+    # x_means = x_windows.mean(dim=(3, 4))
+    # x_means_expanded = x_means \
+    #     .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) \
+    #     .expand(num_width_windows * num_height_windows, batch, channels, min(window_size, width), min(window_size, height))
+    # print(x_means_expanded.shape)
+    # print((x_windows - x_means_expanded).shape)
+
+    ssim = StructuralSimilarityIndexMeasure(transform=None, window_size=window_size, l=6)
+    x = torch.randn(batch, channels, width, height)
+    y = torch.randn(batch, channels, width, height)
+    print(ssim(x, y))
+    print(ssim(x, x + 1e-3))
