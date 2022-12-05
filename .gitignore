@@ -1,4 +1,5 @@
 .env
+mnist
 
 *.aux
 *.fdb_latexmk

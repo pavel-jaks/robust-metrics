@@ -210,13 +210,13 @@ class RootMeanSquaredError(Metric):
 
 
 class PeakSignalToNoiseRatio(Metric):
-    def __init__(self, transform: Union[Transform, None] = None):
+    def __init__(self, transform: Union[Transform, None] = None, l=1):
         super().__init__(transform)
-        self.linf_norm = LinfNorm()
+        self.l = l
         self.rmse = RootMeanSquaredError()
 
     def compute(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        out = 20 * torch.log10(self.linf_norm(x) / self.rmse(x, y))
+        out = 20 * torch.log10(self.l / self.rmse(x, y))
         return out
 
 
@@ -260,17 +260,18 @@ class StructuralSimilarityIndexMeasure(Metric):
         x_variances = x_windows.var(dim=(3, 4), unbiased=True)
         y_variances = y_windows.var(dim=(3, 4), unbiased=True)
         x_means_expanded = x_means \
-            .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) \
-            .expand(num_width_windows * num_height_windows, batch, channels, min(window_size, width), min(window_size, height))
+            .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) # \
+            # .expand(num_width_windows * num_height_windows, batch, channels, min(self.window_size, width), min(self.window_size, height))
         y_means_expanded = y_means \
-            .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) \
-            .expand(num_width_windows * num_height_windows, batch, channels, min(window_size, width), min(window_size, height))
-        bessel = (min(window_size, width) * min(window_size, height))
+            .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) # \
+            # .expand(num_width_windows * num_height_windows, batch, channels, min(self.window_size, width), min(self.window_size, height))
+        bessel = (min(self.window_size, width) * min(self.window_size, height))
         bessel = bessel / (bessel - 1)
+        # bessel = 1
         cov = bessel * ((x_windows - x_means_expanded) * (y_windows - y_means_expanded)).mean(dim=(3, 4))
 
         out = (2 * x_means * y_means + self.c_1) * (2 * cov + self.c_2) \
-            / ((x_means ** 2 + y_means ** 2 + self.c_1) * (x_variances ** 2 + y_variances ** 2 + self.c_1))
+            / ((x_means ** 2 + y_means ** 2 + self.c_1) * (x_variances + y_variances + self.c_2))
         return out.mean(dim=(0, 2))
 
 
