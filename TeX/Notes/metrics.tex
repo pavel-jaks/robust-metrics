@@ -99,24 +99,24 @@ Sdružená rozdělení $\gamma \in \Gamma(\mu, \nu)$ potom odpovídají transpor
 kde $\gamma(x, y) \operatorname{d}x \operatorname{d}y$
 vyjadřuje, kolik hmoty se přesune z $x$ do $y$.
 Tomu lze přiřadit nějakou cenu $C$,
-totiž kolik stojí přesun jednotkové hmoty z $x$ do $y$: $C(x, y)$.
+totiž kolik stojí přesun jednotkové hmoty z $x$ do $y$: $c(x, y)$.
 V případě \emph{Wassersteinovy vzdálenosti}
-za cenu dosadíme $C(x, y) = d(x, y)^p$,
+za cenu dosadíme $c(x, y) = d(x, y)^p$,
 tedy $p$-tou mocninu vzdálenosti mezi $x$ a $y$.
 Potom cena celkového dopravního problému s transportním plánem $\gamma$ bude:
 \begin{align}
-    C_\gamma &= \int C(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
-    &= \int C(x, y) \operatorname{d} \gamma(x, y)
+    c_\gamma &= \int c(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
+    &= \int c(x, y) \operatorname{d} \gamma(x, y)
 \end{align}
 a optimální cena bude:
 \begin{equation}
-    C = \inf_{\gamma \in \Gamma(\mu, \nu)} C_\gamma.
+    c = \inf_{\gamma \in \Gamma(\mu, \nu)} c_\gamma.
 \end{equation}
 Po dosazení:
 \begin{align}
-    C &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int C(x, y) \operatorname{d} \gamma(x, y) \\
-    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int C(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
-    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} C(x, y) \\
+    c &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int c(x, y) \operatorname{d} \gamma(x, y) \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int c(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} c(x, y) \\
     &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} d(x, y)^p \\
     &= W_p (\mu, \nu)^p
 \end{align}
@@ -139,27 +139,46 @@ vyjadřuje vztah mezi obrázkem $x \in \mathbb{R}^{C \times W \times H}$
 a jeho pokažením $\tilde{x} \in \mathbb{R}^{C \times W \times H}$ za přidání šumu.
 Definice je následující:
 \begin{align}
-    \operatorname{PSNR}(x, \tilde{x}) &= 10 \cdot \operatorname{log}_{10} \left( \frac{\|x\|_{\infty}^2}{\operatorname{MSE}(x, \tilde{x})} \right), \\
-    &= 20 \cdot \operatorname{log}_{10} \left( \frac{\|x\|_{\infty}}{\operatorname{RMSE}(x, \tilde{x})} \right).
+    \operatorname{PSNR}(x, \tilde{x}) &= 10 \cdot \operatorname{log}_{10} \left( \frac{l^2}{\operatorname{MSE}(x, \tilde{x})} \right), \\
+    &= 20 \cdot \operatorname{log}_{10} \left( \frac{l}{\operatorname{RMSE}(x, \tilde{x})} \right),
 \end{align}
-Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operatorname{PSNR}$, tato vzdálenost tedy není metrická.
+kde $l$ je dynamický rozsah obrázků, tedy rozdíl mezi maximální možnou hodnotou pixelů a minimální možnou hodnotou pixelů.
+% Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operatorname{PSNR}$, tato vzdálenost tedy není metrická.
+Jedná se tedy o transformaci metriky \emph{MSE}.
 
 \section{SSIM}
 
-Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
-se rozumí následující vzdálenost:
+Zkratka \emph{SSIM} pochází z anglického \emph{structural similarity index measure}.
+Tato metrika se při výpočtu indexu dvou obrázků $x$ a $\tilde{x}$ dívá na podokna,
+ze kterých vybere jisté statistiky a z nich vytvoří index pro daná podokna obrázků.
+Potom se jako celkový index bere průměr přes tato okna.
+Uveďme vzorce pro výpočet indexu SSIM pro případ, že máme jediné okno, které splývá s obrázkem,
+které pro jednoduchost zvolme jednokanálové, tedy černobílé.
+Označme $N = W \times H$ počet pixelů v obrázku a indexujme prvky matice obrázku jediným číslem.
+Potom definujeme pro obrázky $x$ a $\tilde{x}$ následující:
+\begin{align*}
+    \mu_x &= \frac{1}{N} \sum_{i = 1}^N x_i, \\
+    \mu_{\tilde{x}} &= \frac{1}{N} \sum_{i = 1}^N \tilde{x}_i, \\
+    \sigma_x^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)^2, \\
+    \sigma_{\tilde{x}}^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (\tilde{x}_i - \mu_{\tilde{x}})^2, \\
+    \sigma_{x \tilde{x}} &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)(\tilde{x}_i - \mu_{\tilde{x}}).
+\end{align*}
+Potom:
+% Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
+% se rozumí následující vzdálenost:
 \begin{equation}
     \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x}} + C_1)(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
 \end{equation}
-kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
-$\sigma_{x \tilde{x}}$ je nestranný odhad kovariance mezi $x$ a $\tilde{x}$,
-$\sigma^2$ je nestranný odhad rozptylu $x$, resp. $\tilde{x}$
-a $C_1, C_2$ jsou konstanty pro stabilitu dělení volené přímo úměrně dynamickému rozsahu.
+% kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
+% $\sigma_{x \tilde{x}}$ je nestranný odhad kovariance mezi $x$ a $\tilde{x}$,
+% $\sigma^2$ je nestranný odhad rozptylu $x$, resp. $\tilde{x}$
+kde $C_1, C_2$ jsou konstanty pro stabilitu dělení volené kvadraticky úměrně dynamickému rozsahu.
 
-Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
-To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
+% Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
+% To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
 
 Jak volíme celkový SSIM pro barevné obrázky?
+Jako průměr přes kanály.
 
 \begin{thebibliography}{1}
 	\addcontentsline{toc}{chapter}{Literatura}
