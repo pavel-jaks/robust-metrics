@@ -1,0 +1,73 @@
+\documentclass[czech]{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{babel}
+
+\usepackage[x11names]{xcolor}
+\usepackage{framed}
+\usepackage{quoting}
+
+\selectlanguage{czech}
+
+\author{Pavel Jakš}
+\title{Projekce na kouli v zadané metrice}
+
+\begin{document}
+
+\maketitle
+
+\section*{Úvod}
+
+V oblasti generování adversariálních vzorků, kterými se zabývá tato práce, se v různých algoritmech v hojnosti vyskytuje
+potřeba tzv. projektovat nějaký vektor do nějakého $\epsilon$-okolí jiného vektoru.
+To znamená pro vektor $\tilde{x}$ najít vektor $\tilde{x}^*$ v $\epsilon$-okolí vektoru $x$,
+takový že nejlépe odpovídá vektoru $\tilde{x}$, tedy je ze všech vektorů v $\epsilon$-okolí $x$
+nejblíže vektoru $\tilde{x}$.
+
+Mějme metriku $d: \mathbb{R}^n \times \mathbb{R}^n \rightarrow [0, + \infty)$.
+Označme jako kouli:
+\begin{equation}
+    B^{(d)} (x, \epsilon) = \{\hat{x} \in \mathbb{R}^n | d(x, \hat{x}) \leq \epsilon\}.
+\end{equation}
+Poznamenejme, že od standardní definice koule se tato definice liší v tom, že nerovnost definující kouli je neostrá,
+tedy dle standardní definice otevřené koule jsme jako kouli definovali uzávěr otevřené koule.
+Formálně bychom tyto myšlenky o projekci mohli zapsat následovně:
+Projekce je zobrazení $P_{B(x, \epsilon)}$, které pro $\tilde{x}$ má předpis:
+\begin{equation}
+    P_{B^{(d)} (x, \epsilon)}(\tilde{x}) = \operatornamewithlimits{argmin}_{\hat{x} \in B^{(d)} (x, \epsilon)} d(\tilde{x}, \hat{x}).
+\end{equation}
+Otázka zní: Musíme v projekci mít stejnou metriku definující danou kouli jako máme v minimalizačním problému?
+Nemusíme, a budeme toho využívat.
+Proto mějme dvě metriky $d_1, d_2$ na $\mathbb{R}^n$ a zobecněme definici projekce na následující:
+\begin{equation} \label{two_metrics}
+    P_{B^{(d_1)} (x, \epsilon)}^{(d_2)}(\tilde{x}) = \operatornamewithlimits{argmin}_{\hat{x} \in B^{(d_1)} (x, \epsilon)} d_2(\tilde{x}, \hat{x}).
+\end{equation}
+
+V následujících částech textu položme ve vztahu \ref{two_metrics} za metriku $d_2$ metriku indukovanou $l_2$ normou.
+Dále poznamenejme, že umocnění $l_2$ normy rozdílu na druhou nemění řešení optimalizačního problému projekce.
+Proto vezměme za projekci následující:
+\begin{equation}
+    P_{B^{(d)} (x, \epsilon)}(\tilde{x}) = \operatornamewithlimits{argmin}_{\hat{x} \in B^{(d)} (x, \epsilon)} \|\tilde{x} - \hat{x}\|_2^2,
+\end{equation}
+kde $d$ je metrika na $\mathbb{R}^n$.
+
+\section{Projekce na kouli zadanou Wassersteinovou metrikou}
+
+
+
+
+\begin{thebibliography}{1}
+	\addcontentsline{toc}{chapter}{Literatura}
+
+\bibitem{wae} E. Wong, F. R. Schmidt, J. Z. Kolter,
+\emph{Wasserstein Adversarial Examples via Projected Sinkhorn Iterations}.
+Proceedings of the 36th International Conference on Machine Learning, PMLR 97:6808-6817, 2019.
+
+\bibitem{vaserstejn} L. Vaserstein,
+\emph{Markov processes over denumerable products of spaces, describing large systems of automata}.
+Problemy Peredači Informacii 5, 1969.
+
+\end{thebibliography}
+
+\end{document}

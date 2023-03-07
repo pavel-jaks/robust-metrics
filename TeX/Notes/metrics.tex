@@ -98,7 +98,7 @@ o celkové hmotnosti $1$.
 Sdružená rozdělení $\gamma \in \Gamma(\mu, \nu)$ potom odpovídají transportnímu plánu,
 kde $\gamma(x, y) \operatorname{d}x \operatorname{d}y$
 vyjadřuje, kolik hmoty se přesune z $x$ do $y$.
-Tomu lze přiřadit nějakou cenu $C$,
+Tomu lze přiřadit nějakou cenu $c$,
 totiž kolik stojí přesun jednotkové hmoty z $x$ do $y$: $c(x, y)$.
 V případě \emph{Wassersteinovy vzdálenosti}
 za cenu dosadíme $c(x, y) = d(x, y)^p$,
@@ -130,7 +130,13 @@ aby součet prvků tenzoru obrázku byl roven $1$.
 Pak střední hodnota v definici Wassersteinovy vzdálenosti přejde ve váženou sumu cen,
 tedy $p$-tých mocnin vzdáleností mezi jednotlivými pixely.
 
-Jak je to barevnými obrázky?
+Jak je to barevnými obrázky, tedy s obrázku, které mají více než jeden kanál?
+Zde lze uplatnit následující dva přístupy:
+\begin{enumerate}
+    \item Normovat celý obrázek na jedničku, tedy všechny kanály dohromady, a tím pádem i definovat vzdálenost mezi jednotlivými kanály,
+    \item Normovat každý kanál zvlášť na jedničku, počítat Wassersteinovu metriku pro každý kanál zvlášť
+    a následně vybrat nějakou statistiku výsledných vzdáleností, např. průměr.
+\end{enumerate}
 
 \section{PSNR}
 
