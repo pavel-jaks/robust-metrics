@@ -1,6 +1,7 @@
 from typing import Union
 from abc import abstractmethod
 import itertools
+from math import sqrt
 
 import torch
 import torch.nn as nn
@@ -273,39 +274,77 @@ class StructuralSimilarityIndexMeasure(Metric):
         out = (2 * x_means * y_means + self.c_1) * (2 * cov + self.c_2) \
             / ((x_means ** 2 + y_means ** 2 + self.c_1) * (x_variances + y_variances + self.c_2))
         return out.mean(dim=(0, 2))
+    
+
+class WassersteinApproximation(Metric):
+    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 1e3, stopping_criterion:float = 1e-3):
+        super().__init__(transform)
+        self.regularization = regularization
+        self.stopping_criterion = stopping_criterion
+
+    def compute(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
+        if x.ndim != 4 or y.ndim != 4:
+            raise ValueError("Not a batch of images")
+        if x.shape != y.shape:
+            raise ValueError("Given images of different shapes")
+        
+        batch = x.shape[0]
+        channels = x.shape[1]
+        width = x.shape[2]
+        height = x.shape[3]
+
+        if channels > 1:
+            raise NotImplementedError("Wasserstein not implemented for multi-channel images")
+        
+        if (x < 0).sum() > 0 or (y < 0).sum() > 0:
+            raise ValueError("Images must be given with non-negative entries.")
+        
+        # Normalization -> into probability distribution
+        x_norm, y_norm = (x / x.sum(dim=(2, 3), keepdim=True)).reshape(batch, width * height), \
+            (y / y.sum(dim=(2, 3), keepdim=True)).reshape(batch, width * height)
+
+        cost_matrix = torch.tensor(
+            [
+                [
+                    sqrt((i // width - j // width) ** 2 + (i % width - j % width) ** 2) 
+                    for j in range(width * height)
+                ]
+                for i in range(width * height)
+            ]
+        )
+        cost_matrix = cost_matrix / ((width * height) ** 2)
+
+        # Algorithm from paper https://proceedings.neurips.cc/paper/2013/file/af21d0c97db2e27e13572cbf59eb343d-Paper.pdf
+        u_vectors_prev = torch.ones(batch, width * height).unsqueeze(2) / (width * height)
+        u_vectors = torch.ones(batch, width * height).unsqueeze(2) / (width * height)
+        K_matrix = (- self.regularization * cost_matrix).exp().unsqueeze(0)
+        K_tilde_matrices = (1 / x_norm.reshape(batch, width * height, 1)) * K_matrix
+
+        u_vectors = 1 / (K_tilde_matrices @ (y_norm.unsqueeze(2) / (K_matrix.transpose(1, 2).broadcast_to(batch, width * height, width * height) @ u_vectors)))
+        
+        l2_metric = L2Metric()
+        while l2_metric(u_vectors, u_vectors_prev).max() > self.stopping_criterion:
+            u_vectors_temp = u_vectors
+            u_vectors = 1 / (K_tilde_matrices @ (y_norm.unsqueeze(2) / (K_matrix.transpose(1, 2).broadcast_to(batch, width * height, width * height) @ u_vectors)))
+            u_vectors_prev = u_vectors_temp
+        
+        v_vectors = y_norm.unsqueeze(2) / (K_matrix.transpose(1, 2).broadcast_to(batch, width * height, width * height) @ u_vectors)
+        dists = (u_vectors * ((K_matrix * cost_matrix) @ v_vectors))
+        dists = dists.sum(dim=tuple(range(1, dists.ndim)))
+
+        return dists
+        
 
 
 if __name__ == '__main__':
     batch = 20
-    channels = 3
+    channels = 1
     width = 28
     height = 28
-    window_size = 10
-    # num_width_windows = width - window_size + 1 if width >= window_size else 1
-    # num_height_windows = height - window_size + 1 if height >= window_size else 1
-
-    # x = torch.randn(batch, channels, width, height)
-    # windows_indexes = [
-    #         [
-    #             range(i_w_start, min(i_w_start + width, i_w_start + window_size)),
-    #             range(i_h_start, min(i_h_start + height, i_h_start + window_size))
-    #         ]
-    #         for i_w_start, i_h_start in itertools.product(range(num_width_windows), range(num_height_windows))
-    #     ]
-    # x_windows = torch.zeros(len(windows_indexes), batch, channels, min(window_size, width), min(window_size, height))
     
-    # for i, indexes in enumerate(windows_indexes):
-    #     torch.index_select(torch.index_select(x, 2, torch.tensor(indexes[1])), 3, torch.tensor(indexes[1]), out=x_windows[i, ...])
-    # print(x_windows.shape)
-    # x_means = x_windows.mean(dim=(3, 4))
-    # x_means_expanded = x_means \
-    #     .reshape(num_width_windows * num_height_windows, batch, channels, 1, 1) \
-    #     .expand(num_width_windows * num_height_windows, batch, channels, min(window_size, width), min(window_size, height))
-    # print(x_means_expanded.shape)
-    # print((x_windows - x_means_expanded).shape)
+    x = torch.rand(batch, channels, width, height) * 100
+    y = torch.rand(batch, channels, width, height) * 100
 
-    ssim = StructuralSimilarityIndexMeasure(transform=None, window_size=window_size, l=6)
-    x = torch.randn(batch, channels, width, height)
-    y = torch.randn(batch, channels, width, height)
-    print(ssim(x, y))
-    print(ssim(x, x + 1e-3))
+    wasserstein = WassersteinApproximation(regularization=1e1, stopping_criterion=1e-8)
+    d = wasserstein(x, y)
+    print(d)

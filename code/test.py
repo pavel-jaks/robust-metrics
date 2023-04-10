@@ -44,4 +44,9 @@ def test(verbose=False):
     if verbose:
         print(f'PSNR:{psnr_ref};MyPSNR:{psnr_my}')
 
+    
+    wasserstein_my = metrics.WassersteinApproximation()(image.unsqueeze(0), noised_image.unsqueeze(0))
+    if verbose:
+        print(f'MyWasserstein:{wasserstein_my}')
+
 test(True)
