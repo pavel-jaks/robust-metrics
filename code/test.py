@@ -3,6 +3,7 @@ from itertools import product
 import torch
 import torchvision
 import skimage.metrics as skit
+from geomloss import SamplesLoss
 
 import metrics
 
@@ -13,6 +14,10 @@ def get_mnist_pair():
     
     noised_image = (image + (0.1 * torch.rand(image.shape))).apply_(lambda x: 0 if x < 0 else 255 if x > 255 else x)
     return image, noised_image
+
+def get_mnist_two_images():
+    mnist = torchvision.datasets.MNIST('mnist', download=True, transform=torchvision.transforms.ToTensor())
+    return mnist[0][0].unsqueeze(0), mnist[1][0].unsqueeze(0)
 
 def test(verbose=False):
     image, noised_image = get_mnist_pair()
@@ -45,8 +50,24 @@ def test(verbose=False):
         print(f'PSNR:{psnr_ref};MyPSNR:{psnr_my}')
 
     
-    wasserstein_my = metrics.WassersteinApproximation()(image.unsqueeze(0), noised_image.unsqueeze(0))
+    # wasserstein_my = metrics.WassersteinApproximation()(image.unsqueeze(0), noised_image.unsqueeze(0))
+    image_one, image_two = get_mnist_two_images()
+    regularization = 8e-3
+    stopping_criterion = 1e-6
+    wasserstein_my = metrics.WassersteinApproximation(
+        regularization=regularization,
+        stopping_criterion=stopping_criterion
+    )(image_one, image_two)
+    
+    ref = SamplesLoss(
+        loss="sinkhorn",
+        p=1,
+        blur= (regularization)
+    )
+
+    ref_value = ref(image_one.reshape(1, 1, 28 * 28), image_two.reshape(1, 1, 28 * 28))
+
     if verbose:
-        print(f'MyWasserstein:{wasserstein_my}')
+        print(f'Wasserstein:{ref_value};MyWasserstein:{wasserstein_my}')
 
 test(True)

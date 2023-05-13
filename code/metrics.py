@@ -312,28 +312,39 @@ class WassersteinApproximation(Metric):
                 for i in range(width * height)
             ]
         )
-        cost_matrix = cost_matrix / ((width * height) ** 2)
+        # cost_matrix = cost_matrix / cost_matrix.sum()
+
+        dists = torch.zeros(batch)
+
+        for i in range(batch):
+            dists[i] += self.compute_vectors_distance(x_norm[i].flatten(), y_norm[i].flatten(), cost_matrix)
+
+        return torch.Tensor(dists)
+        
+    def compute_vectors_distance(self, x, y, cost_matrix):
+        indices = (x != 0)
+        x_non_zero = x[indices]
+        x_non_zero_dim = x_non_zero.shape[0]
 
         # Algorithm from paper https://proceedings.neurips.cc/paper/2013/file/af21d0c97db2e27e13572cbf59eb343d-Paper.pdf
-        u_vectors_prev = torch.ones(batch, width * height).unsqueeze(2) / (width * height)
-        u_vectors = torch.ones(batch, width * height).unsqueeze(2) / (width * height)
-        K_matrix = (- self.regularization * cost_matrix).exp().unsqueeze(0)
-        K_tilde_matrices = (1 / x_norm.reshape(batch, width * height, 1)) * K_matrix
+        u_vector_prev = torch.ones(x_non_zero_dim) / x_non_zero_dim
 
-        u_vectors = 1 / (K_tilde_matrices @ (y_norm.unsqueeze(2) / (K_matrix.transpose(1, 2).broadcast_to(batch, width * height, width * height) @ u_vectors)))
-        
-        l2_metric = L2Metric()
-        while l2_metric(u_vectors, u_vectors_prev).max() > self.stopping_criterion:
-            u_vectors_temp = u_vectors
-            u_vectors = 1 / (K_tilde_matrices @ (y_norm.unsqueeze(2) / (K_matrix.transpose(1, 2).broadcast_to(batch, width * height, width * height) @ u_vectors)))
-            u_vectors_prev = u_vectors_temp
-        
-        v_vectors = y_norm.unsqueeze(2) / (K_matrix.transpose(1, 2).broadcast_to(batch, width * height, width * height) @ u_vectors)
-        dists = (u_vectors * ((K_matrix * cost_matrix) @ v_vectors))
-        dists = dists.sum(dim=tuple(range(1, dists.ndim)))
+        u_vector = torch.ones(x_non_zero_dim) / x_non_zero_dim
+        K_matrix = (- self.regularization * cost_matrix[indices, :]).exp()
+        K_tilde_matrices = torch.diag(1 / x_non_zero) @ K_matrix
 
-        return dists
+        u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+
+        while ((u_vector - u_vector_prev) ** 2).sum() > self.stopping_criterion:
+            u_vector_temp = u_vector
+            u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+            u_vector_prev = u_vector_temp
         
+        v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
+        dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
+        dist = dist.sum()
+
+        return dist
 
 
 if __name__ == '__main__':
@@ -345,6 +356,6 @@ if __name__ == '__main__':
     x = torch.rand(batch, channels, width, height) * 100
     y = torch.rand(batch, channels, width, height) * 100
 
-    wasserstein = WassersteinApproximation(regularization=1e1, stopping_criterion=1e-8)
+    wasserstein = WassersteinApproximation(regularization=1e-2, stopping_criterion=1e-10)
     d = wasserstein(x, y)
     print(d)
