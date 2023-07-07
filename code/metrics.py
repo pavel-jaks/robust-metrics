@@ -277,16 +277,18 @@ class StructuralSimilarityIndexMeasure(Metric):
     
 
 class WassersteinApproximation(Metric):
-    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 1e3, stopping_criterion:float = 1e-3):
+    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 1e3, iterations: int = 500):
         super().__init__(transform)
         self.regularization = regularization
-        self.stopping_criterion = stopping_criterion
+        self.iterations = iterations
 
     def compute(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
         if x.ndim != 4 or y.ndim != 4:
             raise ValueError("Not a batch of images")
         if x.shape != y.shape:
             raise ValueError("Given images of different shapes")
+        if any(x.flatten() < 0) or any(y.flatten() < 0):
+            raise ValueError("Given images are with negative values")
         
         batch = x.shape[0]
         channels = x.shape[1]
@@ -327,24 +329,25 @@ class WassersteinApproximation(Metric):
         x_non_zero_dim = x_non_zero.shape[0]
 
         # Algorithm from paper https://proceedings.neurips.cc/paper/2013/file/af21d0c97db2e27e13572cbf59eb343d-Paper.pdf
-        u_vector_prev = torch.ones(x_non_zero_dim) / x_non_zero_dim
 
+        # u_vector_prev = torch.ones(x_non_zero_dim) / x_non_zero_dim
         u_vector = torch.ones(x_non_zero_dim) / x_non_zero_dim
         K_matrix = (- self.regularization * cost_matrix[indices, :]).exp()
         K_tilde_matrices = torch.diag(1 / x_non_zero) @ K_matrix
 
-        u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
-
-        while ((u_vector - u_vector_prev) ** 2).sum() > self.stopping_criterion:
-            u_vector_temp = u_vector
+        for _ in range(self.iterations):
             u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
-            u_vector_prev = u_vector_temp
-        
-        v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
-        dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
-        dist = dist.sum()
 
-        return dist
+        # while ((u_vector - u_vector_prev) ** 2).sum() > self.stopping_criterion:
+        #     u_vector_temp = u_vector
+        #     u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+        #     u_vector_prev = u_vector_temp
+        
+
+        v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
+        # return torch.diag(u_vector) @ K_matrix @ torch.diag(v_vector)
+        dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
+        return dist.sum()
 
 
 if __name__ == '__main__':
