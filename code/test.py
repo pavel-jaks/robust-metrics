@@ -102,12 +102,6 @@ def test(verbose=False):
         regularization=regularization,
         iterations=iterations
     )(image_one, image_two)
-    
-    # ref = SamplesLoss(
-    #     loss="sinkhorn",
-    #     p=1,
-    #     blur= (regularization)
-    # )
 
     # width, height = 5, 5
     cost_matrix = torch.tensor(
@@ -120,9 +114,6 @@ def test(verbose=False):
             ]
         )
 
-    # x, y = image_one.flatten(), image_two.flatten()
-    # x_norm, y_norm = (x / x.sum(dim=(2, 3), keepdim=True)).reshape(batch, width * height), \
-        # (y / y.sum(dim=(2, 3), keepdim=True)).reshape(batch, width * height)
     
     ref_value = wasserstein_linear_program(image_one, image_two, cost_matrix)
 
