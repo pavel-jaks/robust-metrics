@@ -323,7 +323,7 @@ class WassersteinApproximation(Metric):
 
         return torch.Tensor(dists)
         
-    def compute_vectors_distance(self, x, y, cost_matrix):
+    def compute_vectors_distance(self, x, y, cost_matrix, retain_all_iterations: bool = False):
         indices = (x != 0)
         x_non_zero = x[indices]
         x_non_zero_dim = x_non_zero.shape[0]
@@ -335,20 +335,22 @@ class WassersteinApproximation(Metric):
         K_matrix = (- self.regularization * cost_matrix[indices, :]).exp()
         K_tilde_matrices = torch.diag(1 / x_non_zero) @ K_matrix
 
-        for _ in range(self.iterations):
-            u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+        if not retain_all_iterations:
+            for _ in range(self.iterations):
+                u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+            v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
+            dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
+            return dist.sum()
+        else:
+            dists = []
+            for _ in range(self.iterations):
+                u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+                v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
+                dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
+                dists.append(dist.sum())
+            return dists
 
-        # while ((u_vector - u_vector_prev) ** 2).sum() > self.stopping_criterion:
-        #     u_vector_temp = u_vector
-        #     u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
-        #     u_vector_prev = u_vector_temp
         
-
-        v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
-        # return torch.diag(u_vector) @ K_matrix @ torch.diag(v_vector)
-        dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
-        return dist.sum()
-
 
 if __name__ == '__main__':
     batch = 20

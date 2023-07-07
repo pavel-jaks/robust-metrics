@@ -1,10 +1,8 @@
-from itertools import product
 from math import sqrt
 
 import torch
 import torchvision
 import skimage.metrics as skit
-from geomloss import SamplesLoss
 
 import metrics
 import numpy as np
