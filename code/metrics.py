@@ -1,7 +1,6 @@
 from typing import Union
 from abc import abstractmethod
 import itertools
-from math import sqrt
 
 import torch
 import torch.nn as nn
@@ -308,7 +307,7 @@ class WassersteinApproximation(Metric):
         cost_matrix = torch.tensor(
             [
                 [
-                    sqrt((i // width - j // width) ** 2 + (i % width - j % width) ** 2) 
+                    abs(i // width - j // width) + abs(i % width - j % width) 
                     for j in range(width * height)
                 ]
                 for i in range(width * height)

@@ -94,7 +94,7 @@ def test(verbose=False):
     image_two = torch.tensor(image_two, dtype=torch.float32)
     image_one, image_two = image_one.reshape(1, 1, width, height), image_two.reshape(1, 1, width, height)
 
-    regularization = 35
+    regularization = 5
     iterations = 300
     wasserstein_my = metrics.WassersteinApproximation(
         regularization=regularization,
@@ -105,7 +105,7 @@ def test(verbose=False):
     cost_matrix = torch.tensor(
             [
                 [
-                    sqrt((i // width - j // width) ** 2 + (i % width - j % width) ** 2) 
+                    abs(i // width - j // width) + abs(i % width - j % width) 
                     for j in range(width * height)
                 ]
                 for i in range(width * height)

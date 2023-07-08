@@ -37,7 +37,13 @@ a splňuje:
     \item $\|\alpha x\| = |\alpha| \cdot \|x\| \quad \forall \alpha \in \mathbb{R}, \forall x \in V$,
     \item $\|x + y\| \leq \|x\| + \|y\| \quad \forall x, y \in V$.
 \end{enumerate}
-S metrikami, které jsou tzv. indukované normami se setkáme.
+Metriku potom získáme z normy následující konstrukcí:
+\begin{equation*}
+    \rho (x, y) = \| x - y \|,
+\end{equation*}
+tedy vzdálenost dvou vektorů je dána normou rozdílu vektorů.
+Snadno lze nahlédnout, že takto zadané zobrazení je metrika.
+S metrikami, které jsou tzv. indukované normami dle předchozího se setkáme.
 
 
 \section{Metriky indukované $l_p$ normami}
@@ -80,6 +86,8 @@ Pro tenzory $x, \tilde{x} \in \mathbb{R}^{C \times W \times H}$ mají definici:
 \end{align}
 
 \section{Wassersteinova vzdálenost}
+
+\subsection{Definice}
 
 Buď $(M, d)$ metrický prostor, který je zároveň \emph{Radonův}. Zvolme $p \in [1, + \infty)$.
 Potom máme \emph{Wassersteinovu $p$-vzdálenost} mezi dvěma pravděpodobnostními mírami $\mu$ a $\nu$ na $M$,
