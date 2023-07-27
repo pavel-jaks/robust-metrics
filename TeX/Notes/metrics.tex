@@ -146,6 +146,85 @@ Zde lze uplatnit následující dva přístupy:
     a následně vybrat nějakou statistiku výsledných vzdáleností, např. průměr.
 \end{enumerate}
 
+\subsection{Výpočet}
+
+Abychom mohli s Wassersteinovou metrikou nakládat například v počítači, je nutné tuto metriku spočíst.
+Podíváme-li se do definice, znamená to vyřešit optimalizační problém.
+Byť bychom se omezili hledání vzdáleností dvou vektorů o~rozměru $q$,
+měli bychom problém s časovou složitostí nejlépe $\mathcal{O}(q^3 \operatorname{log} q)$ \cite{wass_computation}.
+A~to je hodně.
+Proto se podívejme, jak Wassersteinovu vzdálenost spočíst rychleji, byť za ztráty přesnosti.
+
+Omezme se na prostory konečné dimenze. Potom mějme za úkol spočíst Wassersteinovu  (zvolme $p = 1$) vzdálenost vektorů
+$\mu, \nu \in \mathbb{R}^q, \mu ^ T 1_q = \nu ^ T 1_q = 1$, kde $1_q$ je vektor rozměru $q$ složen pouze z jedniček.
+Potom $\mu, \nu$ lze chápat jako diskrétní pravděpodobnostní rozdělení.
+Označme jako $U(\mu, \nu)$ množinu všech matic $P \in \mathbb{R}^{q \times q}, P_{i,j} \geq 0$
+takových, že $P 1_q = \mu$ a $P^T 1_q = \nu$.
+Jako matici $C$ označme zadanou matici cen, která splňuje, že reprezentuje metriku.
+To znamená, že $C_{i, j} \geq 0$, $C_{i, j} = 0 \iff i = j$, $C_{i, j} = C_{j, i}$ a $C_{i, k} \leq C_{i, j} + C_{j, k}$.
+Potom lze napsat:
+\begin{equation}
+    W (\mu, \nu) \equiv W_1 (\mu, \nu) = \min_{P \in U(\mu, \nu)} \langle P, C \rangle,
+\end{equation}
+kde $\langle P, C \rangle = \sum_{i, j = 1}^q P_{i, j} C_{i, j}$.
+
+Přejděme nyní od Wassersteinovy metriky k tzv. duální Sinkhornově metrice.
+Ta je pro pevně zvolené $\lambda > 0$ definována následovně:
+\begin{align}
+    W^\lambda (\mu, \nu) &= \langle P^\lambda, C \rangle, \\
+    kde \; P^\lambda &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \langle P, C \rangle - \frac{1}{\lambda} H(P),
+\end{align}
+kde $H(P)$ je entropie pravděpodobnostního rozdělení $P$, tedy 
+\begin{equation*}
+    H(P) = - \sum_{i, j = 1}^q P_{i, j} \operatorname{log}(P_{i, j}).
+\end{equation*}
+Jedná se tedy o regularizovaný dopravní problém.
+Tato úprava Wassersteinovy metriky je, jak se přesvědčíme, mnohem lépe vyčíslitelná.
+Nejdříve se ovšem podívejme na intuici za touto úpravou.
+
+Začněme s mírnou úpravou původního optimalizačního problému definujícího Wassersteinovu vzdálenost:
+Pro $\alpha > 0$ definujme jakési $\alpha$ okolí rozdělení $\mu \nu^T$
+(sdružené pravděpodobnostní rozdělení s marginálními $\mu$ a $\nu$, kde $\mu$ a $\nu$ jsou nezávislá rozdělení) ve smyslu
+\emph{Kullback-Leiblerovy divergence}
+\begin{equation}
+    U_{\alpha} (\mu, \nu) = \{P \in U(\mu, \nu) | KL(P \| \mu \nu^T) \leq \alpha\}.
+\end{equation}
+Připomeňme definici Kullback-Leiblerovy divergence:
+\begin{equation*}
+    KL(\tilde{P} \| \hat{P}) = \sum_{i, j = 1}^q P_{i, j} \operatorname{log} \frac{P_{i, j}}{ Q_{i, j}}.
+\end{equation*}
+Pro dané $P \in U(\mu, \nu)$ lze na kvantitu $KL(P \| \mu \nu^T)$ nahlédnout jako na informaci mezi veličinami s rozděleními $\mu$ a $\nu$.
+Tedy $U_\alpha (\mu, \nu)$ vybírá ta rozdělení, která nesou malou vzájemnou informaci mezi $\mu$ a $\nu$ (ve smyslu menší než $\alpha$).
+Dle \cite{wass_computation} lze tuto úpravu ospravedlnit pomocí \emph{principu maximální entropie}.
+
+Potom lze definovat následující Sinkhornovu metriku:
+\begin{equation}
+    W^\alpha (\mu, \nu) = \min_{P \in U_\alpha (\mu, \nu)} \langle P, M \rangle.
+\end{equation}
+Jaký je vztah mezi Sinkhornovou metrikou $W^\alpha$ a duální Sinkhornovou metrikou $W^\lambda$?
+Přes téma duality matematického programování.
+Zatímco ve $W^\alpha$ figuruje parametr $\alpha$ v omezení definičního oboru, kde optimalizujeme,
+tak ve $W^\lambda$ figuruje parametr $\lambda$ jako Lagrangeův multiplikátor příslušné vazby.
+
+% Snadno lze nahlédnout na ekvivalentní definici $U_{\alpha} (\mu, \nu)$:
+% \begin{equation}
+%     U_{\alpha} (\mu, \nu) = \{P \in U(\mu, \nu) | H(P) \geq H(\mu) + H(\nu) - \alpha\}.    
+% \end{equation}
+% Tedy chtěli bychom řešit optimalizační problém Sinkhornovy metriky.
+% Lagrangeova funkce by vypadala následovně:
+% \begin{equation}
+%     \mathcal{L}(P, \lambda) = \langle P, M \rangle - \frac{1}{\lambda} ()
+% \end{equation}
+
+Článek \cite{wass_computation} poskytuje též nahlédnutí na fakt, že $W^\lambda$ a $W^\alpha$ jsou skutečně metriky.
+
+Tento úkrok stranou pomocí entropické regularizace původního problému lineárního programování,
+jehož vyřešení je nutné pro výpočet Wassersteinovy vzdálenosti, poskytuje úlevu v oblasti časové složitosti pro výpočet.
+% $W^\lambda$ lze totiž spočítat pomocí Sinkhornových iterací pevného bodu, která stojí na platnosti Sinkhornovy věty,
+% jejíž znění poskytuje při aplikaci na náš problém informaci, že matici 
+
+
+
 \section{PSNR}
 
 Vzdálenost označená zkratkou \emph{PSNR} z anglického \emph{Peak Signal-to-Noise Ratio}
@@ -200,6 +279,10 @@ Jako průměr přes kanály.
 \bibitem{vaserstejn} L. Vaserstein,
 \emph{Markov processes over denumerable products of spaces, describing large systems of automata}.
 Problemy Peredači Informacii 5, 1969.
+
+\bibitem{wass_computation} M. Cuturi,
+\emph{Sinkhorn Distances: Lightspeed Computation of Optimal Transport}.
+Advances in Neural Information Processing Systems 26, 2013.
 
 \end{thebibliography}
 
