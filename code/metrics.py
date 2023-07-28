@@ -276,7 +276,7 @@ class StructuralSimilarityIndexMeasure(Metric):
     
 
 class WassersteinApproximation(Metric):
-    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 1e3, iterations: int = 500):
+    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 5, iterations: int = 250):
         super().__init__(transform)
         self.regularization = regularization
         self.iterations = iterations

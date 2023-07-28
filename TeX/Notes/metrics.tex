@@ -223,6 +223,25 @@ jehož vyřešení je nutné pro výpočet Wassersteinovy vzdálenosti, poskytuj
 % $W^\lambda$ lze totiž spočítat pomocí Sinkhornových iterací pevného bodu, která stojí na platnosti Sinkhornovy věty,
 % jejíž znění poskytuje při aplikaci na náš problém informaci, že matici 
 
+Konečný numerický algoritmus pro výpočet duální Sinkhornovy metriky potom vypadá následovně:
+Na vstupu algoritmus dostává pravděpodobnostní rozdělení $\mu$ a $\nu$, jejichž vzdálenost je hledaná,
+dále matici $C$ a regularizační parametr $\lambda$.
+\begin{enumerate}
+    \item $I = \mu > 0$ - tj. do proměnné $I$ uložme indexy, kde rozdělení $\mu$ je nenulové.
+    \item $\tilde{\mu} = \mu [I]$ - do proměnné $\tilde{\mu}$ uložíme právě nenulové prvky $\mu$.
+    \item $\tilde{C} = C [I, :]$ - do proměnné $\tilde{C}$ uložíme příslušné řádky matice cen.
+    \item $K = \operatorname{exp}(- \lambda * \tilde{C})$ - jako matici $K$ vezmeme matici,
+    která vznikne po prvcích jako exponenciála matice $- \lambda M$.
+    \item $u = \operatorname{ones}(\operatorname{len}(\tilde{\mu})) / \operatorname{len}(\tilde{\mu})$
+    - do proměnné $u$ uložíme rovnoměrné rozdělení délky $\tilde{\mu}$.
+    \item $\hat{K} = \operatorname{diag}(1 / \tilde{\mu}) @ K$
+    \item Opakujme:
+    $u = 1 / (\hat{K} @ (\nu / (K^T @ u)))$ - dokud není dosaženo vhodné zastavovací kritérium.
+    \item $v = \nu / (K^T @ u)$.
+    \item $W^\lambda (\mu, \nu) = \operatorname{sum}(u * ((K * \tilde{C}) @ v))$.
+\end{enumerate}
+Algoritmus byl napsán, aby syntakticky odpovídal programovacímu jazyku \emph{python}, který využívá knihoven jako je \emph{numpy}
+či \emph{pytorch}.
 
 
 \section{PSNR}
