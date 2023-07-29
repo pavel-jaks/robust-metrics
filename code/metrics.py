@@ -252,8 +252,8 @@ class StructuralSimilarityIndexMeasure(Metric):
         x_windows = torch.zeros(len(windows_indexes), batch, channels, min(self.window_size, width), min(self.window_size, height))
         y_windows = torch.zeros(len(windows_indexes), batch, channels, min(self.window_size, width), min(self.window_size, height))
         for i, indexes in enumerate(windows_indexes):
-            torch.index_select(torch.index_select(x, 2, torch.tensor(indexes[0], dtype=torch.int)), 3, torch.tensor(indexes[1], dtype=torch.int), out=x_windows[i, :, :, :, :])
-            torch.index_select(torch.index_select(y, 2, torch.tensor(indexes[0], dtype=torch.int)), 3, torch.tensor(indexes[1], dtype=torch.int), out=y_windows[i, :, :, :, :])
+            x_windows[i, :, :, :, :] += torch.index_select(torch.index_select(x, 2, torch.tensor(indexes[0], dtype=torch.int)), 3, torch.tensor(indexes[1], dtype=torch.int))
+            y_windows[i, :, :, :, :] += torch.index_select(torch.index_select(y, 2, torch.tensor(indexes[0], dtype=torch.int)), 3, torch.tensor(indexes[1], dtype=torch.int))
         
         x_means = x_windows.mean(dim=(3, 4))
         y_means = y_windows.mean(dim=(3, 4))
@@ -276,12 +276,16 @@ class StructuralSimilarityIndexMeasure(Metric):
     
 
 class WassersteinApproximation(Metric):
-    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 5, iterations: int = 250):
+    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 5, iterations: int = 250, verbose: bool = False):
         super().__init__(transform)
         self.regularization = regularization
         self.iterations = iterations
+        self.verbose = verbose
 
     def compute(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
+        if self.verbose:
+            print('ENTERING WASSERSTEIN')
+
         if x.ndim != 4 or y.ndim != 4:
             raise ValueError("Not a batch of images")
         if x.shape != y.shape:
@@ -319,7 +323,10 @@ class WassersteinApproximation(Metric):
 
         for i in range(batch):
             dists[i] += self.compute_vectors_distance(x_norm[i].flatten(), y_norm[i].flatten(), cost_matrix)
-
+            if self.verbose:
+                print(f'-COMPUTED DISTANCE {i + 1 } out of {batch}')
+        if self.verbose:
+            print('LEAVING WASSERSTEIN')
         return torch.Tensor(dists)
         
     def compute_vectors_distance(self, x, y, cost_matrix, retain_all_iterations: bool = False):
@@ -333,6 +340,9 @@ class WassersteinApproximation(Metric):
         u_vector = torch.ones(x_non_zero_dim) / x_non_zero_dim
         K_matrix = (- self.regularization * cost_matrix[indices, :]).exp()
         K_tilde_matrices = torch.diag(1 / x_non_zero) @ K_matrix
+
+        if self.verbose:
+            print('-STARTING ITERATIONS')
 
         if not retain_all_iterations:
             for _ in range(self.iterations):
