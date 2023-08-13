@@ -164,10 +164,10 @@
 
 \noindent \emph{\Large{}Poděkování:}{\Large\par}
 
-\noindent Chtěl bych zde poděkovat především svému školiteli ...................
+\noindent Chtěl bych zde poděkovat především svému školiteli panu doktoru Adamovi
 za pečlivost, ochotu, vstřícnost a odborné i lidské zázemí při vedení
-mé diplomové práce. Dále děkuji svému konzultantovi ................
-za ................
+mé diplomové práce. Dále děkuji svému konzultantovi panu magistru Čermákovi
+za jeho odborné vedení.
 
 \vfill
 
@@ -290,7 +290,291 @@ by commas
 
 Text úvodu....
 
-\chapter{Název první kapitoly}
+\chapter{Metriky vizuální podobnosti}
+
+\section*{Úvodní slovo k metrikám}
+
+Pod pojmem metrika na prostoru $X$ si každý matematik představí zobrazení $\rho : X \times X \rightarrow [0, + \infty)$
+splňující
+\begin{enumerate}
+    \item $\rho(x, y) = 0 \iff x = y \quad \forall x, y \in X$,
+    \item $\rho(x, y) = \rho(y, x) \quad \forall x, y \in X$,
+    \item $\rho(x, z) \leq \rho(x, y) + \rho(y, z) \quad \forall x, y, z \in X$.
+\end{enumerate}
+
+Taková metrika může být na lineárním prostoru $V$ nad číselným tělesem (pro naše účely zůstaňme nad $\mathbb{R}$)
+snadno zadána pomocí normy,
+která je buď indukována skalárním součinem v případě pre-Hilbertových prostorů,
+nebo dána vlastnostmi, že se jedná o zobrazení $\|.\| : V \rightarrow [0, + \infty)$
+a splňuje:
+\begin{enumerate}
+    \item $\|x\| = 0 \iff x = 0 \quad \forall x \in V$,
+    \item $\|\alpha x\| = |\alpha| \cdot \|x\| \quad \forall \alpha \in \mathbb{R}, \forall x \in V$,
+    \item $\|x + y\| \leq \|x\| + \|y\| \quad \forall x, y \in V$.
+\end{enumerate}
+Metriku potom získáme z normy následující konstrukcí:
+\begin{equation*}
+    \rho (x, y) = \| x - y \|,
+\end{equation*}
+tedy vzdálenost dvou vektorů je dána normou rozdílu vektorů.
+Snadno lze nahlédnout, že takto zadané zobrazení je metrika.
+S metrikami, které jsou tzv. indukované normami dle předchozího se setkáme.
+
+
+\section{Metriky indukované $l_p$ normami}
+
+Vzhledem k tomu, že obrázky, které jsou středem naší pozornosti,
+lze reprezentovat jako tenzory standardně o rozměrech $C \times W \times H$,
+kde $C$ značí počet kanálů (nejčastěji kanály po řadě pro červenou, zelenou a modrou barvu),
+$W$ označuje šířku a $H$ výšku, tak lze na tyto tenzory vpustit $L^p$ normy.
+Pro $p \in [1, + \infty)$ je $L^p$ norma z $f \in L_p(X, \mu )$
+definována vztahem:
+\begin{equation*}
+    \|f\|_p = \left(\int_X |f|^p \mathrm{d} \mu \right)^{\frac{1}{p}}.
+\end{equation*}
+
+Pro naše obrázky lze za $X$ vzít $\{1, ... C\} \times \{1, ..., W\} \times \{1, ..., H\}$ a za $\mu$ \emph{počítací míru}.
+Potom naše $L^p$ norma přejde v $l_p$ normu, která má pro naše obrázky, tedy tenzory $x \in \mathbb{R}^{C \times W \times H}$, tvar:
+\begin{equation}
+    \|x\|_p = \left( \sum_{i=1}^{C} \sum_{j=1}^{W} \sum_{k=1}^{H} |x_{i, j, k}|^p \right)^{\frac{1}{p}}.
+\end{equation}
+
+Trochu mimo stojí $l_{\infty}$ norma, která má tvar pro tenzor $x \in \mathbb{R}^{C \times W \times H}$:
+\begin{equation}
+    \|x\|_\infty = \max_{i \in \{1, ..., C\}} \max_{j \in \{1, ..., W\}} \max_{k \in \{1, ..., H\}} |x_{i, j, k}|.
+\end{equation}
+
+A úplně mimo stojí $L_0$ norma, která svou povahou \emph{není} norma ve smyslu výše uvedené definice,
+ale pro účely porovnávání obrázků se používá rozdíl obrázků v této pseudo-normě, proto ji zde zmiňuji:
+\begin{equation}
+    \|x\|_0 = |\{x_{i, j, k} \neq 0\}|.
+\end{equation}
+
+\section{MSE a RMSE}
+
+Vzdálenosti, které mají blízko k metrikám indukovaným $l_2$ normou, jsou \emph{MSE} (z anglického \emph{Mean Squared Error})
+a \emph{RMSE} (z anglického \emph{Root Mean Squared Error}).
+Pro tenzory $x, \tilde{x} \in \mathbb{R}^{C \times W \times H}$ mají definici:
+\begin{align}
+    \operatorname{MSE}(x, \tilde{x}) &= \frac{1}{C W H} \sum_{i=1}^C \sum_{j=1}^W \sum_{k=1}^H | x_{i, j, k} - \tilde{x}_{i, j, k} |^2 \\
+    \operatorname{RMSE}(x, \tilde{x}) &= \left(\frac{1}{C W H} \sum_{i=1}^C \sum_{j=1}^W \sum_{k=1}^H | x_{i, j, k} - \tilde{x}_{i, j, k} |^2 \right)^{\frac{1}{2}}
+\end{align}
+
+\section{Wassersteinova vzdálenost}
+
+\subsection{Definice}
+
+Buď $(M, d)$ metrický prostor, který je zároveň \emph{Radonův}. Zvolme $p \in [1, + \infty)$.
+Potom máme \emph{Wassersteinovu $p$-vzdálenost} mezi dvěma pravděpodobnostními mírami $\mu$ a $\nu$ na $M$,
+které mají konečné $p$-té momenty,
+jako:
+\begin{equation}
+    W_p (\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} d(x, y)^p \right)^{\frac{1}{p}},
+\end{equation}
+kde $\Gamma(\mu, \nu)$ je množina všech sdružených pravděpodobnostních měr na $M \times M$,
+které mají po řadě $\mu$ a $\nu$ za marginální pravděpodobnostní míry \cite{vaserstejn}.
+
+Jak to souvisí s obrázky?
+Přes dopravní problém.
+Pod pravděpodobnostní distribucí $\mu$ či $\nu$ na $X$ si lze představit rozložení jakési hmoty
+o celkové hmotnosti $1$.
+Sdružená rozdělení $\gamma \in \Gamma(\mu, \nu)$ potom odpovídají transportnímu plánu,
+kde $\gamma(x, y) \operatorname{d}x \operatorname{d}y$
+vyjadřuje, kolik hmoty se přesune z $x$ do $y$.
+Tomu lze přiřadit nějakou cenu $c$,
+totiž kolik stojí přesun jednotkové hmoty z $x$ do $y$: $c(x, y)$.
+V případě \emph{Wassersteinovy vzdálenosti}
+za cenu dosadíme $c(x, y) = d(x, y)^p$,
+tedy $p$-tou mocninu vzdálenosti mezi $x$ a $y$.
+Potom cena celkového dopravního problému s transportním plánem $\gamma$ bude:
+\begin{align}
+    c_\gamma &= \int c(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
+    &= \int c(x, y) \operatorname{d} \gamma(x, y)
+\end{align}
+a optimální cena bude:
+\begin{equation}
+    c = \inf_{\gamma \in \Gamma(\mu, \nu)} c_\gamma.
+\end{equation}
+Po dosazení:
+\begin{align}
+    c &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int c(x, y) \operatorname{d} \gamma(x, y) \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int c(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} c(x, y) \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} d(x, y)^p \\
+    &= W_p (\mu, \nu)^p
+\end{align}
+Dostáváme tedy interpretaci, že $p$-tá mocnina \emph{Wassersteinovy vzdálenosti}
+odpovídá ceně dopravního problému.
+
+Pro obrázky má tato konstrukce následující uplatnění:
+Obrázky je třeba chápat jako diskrétní pravděpodobnostní rozdělení,
+proto je třeba je normalizovat,
+aby součet prvků tenzoru obrázku byl roven $1$.
+Pak střední hodnota v definici Wassersteinovy vzdálenosti přejde ve váženou sumu cen,
+tedy $p$-tých mocnin vzdáleností mezi jednotlivými pixely.
+
+Jak je to barevnými obrázky, tedy s obrázku, které mají více než jeden kanál?
+Zde lze uplatnit následující dva přístupy:
+\begin{enumerate}
+    \item Normovat celý obrázek na jedničku, tedy všechny kanály dohromady, a tím pádem i definovat vzdálenost mezi jednotlivými kanály,
+    \item Normovat každý kanál zvlášť na jedničku, počítat Wassersteinovu metriku pro každý kanál zvlášť
+    a následně vybrat nějakou statistiku výsledných vzdáleností, např. průměr.
+\end{enumerate}
+
+\subsection{Výpočet}
+
+Abychom mohli s Wassersteinovou metrikou nakládat například v počítači, je nutné tuto metriku spočíst.
+Podíváme-li se do definice, znamená to vyřešit optimalizační problém.
+Byť bychom se omezili hledání vzdáleností dvou vektorů o~rozměru $q$,
+měli bychom problém s časovou složitostí nejlépe $\mathcal{O}(q^3 \operatorname{log} q)$ \cite{wass_computation}.
+A~to je hodně.
+Proto se podívejme, jak Wassersteinovu vzdálenost spočíst rychleji, byť za ztráty přesnosti.
+
+Omezme se na prostory konečné dimenze. Potom mějme za úkol spočíst Wassersteinovu  (zvolme $p = 1$) vzdálenost vektorů
+$\mu, \nu \in \mathbb{R}^q, \mu ^ T 1_q = \nu ^ T 1_q = 1$, kde $1_q$ je vektor rozměru $q$ složen pouze z jedniček.
+Potom $\mu, \nu$ lze chápat jako diskrétní pravděpodobnostní rozdělení.
+Označme jako $U(\mu, \nu)$ množinu všech matic $P \in \mathbb{R}^{q \times q}, P_{i,j} \geq 0$
+takových, že $P 1_q = \mu$ a $P^T 1_q = \nu$.
+Jako matici $C$ označme zadanou matici cen, která splňuje, že reprezentuje metriku.
+To znamená, že $C_{i, j} \geq 0$, $C_{i, j} = 0 \iff i = j$, $C_{i, j} = C_{j, i}$ a $C_{i, k} \leq C_{i, j} + C_{j, k}$.
+Potom lze napsat:
+\begin{equation}
+    W (\mu, \nu) \equiv W_1 (\mu, \nu) = \min_{P \in U(\mu, \nu)} \langle P, C \rangle,
+\end{equation}
+kde $\langle P, C \rangle = \sum_{i, j = 1}^q P_{i, j} C_{i, j}$.
+
+Přejděme nyní od Wassersteinovy metriky k tzv. duální Sinkhornově metrice.
+Ta je pro pevně zvolené $\lambda > 0$ definována následovně:
+\begin{align}
+    W^\lambda (\mu, \nu) &= \langle P^\lambda, C \rangle, \\
+    kde \; P^\lambda &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \langle P, C \rangle - \frac{1}{\lambda} H(P),
+\end{align}
+kde $H(P)$ je entropie pravděpodobnostního rozdělení $P$, tedy 
+\begin{equation*}
+    H(P) = - \sum_{i, j = 1}^q P_{i, j} \operatorname{log}(P_{i, j}).
+\end{equation*}
+Jedná se tedy o regularizovaný dopravní problém.
+Tato úprava Wassersteinovy metriky je, jak se přesvědčíme, mnohem lépe vyčíslitelná.
+Nejdříve se ovšem podívejme na intuici za touto úpravou.
+
+Začněme s mírnou úpravou původního optimalizačního problému definujícího Wassersteinovu vzdálenost:
+Pro $\alpha > 0$ definujme jakési $\alpha$ okolí rozdělení $\mu \nu^T$
+(sdružené pravděpodobnostní rozdělení s marginálními $\mu$ a $\nu$, kde $\mu$ a $\nu$ jsou nezávislá rozdělení) ve smyslu
+\emph{Kullback-Leiblerovy divergence}
+\begin{equation}
+    U_{\alpha} (\mu, \nu) = \{P \in U(\mu, \nu) | KL(P \| \mu \nu^T) \leq \alpha\}.
+\end{equation}
+Připomeňme definici Kullback-Leiblerovy divergence:
+\begin{equation*}
+    KL(\tilde{P} \| \hat{P}) = \sum_{i, j = 1}^q P_{i, j} \operatorname{log} \frac{P_{i, j}}{ Q_{i, j}}.
+\end{equation*}
+Pro dané $P \in U(\mu, \nu)$ lze na kvantitu $KL(P \| \mu \nu^T)$ nahlédnout jako na informaci mezi veličinami s rozděleními $\mu$ a $\nu$.
+Tedy $U_\alpha (\mu, \nu)$ vybírá ta rozdělení, která nesou malou vzájemnou informaci mezi $\mu$ a $\nu$ (ve smyslu menší než $\alpha$).
+Dle \cite{wass_computation} lze tuto úpravu ospravedlnit pomocí \emph{principu maximální entropie}.
+
+Potom lze definovat následující Sinkhornovu metriku:
+\begin{equation}
+    W^\alpha (\mu, \nu) = \min_{P \in U_\alpha (\mu, \nu)} \langle P, M \rangle.
+\end{equation}
+Jaký je vztah mezi Sinkhornovou metrikou $W^\alpha$ a duální Sinkhornovou metrikou $W^\lambda$?
+Přes téma duality matematického programování.
+Zatímco ve $W^\alpha$ figuruje parametr $\alpha$ v omezení definičního oboru, kde optimalizujeme,
+tak ve $W^\lambda$ figuruje parametr $\lambda$ jako Lagrangeův multiplikátor příslušné vazby.
+
+% Snadno lze nahlédnout na ekvivalentní definici $U_{\alpha} (\mu, \nu)$:
+% \begin{equation}
+%     U_{\alpha} (\mu, \nu) = \{P \in U(\mu, \nu) | H(P) \geq H(\mu) + H(\nu) - \alpha\}.    
+% \end{equation}
+% Tedy chtěli bychom řešit optimalizační problém Sinkhornovy metriky.
+% Lagrangeova funkce by vypadala následovně:
+% \begin{equation}
+%     \mathcal{L}(P, \lambda) = \langle P, M \rangle - \frac{1}{\lambda} ()
+% \end{equation}
+
+Článek \cite{wass_computation} poskytuje též nahlédnutí na fakt, že $W^\lambda$ a $W^\alpha$ jsou skutečně metriky.
+
+Tento úkrok stranou pomocí entropické regularizace původního problému lineárního programování,
+jehož vyřešení je nutné pro výpočet Wassersteinovy vzdálenosti, poskytuje úlevu v oblasti časové složitosti pro výpočet.
+% $W^\lambda$ lze totiž spočítat pomocí Sinkhornových iterací pevného bodu, která stojí na platnosti Sinkhornovy věty,
+% jejíž znění poskytuje při aplikaci na náš problém informaci, že matici 
+
+Konečný numerický algoritmus pro výpočet duální Sinkhornovy metriky potom vypadá následovně:
+Na vstupu algoritmus dostává pravděpodobnostní rozdělení $\mu$ a $\nu$, jejichž vzdálenost je hledaná,
+dále matici $C$ a regularizační parametr $\lambda$.
+\begin{enumerate}
+    \item $I = \mu > 0$ - tj. do proměnné $I$ uložme indexy, kde rozdělení $\mu$ je nenulové.
+    \item $\tilde{\mu} = \mu [I]$ - do proměnné $\tilde{\mu}$ uložíme právě nenulové prvky $\mu$.
+    \item $\tilde{C} = C [I, :]$ - do proměnné $\tilde{C}$ uložíme příslušné řádky matice cen.
+    \item $K = \operatorname{exp}(- \lambda * \tilde{C})$ - jako matici $K$ vezmeme matici,
+    která vznikne po prvcích jako exponenciála matice $- \lambda M$.
+    \item $u = \operatorname{ones}(\operatorname{len}(\tilde{\mu})) / \operatorname{len}(\tilde{\mu})$
+    - do proměnné $u$ uložíme rovnoměrné rozdělení délky $\tilde{\mu}$.
+    \item $\hat{K} = \operatorname{diag}(1 / \tilde{\mu}) @ K$
+    \item Opakujme:
+    $u = 1 / (\hat{K} @ (\nu / (K^T @ u)))$ - dokud není dosaženo vhodné zastavovací kritérium.
+    \item $v = \nu / (K^T @ u)$.
+    \item $W^\lambda (\mu, \nu) = \operatorname{sum}(u * ((K * \tilde{C}) @ v))$.
+\end{enumerate}
+Algoritmus byl napsán, aby syntakticky odpovídal programovacímu jazyku \emph{python}, který využívá knihoven jako je \emph{numpy}
+či \emph{pytorch}.
+
+
+\section{PSNR}
+
+Vzdálenost označená zkratkou \emph{PSNR} z anglického \emph{Peak Signal-to-Noise Ratio}
+vyjadřuje vztah mezi obrázkem $x \in \mathbb{R}^{C \times W \times H}$
+a jeho pokažením $\tilde{x} \in \mathbb{R}^{C \times W \times H}$ za přidání šumu.
+Definice je následující:
+\begin{align}
+    \operatorname{PSNR}(x, \tilde{x}) &= 10 \cdot \operatorname{log}_{10} \left( \frac{l^2}{\operatorname{MSE}(x, \tilde{x})} \right), \\
+    &= 20 \cdot \operatorname{log}_{10} \left( \frac{l}{\operatorname{RMSE}(x, \tilde{x})} \right),
+\end{align}
+kde $l$ je dynamický rozsah obrázků, tedy rozdíl mezi maximální možnou hodnotou pixelů a minimální možnou hodnotou pixelů.
+% Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operatorname{PSNR}$, tato vzdálenost tedy není metrická.
+Jedná se tedy o transformaci metriky \emph{MSE}.
+
+\section{SSIM}
+
+Zkratka \emph{SSIM} pochází z anglického \emph{structural similarity index measure}.
+Tato metrika se při výpočtu indexu dvou obrázků $x$ a $\tilde{x}$ dívá na podokna,
+ze kterých vybere jisté statistiky a z nich vytvoří index pro daná podokna obrázků.
+Potom se jako celkový index bere průměr přes tato okna.
+Uveďme vzorce pro výpočet indexu SSIM pro případ, že máme jediné okno, které splývá s obrázkem,
+které pro jednoduchost zvolme jednokanálové, tedy černobílé.
+Označme $N = W \times H$ počet pixelů v obrázku a indexujme prvky matice obrázku jediným číslem.
+Potom definujeme pro obrázky $x$ a $\tilde{x}$ následující:
+\begin{align*}
+    \mu_x &= \frac{1}{N} \sum_{i = 1}^N x_i, \\
+    \mu_{\tilde{x}} &= \frac{1}{N} \sum_{i = 1}^N \tilde{x}_i, \\
+    \sigma_x^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)^2, \\
+    \sigma_{\tilde{x}}^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (\tilde{x}_i - \mu_{\tilde{x}})^2, \\
+    \sigma_{x \tilde{x}} &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)(\tilde{x}_i - \mu_{\tilde{x}}).
+\end{align*}
+Potom:
+% Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
+% se rozumí následující vzdálenost:
+\begin{equation}
+    \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x}} + C_1)(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
+\end{equation}
+% kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
+% $\sigma_{x \tilde{x}}$ je nestranný odhad kovariance mezi $x$ a $\tilde{x}$,
+% $\sigma^2$ je nestranný odhad rozptylu $x$, resp. $\tilde{x}$
+kde $C_1, C_2$ jsou konstanty pro stabilitu dělení volené kvadraticky úměrně dynamickému rozsahu.
+
+% Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
+% To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
+
+Jak volíme celkový SSIM pro barevné obrázky?
+Jako průměr přes kanály.
+
+
+\chapter{Adversariální vzorky a jejich tvorba}
+
+\chapter{Knihovny robustního strojového učení}
+
+\chapter{Implementace metrik vizuální podobnosti}
+
+\chapter{Výsledky tvorby adversariálních vzorků pomocí vybraných metrik vizuální podobnosti}
 
 \pagestyle{headings}
 
@@ -301,18 +585,31 @@ Text úvodu....
 \addcontentsline{toc}{chapter}{Záv\v{e}r}
 
 Text závěru....
+
+
 \begin{thebibliography}{1}
-\bibitem{Allen-Cahn}S. Allen, J. W. Cahn: \emph{A microscopic theory
-for antiphase boundary motion and its application to antiphase domain
-coarsening}. Acta Metall., 27:1084-1095, 1979.
+\addcontentsline{toc}{chapter}{Literatura}
 
-\bibitem{CINECA}G. Ballabio et al.: \emph{High Performance Systems
-User Guide}. High Performance Systems Department, CINECA, Bologna,
-2005. \url{www.cineca.it}
+\bibitem{advances}N. Akhtar, A. Mian, N. Kardan, M. Shah:
+\emph{Advances in adversarial attacks and defenses in computer vision: A survey}.
+IEEE Access 9, 2021, 155161-155196.
 
-\bibitem{rumpf3}J. Becker, T. Preusser, M. Rumpf: \emph{PDE methods
-in flow simulation post processing}. Computing and Visualization in
-Science, 3(3):159-167, 2000.
+\bibitem{projected}W. Eric, F. Schmidt, Z. Kolter:
+\emph{Wasserstein adversarial examples via projected sinkhorn iterations}.
+International Conference on Machine Learning, PMLR, 2019.
+
+\bibitem{foolbox}J. Rauber, R. Zimmermann, M. Bethge, W. Brendel:
+\emph{Foolbox: A Python toolbox to benchmark the robustness of machine learning models}.
+Reliable Machine Learning in the Wild Workshop, 34th International Conference on Machine Learning, 2017.
+
+\bibitem{vaserstejn} L. Vaserstein,
+\emph{Markov processes over denumerable products of spaces, describing large systems of automata}.
+Problemy Peredači Informacii 5, 1969.
+
+\bibitem{wass_computation} M. Cuturi,
+\emph{Sinkhorn Distances: Lightspeed Computation of Optimal Transport}.
+Advances in Neural Information Processing Systems 26, 2013.
+
 \end{thebibliography}
 
 \end{document}
