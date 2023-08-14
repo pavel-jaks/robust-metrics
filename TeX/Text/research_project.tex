@@ -292,8 +292,6 @@ Text úvodu....
 
 \chapter{Metriky vizuální podobnosti}
 
-\section*{Úvodní slovo k metrikám}
-
 Pod pojmem metrika na prostoru $X$ si každý matematik představí zobrazení $\rho : X \times X \rightarrow [0, + \infty)$
 splňující
 \begin{enumerate}
@@ -570,6 +568,101 @@ Jako průměr přes kanály.
 
 \chapter{Adversariální vzorky a jejich tvorba}
 
+\section{Klasifikace v kontextu strojového učení}
+
+Mějme za úkol klasifikovat jakési vzorky do $m$ tříd.
+Např. mějme za úkol na základě černobílého obrázku s číslicí říci, jaká že číslice je na daném obrázku vyobrazená.
+Máme-li dostatečný počet vzorků, o kterých víme, do jaké třídy náleží, můžeme využít různých metod strojového učení.
+Pro konkrétnost zvolme metodu neuronových sítí.
+To znamená, že vytvoříme zobrazení $F_\theta : X \rightarrow Y$, kde za $X$ bereme množinu všech možných vzorků,
+v případě klasifikace čísliic na obrázku právě všechny možné obrázky příslušného rozměru.
+Dále za $Y$ berme množinu všech diskrétních pravděpodobnostních rozdělení na třídách,
+tedy v případě klasifikace číslic může být:
+\begin{equation*}
+    Y = \left\{ \, y \in \mathbb{R}^{10} \, | \, \forall i = 1, ..., 10: y_i \geq 0 \land \sum_{i=1}^{10} y_i = 1\right\}.
+\end{equation*}
+$F_\theta$ je potom daná neuronová síť parametrizovaná pomocí parametrů $\theta$.
+Vhodné parametry $\theta$ se potom volí pomocí procesu \emph{učení}, což je řešení následujícího optimalizačního problému:
+\begin{equation} \label{nn_opt}
+    \hat{\theta} = \operatornamewithlimits{argmin}_{\theta} J(\theta),
+\end{equation}
+kde $J$ je funkce na parametrech určující, jak moc je neuronová síť špatná má-li dané parametry $\theta$.
+Za funkci $J$ se standardně volí agregace typu průměr či součet dílčí ztrátové funkce $L$, která určuje,
+jak moc se neuronová síť mýlí na konkrétním vzorku.
+K tomu je tedy potřeba mít trénovací datovou sadu sestávající z dostatečného počtu vzorků se správnými odpověďmi, tedy značkami.
+Budiž trénovací datová sada označena $\mathbb{T} = \left(\mathbb{X}, \mathbb{Y}\right)$,
+kde $\mathbb{X} = \left(x^{(i)} \in X\right)_{i = 1}^{N}$ a $\mathbb{Y} = \left(y^{(i)} \in Y\right)_{i = 1}^{N}$.
+Potom:
+\begin{equation}
+    \hat{\theta} = \operatornamewithlimits{argmin}_{\theta} \frac{1}{N} \sum_{i=1}^{N} L(y^{(i)}, F_\theta (x^{(i)})).
+\end{equation}
+
+Jelikož prvky $Y$ jsou diskrétní pravděpodobnostní distribuce, za dílčí ztrátovou funkci lze vzít \emph{křížovou entropii}:
+\begin{equation}
+    L(y, \hat{y}) = - \sum_{i=1}^{m} y_i \operatorname{log} \left(\hat{y}_i\right).
+\end{equation}
+
+Procesu učení se zde nemusíme věnovat. Jedná se o řešení optimalizačního problému (\ref{nn_opt}).
+
+Poslední objekt, který si zde v úvodní sekci kapitoly zadefinujeme, je samotná klasifikace.
+Jedná se o funkci $C: Y \rightarrow \{1, 2, ..., m\}$ definovanou přepisem:
+\begin{equation}
+    C(y) = \operatornamewithlimits{argmax}_{i \in \{1, ..., m\}} y_i.
+\end{equation}
+
+\section{Adversariální vzorky}
+
+Jsme-li vybaveni metrikou $\rho$ na prostoru vzorků $X$,
+lze přistoupit k uvedení konceptu adversariálních vzorků.
+Nejprve však definujme vzorek \emph{benigní}.
+Jedná se o takový vzorek $x \in X$, že $C(F_\theta(x)) = C(y)$, kde $y$ je pravdivá třída vzorku $x$.
+Máme-li takový benigní vzorek $x$, pak \emph{adversariální vzorek} k němu, je takový vzorek $\tilde{x}$,
+že vzorek $\tilde{x}$ je podobný benignímu vzorku $x$, ale je špatně klasifikovaný.
+Podobnost lze matematicky vyjádřit způsobem,
+že vzdálenost $\tilde{x}$ od $x$ je malá ve smyslu:
+$\rho(x, \tilde{x}) < \kappa$, kde $\kappa$ je pevně zvolený číselný práh,
+neboli poloměr kulového okolí, ve kterém adversariální vzorek hledáme.
+Špatnou klasifikaci lze pak vyjádřit: $C(F_\theta (\tilde{x})) \neq C(F_\theta (x))$.
+Je-li sám vzorek $x$ špatně klasifikovaný, pak je sám vlastně adversariálním vzorkem.
+
+Problematika adversariálních vzorků představuje v oboru strojového učení úskalí,
+neboť vhodně zvolený adversariální vzorek dokáže v praxi,
+kde algoritmy strojového učení mohou sehrávat roli při automatizaci bezpečnostně kritických úkolů,
+daný algoritmus, rozbít.
+
+Zatím jsme adversariální vzorky představili pouze jako teoretický koncept.
+V následujích sekcích textu se podívejme na jejich konkrétní tvorbu
+a v jedné z následujících kapitol i na praktickou ukázku takových adversariálních vzorků.
+
+\section{Tvorba adversariálních vzorků}
+
+Dostaneme-li benigní vzorek $x$ s pravdivou značkou $y$
+a máme-li za úkol k němu pro daný klasifikátor najít adversariální vzorek $\tilde{x}$,
+mějme v první řadě na mysli, že chceme, zachovat podobnost $x$ a $\tilde{x}$, tak aby oba vzorky
+měly stejnou třídu reprezentovanou značkou $y$.
+Tedy jedna část úkolu bude minimalizovat $\rho(x, \tilde{x})$.
+V další části úkolu máme na výběr ze dvou možností.
+
+Lze k tomuto úkolu přistoupit tak, že si vybereme falešnou značku $\tilde{y}$, která reprezentuje jinou třídu než $y$.
+Dále se budeme snažit pohybovat s $\tilde{x}$ tak, abychom $F_\theta (\tilde{x})$ přiblížili k $\tilde{y}$,
+budeme tedy minimalizovat $L(\tilde{y}, F_\theta (\tilde{x}))$, kde $L$ je dílčí ztrátová funkce na množině značek.
+Máme tedy dvě hodnoty, které chceme minimalizovat. Jak je ale dát dohromady? Tradice hovoří o zavedení nezáporného parametru $\lambda$,
+který nám dá:
+\begin{equation} \label{adv_opt}
+    \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) + \lambda \cdot L(\tilde{y}, F_\theta (\hat{x})).
+\end{equation}
+Zavedený parametr $\lambda$ pak hraje roli v určování toho, zda požadujeme, aby výsledek (\ref{adv_opt}) byl velmi blízký $x$,
+nebo aby tento výsledek byl jistě nesprávně klasifikovaný.
+Tento způsob je představen v původním článku, který osvětluje problematiku adversariálních vzorků \cite{adv_opt}.
+
+Druhý přístup spočívá v tom, že se snažíme namísto minimalizace ztráty k falešné značce
+maximalizovat ztrátu od původní značky $y$.
+Tedy:
+\begin{equation} \label{adv_cw}
+    \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
+\end{equation}
+Tento přístup se nazývá metoda \emph{CW} (\emph{Carlini-Wagner}, \cite{cw}).
+
 \chapter{Knihovny robustního strojového učení}
 
 \chapter{Implementace metrik vizuální podobnosti}
@@ -609,6 +702,14 @@ Problemy Peredači Informacii 5, 1969.
 \bibitem{wass_computation} M. Cuturi,
 \emph{Sinkhorn Distances: Lightspeed Computation of Optimal Transport}.
 Advances in Neural Information Processing Systems 26, 2013.
+
+\bibitem{adv_opt} C. Szegedy, W. Zaremba, I. Sutskever, J. Bruna, D. Erhan, I. Goodfellow, R. Fergus,
+\emph{Intriguing properties of neural networks}.
+arXiv, 2014.
+
+\bibitem{cw} N. Carlini, D. Wagner,
+\emph{Towards evaluating the robustness of neural networks}.
+IEEE Symposium on Security and Privacy (SP), IEEE, 2017.
 
 \end{thebibliography}
 

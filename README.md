@@ -14,8 +14,8 @@ The actual theses are written in czech.
 
 ## Acknowledgements
 
-Special thanks to my supervisor Mgr. Vojtěch Čermák & consultant Mgr. Lukáš Adam, Ph.D.
+Special thanks to my supervisor Mgr. Lukáš Adam, Ph.D. & consultant Mgr. Vojtěch Čermák
 
-___
+---
 
 Created by Bc. Pavel Jakš, 2022
