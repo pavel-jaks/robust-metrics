@@ -60,7 +60,14 @@ class Norm(nn.Module):
     Encapsulation of a norm
     """
 
-    pass
+    @abstractmethod
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        :param x: Tensor of which norm shall be computed (shape: Batch x the_rest)
+
+        :return: Tensor of batch of norms
+        """
+        pass
 
 
 class LpNorm(Norm):
@@ -83,7 +90,7 @@ class LpNorm(Norm):
 
         :return: Tensor of batch of norms
         """
-        return (x ** self.p).sum(dim=tuple(range(1, x.ndim))) ** (1 / self.p)
+        return (x.abs() ** self.p).sum(dim=tuple(range(1, x.ndim))) ** (1 / self.p)
 
 
 class L2Norm(LpNorm):
@@ -184,16 +191,28 @@ class L2Metric(LpMetric):
 
 
 class L0Metric(MetricFromNorm):
+    """
+    Implementation of a L_0 metric derived from L_0 norm
+    """
+
     def __init__(self, transform: Union[Transform, None] = None):
         super().__init__(L0Norm(), transform)
 
 
 class LinfMetric(MetricFromNorm):
+    """
+    Implementation of a L_infty metric derived from L_infty norm
+    """
+
     def __init__(self, transform: Union[Transform, None] = None):
         super().__init__(LinfNorm(), transform)
 
 
 class MeanSquaredError(Metric):
+    """
+    Implementation of MSE as a metric
+    """
+
     def __init__(self, transform: Union[Transform, None] = None):
         super().__init__(transform)
 
@@ -202,6 +221,10 @@ class MeanSquaredError(Metric):
 
 
 class RootMeanSquaredError(Metric):
+    """
+    Implementation of RMSE as a metric
+    """
+
     def __init__(self, transform: Union[Transform, None] = None):
         super().__init__(transform)
 
@@ -210,7 +233,16 @@ class RootMeanSquaredError(Metric):
 
 
 class PeakSignalToNoiseRatio(Metric):
-    def __init__(self, transform: Union[Transform, None] = None, l=1):
+    """
+    Implementation of PSNR
+    """
+
+    def __init__(self, transform: Union[Transform, None] = None, l: float = 1):
+        """
+        Constructor
+
+        :param l: peak signal of the image
+        """
         super().__init__(transform)
         self.l = l
         self.rmse = RootMeanSquaredError()
@@ -218,10 +250,42 @@ class PeakSignalToNoiseRatio(Metric):
     def compute(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         out = 20 * torch.log10(self.l / self.rmse(x, y))
         return out
+    
+class NoiseToPeakSignalRatio(Metric):
+    """
+    Implementation of NPSR
+    """
+
+    def __init__(self, transform: Union[Transform, None] = None, l=1):
+        """
+        Constructor
+
+        :param l: peak signal of the image
+        """
+        super().__init__(transform)
+        self.l = l
+        self.rmse = RootMeanSquaredError()
+
+    def compute(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        out = 20 * torch.log10(self.rmse(x, y) / self.l)
+        return out
 
 
-class StructuralSimilarityIndexMeasure(Metric):
-    def __init__(self, transform: Union[Transform, None] = None, window_size=100, k_1=1e-2, k_2=3e-2, l=255):
+class StructuralDissimilarity(Metric):
+    """
+    Implementation of Structural Dissimilarity.
+    Computed as (1 - SSIM) / 2
+    """
+
+    def __init__(self, transform: Union[Transform, None] = None, window_size=100, k_1=1e-2, k_2=3e-2, l=1):
+        """
+        Constructor
+
+        :param window_size: odd number, size of the sliding window in which SSIMs are computed
+        :param k_1: component of the first constant (for safe division)
+        :param k_2: component of the second constant (for safe division)
+        :param l: peak signal, component of the safe division constants
+        """
         super().__init__(transform)
         self.window_size = window_size
         self.c_1 = (k_1 * l) ** 2
@@ -272,11 +336,22 @@ class StructuralSimilarityIndexMeasure(Metric):
 
         out = (2 * x_means * y_means + self.c_1) * (2 * cov + self.c_2) \
             / ((x_means ** 2 + y_means ** 2 + self.c_1) * (x_variances + y_variances + self.c_2))
-        return out.mean(dim=(0, 2))
+        return (1 - out.mean(dim=(0, 2))) / 2
     
 
 class WassersteinApproximation(Metric):
+    """
+    Implemantation of dual-Sinkhorn divergence
+    """
+
     def __init__(self, transform:Union[Transform, None] = None, regularization: float = 5, iterations: int = 250, verbose: bool = False):
+        """
+        Constructor
+
+        :param regularization: regularization coefficient of the entropy term in the optimization problem
+        :param iterations: fixed number of iterations
+        :param verbose: whether to be noisy or not - for debugging reasons
+        """
         super().__init__(transform)
         self.regularization = regularization
         self.iterations = iterations
@@ -358,18 +433,3 @@ class WassersteinApproximation(Metric):
                 dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
                 dists.append(dist.sum())
             return dists
-
-        
-
-if __name__ == '__main__':
-    batch = 20
-    channels = 1
-    width = 28
-    height = 28
-    
-    x = torch.rand(batch, channels, width, height) * 100
-    y = torch.rand(batch, channels, width, height) * 100
-
-    wasserstein = WassersteinApproximation(regularization=1e-2, stopping_criterion=1e-10)
-    d = wasserstein(x, y)
-    print(d)

@@ -13,6 +13,46 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{setspace}
+\usepackage{listings}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{pdfpages}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\definecolor{mystring}{rgb}{0.9,0.1,0.2}
+
+\lstset{ 
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  basicstyle=\scriptsize\fontfamily{cmtt}\selectfont,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=t,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  stringstyle=\color{mystring},
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  firstnumber=1,                   % start line enumeration with line 1000
+  frame=single,	                   % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=Python,                 % the language of the code
+  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,	                   % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
 
 \makeatletter
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
@@ -138,36 +178,18 @@
 \end{lyxlist}
 \newpage{}
 
-~
+\includepdf{research_project_task.pdf}
 
-\vfill{}
+\includepdf[page=2]{research_project_task.pdf}
 
-\begin{center}
-- Zadání práce -
-\par\end{center}
-
-\vfill{}
-
-~\newpage{}
-
-~
-
-\vfill{}
-
-\begin{center}
-- Zadání práce (zadní strana) -
-\par\end{center}
-
-\vfill{}
-
-~\newpage{}
+\newpage{}
 
 \noindent \emph{\Large{}Poděkování:}{\Large\par}
 
 \noindent Chtěl bych zde poděkovat především svému školiteli panu doktoru Adamovi
 za pečlivost, ochotu, vstřícnost a odborné i lidské zázemí při vedení
 mé diplomové práce. Dále děkuji svému konzultantovi panu magistru Čermákovi
-za jeho odborné vedení.
+za jeho odborné rady.
 
 \vfill
 
@@ -178,7 +200,7 @@ jsem všechnu použitou literaturu.
 
 \bigskip{}
 
-\noindent V Praze dne \documentdate\hfill{}Bc. Pavel Jakš
+\noindent V Praze dne 21. srpna 2023\hfill{}Bc. Pavel Jakš
 
 \vspace{2cm}
 
@@ -358,9 +380,23 @@ Pro tenzory $x, \tilde{x} \in \mathbb{R}^{C \times W \times H}$ mají definici:
     \operatorname{RMSE}(x, \tilde{x}) &= \left(\frac{1}{C W H} \sum_{i=1}^C \sum_{j=1}^W \sum_{k=1}^H | x_{i, j, k} - \tilde{x}_{i, j, k} |^2 \right)^{\frac{1}{2}}
 \end{align}
 
-\section{Wassersteinova vzdálenost}
+\section{Peak signal-to-noise ratio}
 
-\subsection{Definice}
+Vzdálenost označená zkratkou \emph{PSNR} z anglického \emph{peak signal-to-noise ratio}
+vyjadřuje vztah mezi obrázkem $x \in \mathbb{R}^{C \times W \times H}$
+a jeho pokažením $\tilde{x} \in \mathbb{R}^{C \times W \times H}$ za přidání šumu.
+Definice je následující:
+\begin{align}
+    \operatorname{PSNR}(x, \tilde{x}) &= 10 \cdot \operatorname{log}_{10} \left( \frac{l^2}{\operatorname{MSE}(x, \tilde{x})} \right), \\
+    &= 20 \cdot \operatorname{log}_{10} \left( \frac{l}{\operatorname{RMSE}(x, \tilde{x})} \right),
+\end{align}
+kde $l$ je dynamický rozsah obrázků, tedy rozdíl mezi maximální možnou hodnotou pixelů a minimální možnou hodnotou pixelů.
+% Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operatorname{PSNR}$, tato vzdálenost tedy není metrická.
+Jedná se tedy o transformaci metriky \emph{MSE}.
+Samotná hodnota PSNR ovšem není metrická vzdálenost.
+Vždyť budou-li se obrázky $x$ a $\tilde{x}$ blížit k sobě, hodnota $\operatorname{PSNR}(x, \tilde{x})$ poroste do nekonečna.
+
+\section{Wassersteinova vzdálenost}
 
 Buď $(M, d)$ metrický prostor, který je zároveň \emph{Radonův}. Zvolme $p \in [1, + \infty)$.
 Potom máme \emph{Wassersteinovu $p$-vzdálenost} mezi dvěma pravděpodobnostními mírami $\mu$ a $\nu$ na $M$,
@@ -419,7 +455,73 @@ Zde lze uplatnit následující dva přístupy:
     a následně vybrat nějakou statistiku výsledných vzdáleností, např. průměr.
 \end{enumerate}
 
-\subsection{Výpočet}
+\section{Structural similarity index measure}
+
+Zkratka \emph{SSIM} pochází z anglického \emph{structural similarity index measure}.
+Tato metrika se při výpočtu indexu dvou obrázků $x$ a $\tilde{x}$ dívá na podokna,
+ze kterých vybere jisté statistiky a z nich vytvoří index pro daná podokna obrázků.
+Potom se jako celkový index bere průměr přes tato okna.
+Uveďme vzorce pro výpočet indexu SSIM pro případ, že máme jediné okno, které splývá s obrázkem,
+které pro jednoduchost zvolme jednokanálové, tedy černobílé.
+Označme $N = W \times H$ počet pixelů v obrázku a indexujme prvky matice obrázku jediným číslem.
+Potom definujeme pro obrázky $x$ a $\tilde{x}$ následující:
+\begin{align*}
+    \mu_x &= \frac{1}{N} \sum_{i = 1}^N x_i, \\
+    \mu_{\tilde{x}} &= \frac{1}{N} \sum_{i = 1}^N \tilde{x}_i, \\
+    \sigma_x^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)^2, \\
+    \sigma_{\tilde{x}}^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (\tilde{x}_i - \mu_{\tilde{x}})^2, \\
+    \sigma_{x \tilde{x}} &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)(\tilde{x}_i - \mu_{\tilde{x}}).
+\end{align*}
+Potom:
+% Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
+% se rozumí následující vzdálenost:
+\begin{equation}
+    \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x}} + C_1)(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
+\end{equation}
+% kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
+% $\sigma_{x \tilde{x}}$ je nestranný odhad kovariance mezi $x$ a $\tilde{x}$,
+% $\sigma^2$ je nestranný odhad rozptylu $x$, resp. $\tilde{x}$
+kde $C_1, C_2$ jsou konstanty pro stabilitu dělení volené kvadraticky úměrně dynamickému rozsahu.
+% Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
+% To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
+Můžeme si povšimnout, že $\operatorname{SSIM}(x, \tilde{x})$ není metrická vzdálenost.
+Budou-li obrázky stejné, nevyjde $0$, nýbrž $1$.
+Může se také stát, že SSIM vrátí zápornou hodnotu, která může vzniknout členem $\sigma_{x \tilde{x}}$.
+Jak volíme celkový SSIM pro barevné obrázky?
+Jako průměr přes kanály.
+
+
+
+\chapter{Implementace metrik vizuální podobnosti}
+
+V minulé kapitole jsme viděli přehled metod, jak přistoupit k porovnávání dvou různých obrázků.
+Předvedli jsme, jak vyčíslit rozdíl mezi dvěma obrázky.
+Ne vždy se ovšem jedná o metriku vesmyslu matematickém,
+což pro tvorbu adversariálních vzorků je záhodno,
+a ne vždy lze takovouto vzdálenost přímočaře spočíst.
+Proto uveďme, je-li to nutné, příslušné úkroky stranou, které nám umožní hledat adversariální vzorky,
+a to pokud možno v krátkém čase.
+Samotnou výslednou implementaci v podobě kódu v jazyce python lze nalézt v příloze v části týkající se souboru \emph{metrics.py}.
+
+\section{Metriky založené na $l_p$ normách}
+
+Implementovat klasické $l_p$ normy je snadné, a tedy i metriky jimi indukované.
+MSE a RMSE jsou též snadné na implementaci.
+Vlastně i PSNR.
+Metriku vizuální podobnosti PSNR je třeba ovšem ošetřit,
+neboť, jak již bylo poznamenáno,
+budou-li se obrázky $x$ a $\tilde{x}$ blížit k sobě,
+hodnota $\operatorname{PSNR}(x, \tilde{x})$ poroste do nekonečna.
+Proto zkusme vzít konstrukci, kde prohodíme roli dynamického rozsahu $l$ (peak signal) s rolí šumu (noise),
+dostaneme tedy, co lze nazvat noise to peak signal ratio (NPSR):
+\begin{align}
+    \operatorname{NPSR}(x, \tilde{x}) &= 20 \cdot \operatorname{log}_{10} \left( \frac{\operatorname{RMSE}(x, \tilde{x})}{l} \right), \\
+    &= - \operatorname{PSNR}(x, \tilde{x}).
+\end{align}
+Při dvou obrázcích blížících se k sobě bude tedy NPSR klesat, a to neomezeně.
+
+
+\section{Modifikace Wassersteinovy vzdálenosti}
 
 Abychom mohli s Wassersteinovou metrikou nakládat například v počítači, je nutné tuto metriku spočíst.
 Podíváme-li se do definice, znamená to vyřešit optimalizační problém.
@@ -516,54 +618,25 @@ dále matici $C$ a regularizační parametr $\lambda$.
 Algoritmus byl napsán, aby syntakticky odpovídal programovacímu jazyku \emph{python}, který využívá knihoven jako je \emph{numpy}
 či \emph{pytorch}.
 
+\section{Structural dissimilarity}
 
-\section{PSNR}
-
-Vzdálenost označená zkratkou \emph{PSNR} z anglického \emph{Peak Signal-to-Noise Ratio}
-vyjadřuje vztah mezi obrázkem $x \in \mathbb{R}^{C \times W \times H}$
-a jeho pokažením $\tilde{x} \in \mathbb{R}^{C \times W \times H}$ za přidání šumu.
-Definice je následující:
-\begin{align}
-    \operatorname{PSNR}(x, \tilde{x}) &= 10 \cdot \operatorname{log}_{10} \left( \frac{l^2}{\operatorname{MSE}(x, \tilde{x})} \right), \\
-    &= 20 \cdot \operatorname{log}_{10} \left( \frac{l}{\operatorname{RMSE}(x, \tilde{x})} \right),
-\end{align}
-kde $l$ je dynamický rozsah obrázků, tedy rozdíl mezi maximální možnou hodnotou pixelů a minimální možnou hodnotou pixelů.
-% Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operatorname{PSNR}$, tato vzdálenost tedy není metrická.
-Jedná se tedy o transformaci metriky \emph{MSE}.
-
-\section{SSIM}
-
-Zkratka \emph{SSIM} pochází z anglického \emph{structural similarity index measure}.
-Tato metrika se při výpočtu indexu dvou obrázků $x$ a $\tilde{x}$ dívá na podokna,
-ze kterých vybere jisté statistiky a z nich vytvoří index pro daná podokna obrázků.
-Potom se jako celkový index bere průměr přes tato okna.
-Uveďme vzorce pro výpočet indexu SSIM pro případ, že máme jediné okno, které splývá s obrázkem,
-které pro jednoduchost zvolme jednokanálové, tedy černobílé.
-Označme $N = W \times H$ počet pixelů v obrázku a indexujme prvky matice obrázku jediným číslem.
-Potom definujeme pro obrázky $x$ a $\tilde{x}$ následující:
-\begin{align*}
-    \mu_x &= \frac{1}{N} \sum_{i = 1}^N x_i, \\
-    \mu_{\tilde{x}} &= \frac{1}{N} \sum_{i = 1}^N \tilde{x}_i, \\
-    \sigma_x^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)^2, \\
-    \sigma_{\tilde{x}}^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (\tilde{x}_i - \mu_{\tilde{x}})^2, \\
-    \sigma_{x \tilde{x}} &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)(\tilde{x}_i - \mu_{\tilde{x}}).
-\end{align*}
-Potom:
-% Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
-% se rozumí následující vzdálenost:
+Nyní potřebujeme z indexu SSIM vykřesat metiku, resp. alespoň aby byla splněna podmínka, že když se dva obrázky blíží k sobě,
+tak jejich vzdálenost klesá.
+K tomu může dobře posloužit konstrukce \emph{DSSIM} (structural dissimilarity):
 \begin{equation}
-    \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x}} + C_1)(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
+    \operatorname{DSSIM}(x, \tilde{x}) = \frac{1 - \operatorname{SSIM}(x, \tilde{x})}{2}.
 \end{equation}
-% kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
-% $\sigma_{x \tilde{x}}$ je nestranný odhad kovariance mezi $x$ a $\tilde{x}$,
-% $\sigma^2$ je nestranný odhad rozptylu $x$, resp. $\tilde{x}$
-kde $C_1, C_2$ jsou konstanty pro stabilitu dělení volené kvadraticky úměrně dynamickému rozsahu.
+Bohužel nezískáváme ryzí metriku, neboť není splněna trojúhelníková nerovnost.
+Máme ale vlastnost, že
+\begin{equation}
+    \operatorname{DSSIM}(x, \tilde{x}) = 0 \iff x = \tilde{x},
+\end{equation}
+která plyne z vlastnosti
+\begin{equation}
+    \operatorname{SSIM}(x, \tilde{x}) = 1 \iff x = \tilde{x}.
+\end{equation}
 
-% Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
-% To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
 
-Jak volíme celkový SSIM pro barevné obrázky?
-Jako průměr přes kanály.
 
 
 \chapter{Adversariální vzorky a jejich tvorba}
@@ -663,9 +736,26 @@ Tedy:
 \end{equation}
 Tento přístup se nazývá metoda \emph{CW} (\emph{Carlini-Wagner}, \cite{cw}).
 
-\chapter{Knihovny robustního strojového učení}
+Jak nastavit parametr $\lambda$?
+Buď můžeme parametr $\lambda$ chápat jako hyper-parametr, tedy jako něco, co musíme ručně ladit,
+nebo lze hledat optimální hodnotu parametru $\lambda$ vhodně vybraným kritériem.
+Myšlenka je potom následující: Chtějme najít adversariální vzorek co nejblíže původnímu benignímu vzorku.
+Potom v optimalizačním problému (\ref{adv_opt}) nebo (\ref{adv_cw}) potřebujeme,
+aby byl kladen větší důraz na první člen $\rho(x, \hat{x})$, tedy aby $\lambda$ bylo co nejmenší.
+Zárověň ale potřebujeme, aby výsledek byl nesprávně klasifikován.
+Proto optimální hodnota parametru $\lambda$, označme ji jako $\lambda^*$, můžeme v případě CW útoku získat řešením
+\begin{align}
+    \lambda^* &= \operatornamewithlimits{argmin}_\lambda \rho(x, \tilde{x}^\lambda), \\
+    &C(F_\theta (\tilde{x}^\lambda)) \neq C(y),
+\end{align}
+kde
+\begin{equation}
+    \tilde{x}^\lambda = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
+\end{equation}
+Z intuice lze na $\rho(x, \tilde{x}^\lambda)$ nahlédnout jako na monotónní funkci v proměnné $\lambda$.
+Proto na hledání $\lambda$ lze užít metodu půlení intervalů.
 
-\chapter{Implementace metrik vizuální podobnosti}
+\chapter{Knihovny robustního strojového učení}
 
 \chapter{Výsledky tvorby adversariálních vzorků pomocí vybraných metrik vizuální podobnosti}
 
@@ -712,5 +802,10 @@ arXiv, 2014.
 IEEE Symposium on Security and Privacy (SP), IEEE, 2017.
 
 \end{thebibliography}
+
+\chapter*{Příloha}
+\addcontentsline{toc}{chapter}{Příloha}
+
+\lstinputlisting[language=Python, title=metrics.py]{../../code/metrics.py}
 
 \end{document}
