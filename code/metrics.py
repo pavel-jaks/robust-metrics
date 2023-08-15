@@ -281,7 +281,7 @@ class StructuralDissimilarity(Metric):
         """
         Constructor
 
-        :param window_size: odd number, size of the sliding window in which SSIMs are computed
+        :param window_size: number, size of the sliding window in which SSIMs are computed
         :param k_1: component of the first constant (for safe division)
         :param k_2: component of the second constant (for safe division)
         :param l: peak signal, component of the safe division constants
