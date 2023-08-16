@@ -759,7 +759,57 @@ Proto na hledání $\lambda$ lze užít metodu půlení intervalů.
 
 \chapter{Výsledky tvorby adversariálních vzorků pomocí vybraných metrik vizuální podobnosti}
 
+\section{Detaily implementace adversariálního útoku}
 
+Pro předvedení adversariálního útoku jsme zvolili metodu \emph{CW} s pevným parametrem $\lambda$.
+Pro připomenutí: Metoda útoku CW je založena na řešení problému
+\begin{equation}
+    \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
+\end{equation}
+Tento problém jsme se rozhodli řešit \emph{znaménkovým gradientním sestupem}
+(v angl. literatuře uváděný jako \emph{sign gradient descent}),
+a to s pevným počtem iterací ($100$) a s pevným krokem $10^{-2}$,
+který je pro obrázky lineárně přeškálované do intervalu $[0, 1]$ akorát dostačující.
+Jako ukázkovou úlohu jsme zvolili klasifikaci číslic na datové sadě \emph{MNIST} \cite{MNIST}
+(jednokanálové obrázky o rozměru $28 \times 28$),
+která je v komunitě strojového učení notoricky známá.
+Pro řešení původního problému klasifikace jsme natrénovali (algoritmem \emph{RMSProp} \cite{RMSProp})
+jednoduchou konvoluční neuronovou síť,
+která na testovací datové sadě dosáhla úspěšnosti $96,9 \%$.
+Inicializace startovního bodu znaménkového gradientního sestupu probíhala v dvojím režimu:
+V normálním a speciálním.
+Normální inicializace spočívala v náhodné inicializaci každého pixelu v okolí hodnoty $0,5$
+na základě realizace náhodné veličiny s rovnoměrným rozdělením $U(0,3;0,8)$.
+Jak ale uvídíme z výsledků později, pro jednu z metrik je tato inicializace zcela nevyhovující,
+proto došlo i k implementaci speciální inicializace, kde byl za počáteční bod gradientního sestupu
+pro daný benigní vzorek $x$ vzat právě tento vzorek $x$.
+Na samotnou implementaci CW útoku lze nahlédnout v Listing \ref{cw_code}.
+
+\lstinputlisting[label=cw_code, language=Python, caption=adversarials.py, firstline=6]{../../code/adversarials.py}
+
+\section{Srovnání útoků pro různé metiky}
+
+Přistupme nyní k vyhodnocení experimentu, který spočíval v následujícím:
+Pro vybranou metriku vizuální podobnosti a pevně zvolené $\lambda$, které se v logaritmu mění lineárně,
+tj. prochází hodnoty $\lambda \in \left\{10^{-3}, 10^{-2}, 10^{-1}, 1, 10, 10^2, 10^3\right\}$,
+spustit generování adversariálních vzorků pro $20$ benigních vzorků
+z datové sady MNIST a zjistit pro danou metriku a dané $\lambda$ průměrnou úspěšnost útoku,
+dále ale i průměrnou vizuální podobnost (v té samé metrice, která byla použita v optimalizačním problému)
+vygenerovaných vzorků a následně jednotně pro všechny metriky průměrnou $l_2$ vzdálenost vygenerovaných vzorků
+od původních benigních.
+
+Tento experiment vyžaduje, aby implementace dané metriky byla automaticky derivovatelná nástroji,
+které nabízí knihovna \emph{pytorch}.
+To bohužel nesplňuje Wassersteinova vzdálenost, resp. její modifikace duální Sinkhornovy metriky,
+a to z důvodu jejího iterativního charakteru.
+Proto byla tato metrika vynechána z následujícího experimentu.
+
+Ohledně počtu generovaných vzorků v experimentu lze poznamenat,
+že kvůli výpočetní náročnosti DSSIM na dostupných výpočetních zařízeních nebylo možné toto číslo navýšit.
+
+V Tabulce (\ref{cw_table}), která se v textu nachází níže, jsou již uvedeny čísla reprezentující výše představené sledované údaje.
+Jelikož metrika vizuální podobnosti DSSIM je založena na indexu SSIM, který je počítán postupně v podoknech
+a následně agregován, je u této metriky uvedena i velikost tohoto podokna.
 
 \begin{longtable}[c]{|c|c|c|c|c|}
     \caption{Výsledky CW útoku na konvoluční neuronovou síť\label{cw_table}}\\
@@ -767,7 +817,7 @@ Proto na hledání $\lambda$ lze užít metodu půlení intervalů.
     \hline
     \multicolumn{5}{| c |}{\textbf{Začátek tabulky}}\\
     \hline
-    \textbf{metric\_name} & \textbf{lambda} & \textbf{is\_adversarial} & \textbf{metric\_distance} & \textbf{l2\_distance} \\ \hline
+    \textbf{Metrika} & \textbf{Parametr} $\lambda$ & \textbf{Úspěšnost útoku} & \textbf{Prům. vzdálenost} & \textbf{Prům. $l_2$ vzdálenost} \\ \hline
     \endfirsthead
     
 
@@ -778,74 +828,139 @@ Proto na hledání $\lambda$ lze užít metodu půlení intervalů.
     \endlastfoot
 
     \hline
-        \multirow{7}{7em}{DSSIM\_ws13} & 1e-03 & 0.00 & 0.0032 & 0.5658 \\ 
-        & 1e-02 & 0.55 & 0.0091 & 1.2746 \\
-        & 1e-01 & 0.80 & 0.0218 & 2.0332 \\
-        & 1e+00 & 0.90 & 0.0325 & 2.6771 \\
-        & 1e+01 & 1.00 & 0.0387 & 3.0795 \\
-        & 1e+02 & 1.00 & 0.0439 & 3.3408 \\
-        & 1e+03 & 1.00 & 0.0514 & 3.6996 \\ \hline
-        \multirow{7}{7em}{DSSIM\_ws21} & 1e-03 & 0.00 & 0.0002 & 0.2379 \\ 
-        & 1e-02 & 0.65 & 0.0068 & 1.1227 \\
-        & 1e-01 & 0.85 & 0.0179 & 1.9304 \\
-        & 1e+00 & 0.90 & 0.0245 & 2.3356 \\
-        & 1e+01 & 1.00 & 0.0319 & 2.8478 \\
-        & 1e+02 & 1.00 & 0.0351 & 3.0299 \\
-        & 1e+03 & 1.00 & 0.0402 & 3.2757 \\ \hline
-        \multirow{7}{7em}{DSSIM\_ws28} & 1e-03 & 0.00 & 0.0010 & 0.3576 \\ 
-        & 1e-02 & 0.75 & 0.0088 & 1.4044 \\
-        & 1e-01 & 0.90 & 0.0157 & 1.9415 \\
-        & 1e+00 & 1.00 & 0.0229 & 2.4947 \\
-        & 1e+01 & 1.00 & 0.0272 & 2.7499 \\
-        & 1e+02 & 1.00 & 0.0314 & 2.9653 \\
-        & 1e+03 & 1.00 & 0.0351 & 3.1641 \\ \hline
-         \multirow{7}{7em}{DSSIM\_ws5} & 1e-03 & 0.35 & 0.1700 & 3.5686 \\ 
+        \multirow{7}{7em}{DSSIM 5} & 1e-03 & 0.35 & 0.1700 & 3.5686 \\ 
         & 1e-02 & 0.80 & 0.2061 & 8.7937 \\ 
         & 1e-01 & 1.00 & 0.2243 & 10.8962 \\ 
         & 1e+00 & 0.95 & 0.2282 & 11.2006 \\ 
         & 1e+01 & 1.00 & 0.2359 & 12.1091 \\ 
         & 1e+02 & 1.00 & 0.2397 & 11.8446 \\ 
         & 1e+03 & 1.00 & 0.2443 & 11.3087 \\  \hline
-        \multirow{7}{7em}{L1} & 1e-03 & 0.00 & 3.9127 & 0.1612 \\
+        \multirow{7}{7em}{DSSIM 13} & 1e-03 & 0.00 & 0.0032 & 0.5658 \\ 
+        & 1e-02 & 0.55 & 0.0091 & 1.2746 \\
+        & 1e-01 & 0.80 & 0.0218 & 2.0332 \\
+        & 1e+00 & 0.90 & 0.0325 & 2.6771 \\
+        & 1e+01 & 1.00 & 0.0387 & 3.0795 \\
+        & 1e+02 & 1.00 & 0.0439 & 3.3408 \\
+        & 1e+03 & 1.00 & 0.0514 & 3.6996 \\ \hline
+        \multirow{7}{7em}{DSSIM 21} & 1e-03 & 0.00 & 0.0002 & 0.2379 \\ 
+        & 1e-02 & 0.65 & 0.0068 & 1.1227 \\
+        & 1e-01 & 0.85 & 0.0179 & 1.9304 \\
+        & 1e+00 & 0.90 & 0.0245 & 2.3356 \\
+        & 1e+01 & 1.00 & 0.0319 & 2.8478 \\
+        & 1e+02 & 1.00 & 0.0351 & 3.0299 \\
+        & 1e+03 & 1.00 & 0.0402 & 3.2757 \\ \hline
+        \multirow{7}{7em}{DSSIM 28} & 1e-03 & 0.00 & 0.0010 & 0.3576 \\ 
+        & 1e-02 & 0.75 & 0.0088 & 1.4044 \\
+        & 1e-01 & 0.90 & 0.0157 & 1.9415 \\
+        & 1e+00 & 1.00 & 0.0229 & 2.4947 \\
+        & 1e+01 & 1.00 & 0.0272 & 2.7499 \\
+        & 1e+02 & 1.00 & 0.0314 & 2.9653 \\
+        & 1e+03 & 1.00 & 0.0351 & 3.1641 \\ \hline
+        
+        \multirow{7}{7em}{$l_1$} & 1e-03 & 0.00 & 3.9127 & 0.1612 \\
         & 1e-02 & 0.00 & 3.9545 & 0.1625 \\ 
         & 1e-01 & 0.00 & 3.9264 & 0.1619 \\ 
         & 1e+00 & 0.00 & 3.9351 & 0.1623 \\ 
         & 1e+01 & 0.75 & 15.6376 & 1.9642 \\ 
         & 1e+02 & 0.85 & 20.6205 & 2.3534 \\ 
         & 1e+03 & 1.00 & 27.6782 & 3.1174 \\  \hline
-        \multirow{7}{7em}{L2} & 1e-03 & 0.00 & 0.1615 & 0.1615 \\
+        \multirow{7}{7em}{$l_2$} & 1e-03 & 0.00 & 0.1615 & 0.1615 \\
          & 1e-02 & 0.00 & 0.1613 & 0.1613 \\
          & 1e-01 & 0.00 & 0.1611 & 0.1611 \\
          & 1e+00 & 0.75 & 1.5334 & 1.5334 \\
          & 1e+01 & 0.95 & 2.1603 & 2.1603 \\
          & 1e+02 & 1.00 & 2.4959 & 2.4959 \\
          & 1e+03 & 1.00 & 2.6871 & 2.6871 \\ \hline
-         \multirow{7}{7em}{Linf} & 1e-03 & 1.00 & 1.1404 & 15.6282 \\
+         \multirow{7}{7em}{$l_\infty$} & 1e-03 & 1.00 & 1.1404 & 15.6282 \\
          & 1e-02 & 1.00 & 1.1585 & 15.6439 \\ 
          & 1e-01 & 1.00 & 1.1527 & 15.6620 \\ 
          & 1e+00 & 1.00 & 1.1629 & 15.5520 \\ 
          & 1e+01 & 1.00 & 1.1511 & 15.7462 \\ 
          & 1e+02 & 1.00 & 1.1573 & 15.6811 \\ 
          & 1e+03 & 1.00 & 1.1606 & 15.5801 \\  \hline
-         \multirow{7}{7em}{Linf\_special} & 1e-03 & 1.00 & 0.7640 & 9.3911 \\
+         \multirow{7}{7em}{$l_\infty$ specialní} & 1e-03 & 1.00 & 0.7640 & 9.3911 \\
          & 1e-02 & 1.00 & 0.7600 & 9.3717 \\ 
          & 1e-01 & 1.00 & 0.7650 & 9.4483 \\ 
          & 1e+00 & 1.00 & 0.7680 & 9.3663 \\ 
          & 1e+01 & 1.00 & 0.7620 & 9.3416 \\ 
          & 1e+02 & 1.00 & 0.7690 & 9.4340 \\ 
          & 1e+03 & 1.00 & 0.7590 & 9.4688 \\  \hline
-         \multirow{9}{7em}{NPSR} & 1e-03 & 0.00 & -inf & 0.0000 \\
-         & 1e-02 & 0.00 & -inf & 0.0000 \\ 
-        & 1e-01 & 0.00 & -inf & 0.0000 \\ 
-        & 1e+00 & 0.00 & -inf & 0.0000 \\ 
-        & 1e+01 & 0.00 & -inf & 0.0052 \\ 
-        & 1e+02 & 0.05 & -inf & 0.0437 \\ 
-        & 1e+03 & 0.15 & -inf & 0.1282 \\ 
-        & 1e+04 & 0.15 & -inf & 0.1666 \\ 
-        & 1e+05 & 0.20 & -inf & 0.2699 \\ \hline
+         \multirow{7}{7em}{NPSR} & 1e-03 & 0.00 & $-\infty$ & 0.0000 \\
+         & 1e-02 & 0.00 & $-\infty$ & 0.0000 \\ 
+        & 1e-01 & 0.00 & $-\infty$ & 0.0000 \\ 
+        & 1e+00 & 0.00 & $-\infty$ & 0.0000 \\ 
+        & 1e+01 & 0.00 & $-\infty$ & 0.0052 \\ 
+        & 1e+02 & 0.05 & $-\infty$ & 0.0437 \\ 
+        & 1e+03 & 0.15 & $-\infty$ & 0.1282 \\ \hline
+        % & 1e+04 & 0.15 & $-\infty$ & 0.1666 \\ 
+        % & 1e+05 & 0.20 & $-\infty$ & 0.2699 \\ \hline
 
     
 \end{longtable}
+
+Na Obrázku (\ref{adv_pic}) lze spatřit adversariální vzorek vygenerovaný $l_2$ útokem s hodnotou parametru $\lambda = 10$.
+Jeho $l_2$ vzdálenost od původního vzorku je potom $1,75$.
+Toto je typický zástupce adversariálních vzorků: V obrázku jsou jakési artefakty,
+které pro lidské oko nepředstavují zatemnění informace, že se jedná o obrázek devítky.
+Klasifikátor v podobě naší neuronové sítě ovšem tyto artefakty interpretovall jinak,
+a to tak, že obrázek špatně klasifikoval.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.2\textwidth]{Images/adv_pic.png}
+    \caption{Příklad adversariálního vzorku} \label{adv_pic}
+\end{figure}
+
+Celkově lze z tabulky vyčíst, že například metrika vizuální podobnosti NPSR,
+tedy logaritmická transformace přeškálované metriky $l_2$, je naprosto nevhodná pro tvorbu adversariálních vzorků
+Toto je na první pohled způsobeno charakterem derivace logaritmu,
+jelikož tato derivace je pro argument klesající k nule až neomezená
+a v gradientních metodách optimalizace po čase vždy převáží při optimalizaci účelové funkce derivaci druhého členu v (\ref{adv_cw}).
+
+Z tabulky jako král úspěšnosti vychází útok prováděný s metrikou $l_\infty$.
+To je ovšem za cenu velikého znečištění obrázku, jak vidíme v Obrázku ()
+a jak lze odvodit z průměrné $l_2$ vzdálenosti vygenerovaného vzorku od původního benigního,
+která je až řádově větší než v případě např. $l_2$ útoku s $\lambda = 10^3$, jenž má mimochodem
+též úspěšnost $100 \%$.
+Na Obrázku (\ref{linf_pic}) lze spatřit vlevo vzorek vygenerovaný $l_\infty$ útokem s normální inicializací
+a vpravo vzorek vygenerovaný $l_\infty$ útokem se speciální inicializací.
+Oba vzorky jsou značně poškozené, tedy mají velkou vzdálenost od půvoního benigního vzorku.
+To je dáno faktem, že při optimalizaci v CW útoku člen $\rho(x, \hat{x})$ záleží vlastně na jediné pixelu,
+proto při každém kroku znaménkového gradientního sestupu algoritmus přiblíží k původnímu vzorku
+maximálně pouze jeden jediný pixel.
+Ohledně $l_\infty$ útoku lze též poznamenat,
+že ať v nastavení s normální inicializací, nebo v nastavení se specialní inicializací
+zdánlivě nezávisí na parametru $\lambda$.
+Souvisí to s předchozím.
+Lze vlastně říci, že skoro pro všechny indexy $i$ (výjimkou je vždy jeden jediný)
+platí $\partial_{\hat{x}_i} \rho(x, \hat{x}) = 0$.
+Proto se při znaménkovém gradientním sestupu výsledek k původnímu vzorku prakticky vůbec nepřipližuje.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.2\textwidth]{Images/linf_n.png}
+    \includegraphics[width=0.2\textwidth]{Images/linf_s.png}
+    \caption{Příklady vzorků vygenerovaných $l_\infty$ útokem} \label{linf_pic}
+\end{figure}
+
+Další komentář se bude věnovat obdobnnému problému, který vyvstal pro DSSIM útok
+s parametrem velikosti výpočetního podokna $5$.
+Podle Obrázku (\ref{dssim_pic})
+je okolí číslice silně znečištěno artefakty.
+Kupodivu samotná číslice a její bezprostřední okolí je relativně nedotknuté.
+Tento fenomén se vyskytl hlavně u volby velikosti výpočetního podokna $5$.
+Vysvětlení zní jednoduše.
+Neboť je původní benigní obrázek dál od číslice roven v každém pixelu nule,
+pak SSIM index příslušných dvou podoken dál od číslice vychází konstantně skoro nula,
+a to kvůli členu $\sigma_{x \tilde{x}}$ v čitateli.
+Není úplně nula díky konstantě $C_2$, která zde vystupuje kvůli dělení.
+Ta je ovšem dostatečně malá, aby byla převážena druhým členem gradientu.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.2\textwidth]{Images/dssim.png}
+    \caption{Příklad vzorku vygenerovaného DSSIM útokem} \label{dssim_pic}
+\end{figure}
 
 \chapter{Knihovny robustního strojového učení}
 
@@ -894,6 +1009,13 @@ arXiv, 2014.
 \bibitem{cw} N. Carlini, D. Wagner,
 \emph{Towards evaluating the robustness of neural networks}.
 IEEE Symposium on Security and Privacy (SP), IEEE, 2017.
+
+\bibitem{MNIST} Y. Lecun, C. Cortes, C. J. Burges,
+\emph{The mnist database of handwritten digits}. 1998.
+
+\bibitem{RMSProp} G. Hinton,
+\emph{Neural networks for machine learning}.
+Coursera, video lectures, 2012.
 
 \end{thebibliography}
 
