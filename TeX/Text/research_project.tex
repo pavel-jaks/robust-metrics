@@ -962,7 +962,23 @@ Ta je ovšem dostatečně malá, aby byla převážena druhým členem gradientu
     \caption{Příklad vzorku vygenerovaného DSSIM útokem} \label{dssim_pic}
 \end{figure}
 
-\chapter{Knihovny robustního strojového učení}
+\chapter{Robustnost neuronové sítě}
+
+Předvedli jsme jev existence adversariálních vzorků
+a z jeho vlastní povahy je zřejmé, že se jedná o nežádoucí jev.
+Na tento fenomén potom odpovídá \emph{robustní strojové učení},
+které se ve své podstatě snaží při učení neuronové sítě
+danou neuronovou síť naučit tak, aby, pokud možno, k existenci adversariálních vzorků nedocházelo.
+Obor robustního strojového učení potom nabízí řadu metod,
+které k tomu mohou dopomoci.
+Otázkou ale je, jak takovou metodu zařadit mezi ostatní ve smyslu jejího srovnání s ostatními metodami.
+Potřebujeme proto ideálně číselné vyjádření toho,
+jak si na tom daná neuronová síť, která byla učena daným algoritmem robustního strojového učení,
+stojí ve smyslu náchylnosti na přítomnost jevu adversariálních vzorků.
+
+\section{Přístup knihovny Foolbox}
+
+
 
 \pagestyle{headings}
 
