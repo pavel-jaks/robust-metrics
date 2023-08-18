@@ -314,6 +314,8 @@ by commas
 
 Text úvodu....
 
+\pagestyle{headings}
+
 \chapter{Metriky vizuální podobnosti}
 
 Pod pojmem metrika na prostoru $X$ si každý matematik představí zobrazení $\rho : X \times X \rightarrow [0, + \infty)$
@@ -618,7 +620,7 @@ dále matici $C$ a regularizační parametr $\lambda$.
     \item $W^\lambda (\mu, \nu) = \operatorname{sum}(u * ((K * \tilde{C}) @ v))$.
 \end{enumerate}
 Algoritmus byl napsán, aby syntakticky odpovídal programovacímu jazyku \emph{python}, který využívá knihoven jako je \emph{numpy}
-či \emph{pytorch}.
+či \emph{PyTorch}.
 
 \section{Structural dissimilarity}
 
@@ -757,7 +759,7 @@ kde
 Z intuice lze na $\rho(x, \tilde{x}^\lambda)$ nahlédnout jako na monotónní funkci v proměnné $\lambda$.
 Proto na hledání $\lambda$ lze užít metodu půlení intervalů.
 
-\chapter{Výsledky tvorby adversariálních vzorků pomocí vybraných metrik vizuální podobnosti}
+\chapter{Výsledky tvorby adversariálních vzorků}
 
 \section{Detaily implementace adversariálního útoku}
 
@@ -799,13 +801,10 @@ vygenerovaných vzorků a následně jednotně pro všechny metriky průměrnou 
 od původních benigních.
 
 Tento experiment vyžaduje, aby implementace dané metriky byla automaticky derivovatelná nástroji,
-které nabízí knihovna \emph{pytorch}.
+které nabízí knihovna \emph{PyTorch}.
 To bohužel nesplňuje Wassersteinova vzdálenost, resp. její modifikace duální Sinkhornovy metriky,
 a to z důvodu jejího iterativního charakteru.
 Proto byla tato metrika vynechána z následujícího experimentu.
-
-Ohledně počtu generovaných vzorků v experimentu lze poznamenat,
-že kvůli výpočetní náročnosti DSSIM na dostupných výpočetních zařízeních nebylo možné toto číslo navýšit.
 
 V Tabulce (\ref{cw_table}), která se v textu nachází níže, jsou již uvedeny čísla reprezentující výše představené sledované údaje.
 Jelikož metrika vizuální podobnosti DSSIM je založena na indexu SSIM, který je počítán postupně v podoknech
@@ -898,6 +897,9 @@ a následně agregován, je u této metriky uvedena i velikost tohoto podokna.
     
 \end{longtable}
 
+Ohledně počtu generovaných vzorků v experimentu lze poznamenat,
+že kvůli výpočetní náročnosti DSSIM na dostupných výpočetních zařízeních nebylo možné toto číslo navýšit.
+
 Na Obrázku (\ref{adv_pic}) lze spatřit adversariální vzorek vygenerovaný $l_2$ útokem s hodnotou parametru $\lambda = 10$.
 Jeho $l_2$ vzdálenost od původního vzorku je potom $1,75$.
 Toto je typický zástupce adversariálních vzorků: V obrázku jsou jakési artefakty,
@@ -936,7 +938,7 @@ Lze vlastně říci, že skoro pro všechny indexy $i$ (výjimkou je vždy jeden
 platí $\partial_{\hat{x}_i} \rho(x, \hat{x}) = 0$.
 Proto se při znaménkovém gradientním sestupu výsledek k původnímu vzorku prakticky vůbec nepřipližuje.
 
-\begin{figure}[h]
+\begin{figure}[b]
     \centering
     \includegraphics[width=0.2\textwidth]{Images/linf_n.png}
     \includegraphics[width=0.2\textwidth]{Images/linf_s.png}
@@ -956,7 +958,7 @@ a to kvůli členu $\sigma_{x \tilde{x}}$ v čitateli.
 Není úplně nula díky konstantě $C_2$, která zde vystupuje kvůli dělení.
 Ta je ovšem dostatečně malá, aby byla převážena druhým členem gradientu.
 
-\begin{figure}[h]
+\begin{figure}[b]
     \centering
     \includegraphics[width=0.2\textwidth]{Images/dssim.png}
     \caption{Příklad vzorku vygenerovaného DSSIM útokem} \label{dssim_pic}
@@ -978,9 +980,60 @@ stojí ve smyslu náchylnosti na přítomnost jevu adversariálních vzorků.
 
 \section{Přístup knihovny Foolbox}
 
+Jednou z programovacích knihoven, která se snaží osvětlit tuto tématiku
+a přinést nástroj pro výše nastíněné měření robustnosti modelu neuronové sítě,
+je knihovna \emph{Foolbox} \cite{foolbox}.
+Její přístup spočívá v implementaci pěti základních stavebních kamenů pro tvorbu
+adversariálních vzorků.
+Jsou to:
+\begin{itemize}
+    \item \emph{Model}, implementace rozhraní, které zajišťuje kompatibilitu knihovny s populárními
+    knihovnami strojového učení (jako je i \emph{PyTorch});
+    \item \emph{kritérium}, totiž pravidlo, podle kterého se rozhoduje, zda daný vzorek je adversariální
+    či nikoliv;
+    \item \emph{metrická vzdálenost}, to jest funkce, která vyjadřuje velikost perturbace
+    potenciálního adversariálního vzorku (rozdíl $\tilde{x} - x$, užijeme-li zavedeného značení);
+    \item \emph{algoritmus útoku}, způsob, jakým budou potenciální adversariální vzorky vyráběny;
+    \item samotná \emph{adversariální perturbace}, což je výsledek algoritmu útoku.
+\end{itemize}
 
+Za komentář stojí, jaká že kritéria mohou být užita k určení adversariality vzorku.
+S jedním jsme se již setkali v minulých kapitolách, totiž kritérium \emph{nesprávné klasifikace},
+které spočívá ve vyhodnocení vzorku jako adversariálního právě při určení modelu,
+že daný vzorek je v jiné třídě než původní vzorek, podle kterého je vzorek adversariální
+tvořen.
+Nemusíme zůstat pouze u tohoto kritéria.
+Další kritéria lze odvodit při hlubším studiu pravděpodobnostního rozdělení, které model produkuje.
+Takže např. kritérium \emph{top-k nesprávné klasifikace} spočívá v tom,
+že vzorek je adversariální, pokud původní třída není mezi $k$~nejpravděpodobnějšími třídami.
 
-\pagestyle{headings}
+Za zmíňku též stojí fakt, že knihovna Foolbox implementuje celou řadu různých adversariálních útoků.
+
+\section{Přístup knihovny RobustBench}
+
+Další programovací knihovnou, která se věnuje tématu robustnosti neuronových sítí
+je knihovna \emph{RobustBench} \cite{robustbench}.
+Tato knihovna jde o krok dál než knihovna Foolbox,
+neboť její snahou je vyvinout jednotnotný test, který pro všechna nastavavení produkuje
+jediné číslo, které lze tudíž hladce porovnat s ostatními výsledky.
+Těchto testů je několik druhů, totiž pro datové sady \emph{CIFAR-10}, \emph{CIFAR-100} \cite{CIFAR}
+a \emph{ImageNet} \cite{ImageNet}.
+Následně podle zkoumané metriky jsou testy pro $l_\infty$ či $l_2$ útoky.
+Výsledné číslo se potom nazývá \emph{robustní úspěšnost} (z angl. \emph{robust accuracy}),
+jehož vyhodnocení spočívá ve vyčíslení průměrné úspěšnosti klasifikace poškozených vzorků
+zkoumaným modelem v daném nastavení experimentu.
+Tyto poškozené vzorky jsou postupně generovány procesem \emph{AutoAttack} \cite{AutoAttack},
+který spočívá v postupném provádění čtyř typů adversariálních útoků.
+Nejprve benigní vzorky projdou úpravou v podobě \emph{projected gradient descent} (\emph{PGD}) \cite{PGD}
+s adaptivní velikostí kroku a ztrátou křížové entropie.
+Dále vzorky, které zůstanou správně klasifikované projdou
+obdobně procesem PGD, ale s jinou ztrátovou funkcí,
+a to ztrátou rozdílu podílů hodnot funkce logit.
+Poté je proveden \emph{cílený FAB útok} \cite{FAB},
+následně \emph{black-box square attack} \cite{SquareAttack}.
+Následně se výsledky agregují v již zmíněnou adversariální úspěšnost.
+Tímm pádem lze metody robustního strojového učení mezi sebou porovnávat.
+
 
 \chapter*{Závěr}
 
@@ -1032,6 +1085,29 @@ IEEE Symposium on Security and Privacy (SP), IEEE, 2017.
 \bibitem{RMSProp} G. Hinton,
 \emph{Neural networks for machine learning}.
 Coursera, video lectures, 2012.
+
+\bibitem{CIFAR}A. Krizhevsky, G. Hinton:
+\emph{Learning multiple layers of features from tiny images}.
+Technical Report, 2009.
+
+\bibitem{ImageNet}J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, L. Fei-Fei:
+\emph{Imagenet: A large-scale hierarchical image database}.
+IEEE conference on computer vision and pattern recognition, pages 248–255, Ieee, 2009.
+
+\bibitem{AutoAttack}F. Croce, M. Hein:
+\emph{Reliable evaluation of adversarial robustness with an ensemble of diverse parameter-free attacks}.
+In ICML, 2020.
+
+\bibitem{PGD} A. Mądry, A. Makelov, L. Schmidt, D. Tsipras, A. Vladu,
+\emph{Towards deep learning models resistant to adversarial attacks}. Stat 1050 9, 2017.
+
+\bibitem{FAB}F. Croce, M. Hein:
+\emph{Minimally distorted adversarial examples with a fast adaptive boundary attack}.
+ICML, 2020.
+
+\bibitem{SquareAttack}M. Andriushchenko, F. Croce, N. Flammarion, M. Hein:
+\emph{Square attack: a query-efficient black-box adversarial attack via random search}.
+ECCV, 2020.
 
 \end{thebibliography}
 
