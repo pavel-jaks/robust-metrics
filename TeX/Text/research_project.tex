@@ -190,8 +190,10 @@
 
 \noindent Chtěl bych zde poděkovat především svému školiteli panu doktoru Adamovi
 za pečlivost, ochotu, vstřícnost a odborné i lidské zázemí při vedení
-mé diplomové práce. Dále děkuji svému konzultantovi panu magistru Čermákovi
+mé práce výzkumného úkolu. Dále děkuji svému konzultantovi panu magistru Čermákovi
 za jeho odborné rady.
+
+% TODO: VU -> DP
 
 \vfill
 
@@ -244,23 +246,29 @@ Karlovo náměstí 13, 121 35 Praha 2.
 
 \bigskip{}
 
-\noindent \emph{Abstrakt:} Abstrakt max. na 10 řádků. Abstrakt max.
-na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků.
-Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max.
-na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků.
-Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max.
-na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků.
-Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max.
-na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků.
-Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max.
-na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků.
-Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max.
-na 10 řádků. Abstrakt max. na 10 řádků. Abstrakt max. na 10 řádků. 
+\noindent \emph{Abstrakt:}
+V oblasti strojového učení se vyskytl problém existence tak zvaných adversariálních vzorků.
+Jedná se o jev, kdy i malá změna vstupu nějakého modelu strojového učení
+způsobí velikou změnu výstupu, což je ve většině případech nežádoucí.
+V této práci se potom věnujeme problematice metrik vizuální podobnosti,
+a to právě v kontextu existence a tvorby adversariálnich vzorků v oblasti klasifikace obrázků.
+Naším cílem je osvětlit, jakým způsobem taková metrika vizuální podobnosti ovlivní
+proces tvorby adversariálních vzorků a jejich podobu.
 
 \bigskip{}
 
-\noindent \emph{Klíčová slova:} klíčová slova (nebo výrazy) seřazená
-podle abecedy a oddělená čárkou
+\noindent \emph{Klíčová slova:}
+Adversariální vzorky,
+CW útok,
+Foolbox,
+$l_p$ norma,
+metrika vizuální podobnosti,
+neuronová síť,
+PSNR,
+robustní strojové učení,
+RobustBench,
+SSIM,
+Wassersteinova metrika.
 
 \vfill{}
 ~
@@ -278,26 +286,29 @@ podle abecedy a oddělená čárkou
 
 \bigskip{}
 
-\noindent \emph{Abstract:} Max. 10 lines of English abstract text.
-Max. 10 lines of English abstract text. Max. 10 lines of English abstract
-text. Max. 10 lines of English abstract text. Max. 10 lines of English
-abstract text. Max. 10 lines of English abstract text. Max. 10 lines
-of English abstract text. Max. 10 lines of English abstract text.
-Max. 10 lines of English abstract text. Max. 10 lines of English abstract
-text. Max. 10 lines of English abstract text. Max. 10 lines of English
-abstract text. Max. 10 lines of English abstract text. Max. 10 lines
-of English abstract text. Max. 10 lines of English abstract text.
-Max. 10 lines of English abstract text. Max. 10 lines of English abstract
-text. Max. 10 lines of English abstract text. Max. 10 lines of English
-abstract text. Max. 10 lines of English abstract text. Max. 10 lines
-of English abstract text. Max. 10 lines of English abstract text.
-Max. 10 lines of English abstract text. Max. 10 lines of English abstract
-text. Max. 10 lines of English abstract text.
+\noindent \emph{Abstract:}
+There exists a problem in the field of machine learning called adversarial examples.
+This is a phenomenon where even a small change of the input to a machine learning model
+causes a big difference in the model output, which is in most cases unwanted.
+In this work we study the questions concerning visual similarity metrics
+and that in the context of existence and crafting of adversarial examples in the problem of image classification.
+Our goal is to enlighten hte way how such a visual similarity metric affects
+the crafting process of adversarial examples and their final look.
 
 \bigskip{}
 
-\noindent \emph{Key words:} keywords in alphabetical order separated
-by commas
+\noindent \emph{Key words:}
+Adversarial examples,
+CW attack,
+Foolbox,
+$l_p$ norm,
+neural network,
+PSNR,
+robust machine learning,
+RobustBench,
+SSIM,
+visual similarity metric,
+Wasserstein metric.
 
 \selectlanguage{czech}%
 \newpage{}
@@ -312,7 +323,42 @@ by commas
 
 \addcontentsline{toc}{chapter}{Úvod}
 
-Text úvodu....
+V této práci se věnujeme problematice metrik vizuální podobnosti,
+a to v kontextu strojového učení,
+konrétně v oblasti existence a tvorby adversariálnich vzorků.
+Zkoumáme, jaký vliv má volba takové metriky na tvorbu a podobu adversariálních vzorků.
+
+V první kapitole představujeme samotné metriky vizuální podobnosti.
+Jelikož obrázky v počítači, s nimiž pracujeme, lze chápat jako tenzory,
+lze se podívat na obrázky v klasické $l_p$ normě.
+Část této kapitoly se proto věnuje formální definici těchto $l_p$ norem
+a toho, jak z nich zkonstuovat metriku.
+Zmiňujeme i metriky založené na průměrování rozdílů prvků vektorů,
+tedy metriky MSE (\emph{mean squared error}) a RMSE (\emph{root mean squared error}),
+dále i jejich logaritmickou transformaci známou pod zkratkou PSNR (\emph{peak signal to noise ratio}).
+Další konstrukce, které představujeme jsou SSIM, tedy \emph{Structural Similarity Index Measure},
+a \emph{Wassersteinova metrika}, která se na obrázky dívá jako na pravděpodobnostní rozdělení.
+
+V druhé kapitole pak narážímme na výpočetní limity a fakt, že ne všechny metriky vizuální podobnosti
+jsou metriky podle matematické definice.
+Proto uvedeme alternativu k PSNR, transformaci SSIM a regularizaci Wassersteinovy metriky,
+které pomohou překonat tyto problémy pro praktickou tvorbu adversariálních vzorků.
+
+Třetí kapitola potom pojednává o samotné problematice adversariálních vzorků,
+o jejich definici a o jednom z mnoha přístupů k jejich praktické tvorbě.
+Nastiňujeme také rozdíl mezi \emph{cíleným} (angl. \emph{targeted}) a \emph{necíleným} (angl. \emph{untargeted})
+adversariálním útokem.
+
+Ve čtvrté kapitole pak uvádíme samotné výsledky použití vybraných metrik vizuální podobnosti
+pro tvorbu adversariálních vzorků pomocí necíleného \emph{CW} útoku.
+Porovnáváme, jak procentuální úspěšnost útoku v dané metrice,
+tak průměrnou $l_2$ vzdálenost výsledků procedury s původními vzorky.
+
+Poslední pátá kapitola pak nastiňuje problematiku robustního strojového učení,
+tedy disciplíny, která se snaží existenci adversariálních vzorků zabránit
+vhodnými metodami pro daný algoritmus strojového učení.
+Uvádíme také, jak se jakousi robustnost obzvlášť neuronových sítí vůči adversariálním útokům
+snaží měřit programovací knihovny \emph{Foolbox} a \emph{RobustBench}.
 
 \pagestyle{headings}
 
@@ -652,7 +698,7 @@ Např. mějme za úkol na základě černobílého obrázku s číslicí říci,
 Máme-li dostatečný počet vzorků, o kterých víme, do jaké třídy náleží, můžeme využít různých metod strojového učení.
 Pro konkrétnost zvolme metodu neuronových sítí.
 To znamená, že vytvoříme zobrazení $F_\theta : X \rightarrow Y$, kde za $X$ bereme množinu všech možných vzorků,
-v případě klasifikace čísliic na obrázku právě všechny možné obrázky příslušného rozměru.
+v případě klasifikace číslic na obrázku právě všechny možné obrázky příslušného rozměru.
 Dále za $Y$ berme množinu všech diskrétních pravděpodobnostních rozdělení na třídách,
 tedy v případě klasifikace číslic může být:
 \begin{equation*}
@@ -1041,7 +1087,35 @@ Tímm pádem lze metody robustního strojového učení mezi sebou porovnávat.
 
 \addcontentsline{toc}{chapter}{Záv\v{e}r}
 
-Text závěru....
+V této práci bylo nastíněno téma problematiky adversariálních vzorků z jiného úhlu pohledu než bývá zvykem.
+Cílem nebylo vyvinout novou metodu pro tvorbu adversariálních vzorků
+ani najít, jak vhodně naučit model strojového učení tak, aby byl robustní vůči adversariálním útokům.
+Cílem bylo nahlédnout na tuto problematiku z pohledu různorodosti metrik vizuální podobnosti
+a poskytnout přehled, jak volba této metriky ovlivňuje tvorbu či podobu adversariálních vzorků.
+
+Představili jsme tedy různé metriky vizuální podobnosti a provedli jejich implementaci v programovacím jazyce \emph{Python}.
+Dále jsme s pomocí knihovny \emph{PyTorch} natrénovali jednoduchou neuronovou síť
+pro klasifikaci číslic a tuto síť použili jako cíl námi implementovaného CW útoku
+s možností volby užité metriky vizuální podobnosti.
+
+Pro ovlivnění tvorby adversariálních vzorků se ukázal jako nežádoucí
+iterativní charakter výpočtu aproximace Wassersteinovy vzdálenosti,
+který nedovolil použít CW útok ke konstrukci adversariálních vzorků pomocí této metriky.
+Další negativní dopad na tvorbu v podobě vysoké výpočetní náročnosti měla volba metriky založené na SSIM.
+
+Ohledně samotné podoby vzorků vygenerovaných CW útokem lze říci,
+že vzorky generované $l_\infty$ CW útokem byly velice poškozené,
+jelikož derivace metriky indukované $l_\infty$ normou podle jedné z proměnných nezáleží na té dané proměnné,
+leč na jednom jediném prvku.
+
+S podobným problémem se bylo možné setkat při použití metriky vizuální podobnosti SSIM
+s relativně malou velikostí podokna (vzhledem k celkové velikosti obrázku).
+Takto vygenerované vzorky vykazovaly značně velkou přítomnost artefaktů v obrázku,
+až na bezprostředně blízké okolí číslice.
+
+Závěrem tedy lze říci, že na volbě metriky vizuální podobnosti záleží
+a do budoucna lze tuto práci rozšířit jednak o další metriky vizuální podobnosti,
+či o výsledky těch samých experimentů za použití jiné (bohatší) datové sady.
 
 
 \begin{thebibliography}{1}
@@ -1098,7 +1172,7 @@ IEEE conference on computer vision and pattern recognition, pages 248–255, Iee
 \emph{Reliable evaluation of adversarial robustness with an ensemble of diverse parameter-free attacks}.
 In ICML, 2020.
 
-\bibitem{PGD} A. Mądry, A. Makelov, L. Schmidt, D. Tsipras, A. Vladu,
+\bibitem{PGD} A. Mądry, A. Makelov, L. Schmidt, D. Tsipras, A. Vladu:
 \emph{Towards deep learning models resistant to adversarial attacks}. Stat 1050 9, 2017.
 
 \bibitem{FAB}F. Croce, M. Hein:
