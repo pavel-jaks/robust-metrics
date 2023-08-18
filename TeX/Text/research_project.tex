@@ -364,7 +364,37 @@ snaží měřit programovací knihovny \emph{Foolbox} a \emph{RobustBench}.
 
 \chapter{Metriky vizuální podobnosti}
 
-Pod pojmem metrika na prostoru $X$ si každý matematik představí zobrazení $\rho : X \times X \rightarrow [0, + \infty)$
+Metrika vizuální podobnosti je nástroj, který umožňuje, jak napovídá sám název,
+měřit, jak jsou si dva vizuální vjemy podobné.
+Pod vizuálním jevem zde v kontextu strojového učení myslíme strojově
+zpracovatelný vizuální vjem, tedy obrázek.
+Tedy obecně se jedná o tenzor z množiny $\mathbb{M}^{C \times W \times H}$,
+kde $\mathbb{M}$ je podmnožina reálných čísel, za kterou volíme například množinu $\{0, 1, ..., 255\}$,
+tedy diskrétní hodnoty pizelů, které lze reprezentovat pomocí $8$ bitů,
+nebo třeba za $\mathbb{M}$ volíme  interval $[0, 1]$.
+Parametry $C$, $W$, $H$ potom reprezentují po řadě počet kanálů obrázku,
+šířku obrázku a výšku obrázku.
+V praxi se nejčastěji setkáme se šedotónovými obrázky, potom $C = 1$,
+nebo s obrázky typu \emph{RGB}, kde $C = 3$ a jednotlivé kanály reprezentují po řadě červenou, zelenou a modrou barvu.
+Alternativní přístup k obrázku je potom reprezentace pomocí tenzorů $\mathbb{M}^{W \times H \times C}$,
+kdy měníme pořadí indexace jednotlivých prvků tenzoru.
+V této práci potom užíváme první z konvencí.
+Důvodem je, že tato konvence je vlastní knihovně \emph{PyTorch}, která je zde užita.
+Máme tedy ujasněno slovo \emph{vizuální} z termínu \emph{metriky vizuální podobnosti}.
+
+Pod pojmem \emph{podobnost} si potom představme to, jaké společné rysy dva takové obrázky mají.
+Může se jednat o vyobrazení stejného objektu či o informaci, kterou nesou.
+Nebo prostě blízkost ve smyslu pohledu na obrázky jako na dva tenzory.
+
+Nakonec rozveďme pojem metrika.
+Slovo metrika v první řadě vyjadřuje propojení vzdálenosti nebo podobnosti
+ve výše uvedeném smyslu s jedním konkrétním reálným číslem.
+Metrika je tedy zobrazení, které na vstupu bere dva prvky stejné množiny a vrací číslo,
+které vyjadřuje, jak moc si jsou tyto dva objekty blízko či jak jsou si tyto dva objekty podobné.
+Metriku lze ovšem formálně matematicky definovat, aby dávala v konečném důsledku vzniknout topologii,
+což je nástroj, kterým vybavíme-li libovolnou množinu, můžeme nakládat s pojmy jako je okolí bodu,
+otevřená množina či kompaktnost.
+Pod pojmem metrika na prostoru $X$ si tedy každý matematik představí zobrazení $\rho : X \times X \rightarrow [0, + \infty)$
 splňující
 \begin{enumerate}
     \item $\rho(x, y) = 0 \iff x = y \quad \forall x, y \in X$,
@@ -394,9 +424,8 @@ S metrikami, které jsou tzv. indukované normami dle předchozího se setkáme.
 \section{Metriky indukované $l_p$ normami}
 
 Vzhledem k tomu, že obrázky, které jsou středem naší pozornosti,
-lze reprezentovat jako tenzory standardně o rozměrech $C \times W \times H$,
-kde $C$ značí počet kanálů (nejčastěji kanály po řadě pro červenou, zelenou a modrou barvu),
-$W$ označuje šířku a $H$ výšku, tak lze na tyto tenzory vpustit $L^p$ normy.
+lze reprezentovat jako tenzory o rozměrech $C \times W \times H$,
+kde $C$, $W$ a $H$ jsou jako výše, tak lze tyto tenzory použít jako vstup pro $L^p$ normy.
 Pro $p \in [1, + \infty)$ je $L^p$ norma z $f \in L_p(X, \mu )$
 definována vztahem:
 \begin{equation*}
@@ -409,16 +438,16 @@ Potom naše $L^p$ norma přejde v $l_p$ normu, která má pro naše obrázky, te
     \|x\|_p = \left( \sum_{i=1}^{C} \sum_{j=1}^{W} \sum_{k=1}^{H} |x_{i, j, k}|^p \right)^{\frac{1}{p}}.
 \end{equation}
 
-Trochu mimo stojí $l_{\infty}$ norma, která má tvar pro tenzor $x \in \mathbb{R}^{C \times W \times H}$:
+Této definici se potom vymyká $l_{\infty}$ norma, která má tvar pro tenzor $x \in \mathbb{R}^{C \times W \times H}$:
 \begin{equation}
     \|x\|_\infty = \max_{i \in \{1, ..., C\}} \max_{j \in \{1, ..., W\}} \max_{k \in \{1, ..., H\}} |x_{i, j, k}|.
 \end{equation}
 
-A úplně mimo stojí $L_0$ norma, která svou povahou \emph{není} norma ve smyslu výše uvedené definice,
-ale pro účely porovnávání obrázků se používá rozdíl obrázků v této pseudo-normě, proto ji zde zmiňuji:
-\begin{equation}
-    \|x\|_0 = |\{x_{i, j, k} \neq 0\}|.
-\end{equation}
+% A úplně mimo stojí $L_0$ norma, která svou povahou \emph{není} norma ve smyslu výše uvedené definice,
+% ale pro účely porovnávání obrázků se používá rozdíl obrázků v této pseudo-normě, proto ji zde zmiňuji:
+% \begin{equation}
+%     \|x\|_0 = |\{x_{i, j, k} \neq 0\}|.
+% \end{equation}
 
 \section{MSE a RMSE}
 
@@ -429,14 +458,26 @@ Pro tenzory $x, \tilde{x} \in \mathbb{R}^{C \times W \times H}$ mají definici:
     \operatorname{MSE}(x, \tilde{x}) &= \frac{1}{C W H} \sum_{i=1}^C \sum_{j=1}^W \sum_{k=1}^H | x_{i, j, k} - \tilde{x}_{i, j, k} |^2 \\
     \operatorname{RMSE}(x, \tilde{x}) &= \left(\frac{1}{C W H} \sum_{i=1}^C \sum_{j=1}^W \sum_{k=1}^H | x_{i, j, k} - \tilde{x}_{i, j, k} |^2 \right)^{\frac{1}{2}}
 \end{align}
+Jedná se vlastně o transformaci metriky založené na $l_2$ normě.
+Platí totiž:
+\begin{align}
+    \operatorname{MSE}(x, \tilde{x}) = \frac{1}{CWH} \|x - \tilde{x}\|_2^2 \\
+    \operatorname{RMSE}(x, \tilde{x}) = \frac{1}{\sqrt{CWH}} \|x - \tilde{x}\|_2 
+\end{align}
+Tyto metriky vizuální podobnosti potom sehrávají roli,
+chceme-li porovnávat rozdíly mezi obrázky napříč obrázky různých rozměrů.
+Samozřejmě to ale neznamená, že získáme vzdálenost dvou obrázků, které mají každý jiný rozměr.
 
 \section{Peak signal-to-noise ratio}
 
 Vzdálenost označená zkratkou \emph{PSNR} z anglického \emph{peak signal-to-noise ratio}
 vyjadřuje vztah mezi obrázkem $x \in \mathbb{R}^{C \times W \times H}$
-a jeho pokažením $\tilde{x} \in \mathbb{R}^{C \times W \times H}$ za přidání šumu.
+a jeho pokažením $\tilde{x} \in \mathbb{R}^{C \times W \times H}$,
+což je obrázek, který má zásadě nést stejnou informaci, ale je poškozený,
+a to ať už rozmazáním nebo šumem.
+Cílem této metriky vizuální podobnosti je potom kvantitativně vyjádřit právě míru šumu.
 Definice je následující:
-\begin{align}
+\begin{align} \label{PSNR_def}
     \operatorname{PSNR}(x, \tilde{x}) &= 10 \cdot \operatorname{log}_{10} \left( \frac{l^2}{\operatorname{MSE}(x, \tilde{x})} \right), \\
     &= 20 \cdot \operatorname{log}_{10} \left( \frac{l}{\operatorname{RMSE}(x, \tilde{x})} \right),
 \end{align}
@@ -444,16 +485,19 @@ kde $l$ je dynamický rozsah obrázků, tedy rozdíl mezi maximální možnou ho
 % Jak je vidět, prohození $x$ a $\tilde{x}$ povede ke změně hodnoty $\operatorname{PSNR}$, tato vzdálenost tedy není metrická.
 Jedná se tedy o transformaci metriky \emph{MSE}.
 Samotná hodnota PSNR ovšem není metrická vzdálenost.
-Vždyť budou-li se obrázky $x$ a $\tilde{x}$ blížit k sobě, hodnota $\operatorname{PSNR}(x, \tilde{x})$ poroste do nekonečna.
+Vždyť budou-li se obrázky $x$ a $\tilde{x}$ blížit k sobě, hodnota $\operatorname{PSNR}(x, \tilde{x})$ poroste do nekonečna,
+neboť jmenovatel argumentu v logaritmu v definici (\ref{PSNR_def}) jde k nule, a to zprava,
+tudíž argument logaritmu jde do $+\infty$ a tedy i logaritmus roste do $+\infty$.
+Toto odpovídá tomu, že šum v pokažení $\tilde{x}$ je nulový.
 
 \section{Wassersteinova vzdálenost}
 
-Buď $(M, d)$ metrický prostor, který je zároveň \emph{Radonův}. Zvolme $p \in [1, + \infty)$.
+Buď $(M, \rho)$ metrický prostor. Zvolme $p \in [1, + \infty)$.
 Potom máme \emph{Wassersteinovu $p$-vzdálenost} mezi dvěma pravděpodobnostními mírami $\mu$ a $\nu$ na $M$,
 které mají konečné $p$-té momenty,
 jako:
-\begin{equation}
-    W_p (\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} d(x, y)^p \right)^{\frac{1}{p}},
+\begin{equation} \label{wass_def}
+    W_p (\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} \rho (x, y)^p \right)^{\frac{1}{p}},
 \end{equation}
 kde $\Gamma(\mu, \nu)$ je množina všech sdružených pravděpodobnostních měr na $M \times M$,
 které mají po řadě $\mu$ a $\nu$ za marginální pravděpodobnostní míry \cite{vaserstejn}.
@@ -463,28 +507,26 @@ Přes dopravní problém.
 Pod pravděpodobnostní distribucí $\mu$ či $\nu$ na $X$ si lze představit rozložení jakési hmoty
 o celkové hmotnosti $1$.
 Sdružená rozdělení $\gamma \in \Gamma(\mu, \nu)$ potom odpovídají transportnímu plánu,
-kde $\gamma(x, y) \operatorname{d}x \operatorname{d}y$
+kde $\gamma(x, y) \, dx \, dy$
 vyjadřuje, kolik hmoty se přesune z $x$ do $y$.
 Tomu lze přiřadit nějakou cenu $c$,
 totiž kolik stojí přesun jednotkové hmoty z $x$ do $y$: $c(x, y)$.
 V případě \emph{Wassersteinovy vzdálenosti}
-za cenu dosadíme $c(x, y) = d(x, y)^p$,
+za cenu dosadíme $c(x, y) = \rho(x, y)^p$,
 tedy $p$-tou mocninu vzdálenosti mezi $x$ a $y$.
 Potom cena celkového dopravního problému s transportním plánem $\gamma$ bude:
-\begin{align}
-    c_\gamma &= \int c(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
-    &= \int c(x, y) \operatorname{d} \gamma(x, y)
-\end{align}
+\begin{equation}
+    c_\gamma = \int c(x, y) \gamma(x, y) \, dx \, dy
+\end{equation}
 a optimální cena bude:
 \begin{equation}
     c = \inf_{\gamma \in \Gamma(\mu, \nu)} c_\gamma.
 \end{equation}
 Po dosazení:
 \begin{align}
-    c &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int c(x, y) \operatorname{d} \gamma(x, y) \\
-    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int c(x, y) \gamma(x, y) \operatorname{d}x \operatorname{d}y \\
+    c &= \inf_{\gamma \in \Gamma(\mu, \nu)} \int c(x, y) \gamma(x, y) \, dx \, dy \\
     &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} c(x, y) \\
-    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} d(x, y)^p \\
+    &= \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} \rho(x, y)^p \\
     &= W_p (\mu, \nu)^p
 \end{align}
 Dostáváme tedy interpretaci, že $p$-tá mocnina \emph{Wassersteinovy vzdálenosti}
@@ -522,7 +564,10 @@ Potom definujeme pro obrázky $x$ a $\tilde{x}$ následující:
     \sigma_{\tilde{x}}^2 &= \frac{1}{N - 1} \sum_{i = 1}^N (\tilde{x}_i - \mu_{\tilde{x}})^2, \\
     \sigma_{x \tilde{x}} &= \frac{1}{N - 1} \sum_{i = 1}^N (x_i - \mu_x)(\tilde{x}_i - \mu_{\tilde{x}}).
 \end{align*}
-Potom:
+Tedy proměnné $\mu_x$ a $\mu_{\tilde{x}}$ odpovídají průměru,
+$\sigma_x^2$ a $\sigma_{\tilde{x}}^2$ rozptylu
+a $\sigma_{x \tilde{x}}$ kovarianci.
+Potom definujeme:
 % Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
 % se rozumí následující vzdálenost:
 \begin{equation}
@@ -534,8 +579,28 @@ Potom:
 kde $C_1, C_2$ jsou konstanty pro stabilitu dělení volené kvadraticky úměrně dynamickému rozsahu.
 % Máme-li dva obrázky, tak za $x$ a $\tilde{x}$ do vzorce pro $\operatorname{SSIM}$ se standardně volí jakási okna obrázků.
 % To znamená, že za celkovou vzdálenost mezi dvěma obrázky volíme průměr přes všechna okna předem zvolené velikosti.
+Tato výsledná statistika je potom součinem tří metrik,
+které jsou definovány jako metrika jasu
+\begin{equation}
+    l(x, \tilde{x}) = \frac{2 \mu_x \mu_{\tilde{x}} + C^{(1)}}{\mu_x^2 + \mu_{\tilde{x}}^2 + C^{(1)}},
+\end{equation}
+metrika kontrastu
+\begin{equation}
+    c(x, \tilde{x}) = \frac{2 \sigma_x \sigma_{\tilde{x}} + C^{(2)}}{\sigma_x^2 + \sigma_{\tilde{x}}^2 + C^{(2)}},
+\end{equation}
+a metrika struktury
+\begin{equation}
+    s(x, \tilde{x}) = \frac{\sigma_{x \tilde{x}} + C^{(3)}}{\sigma_x \sigma_{\tilde{x}} + C^{(3)}}.
+\end{equation}
+Volba konstant je potom
+\begin{align}
+    C^{(1)} &= C_1, \\
+    C^{(2)} &= C_2, \\
+    C^{(3)} &= \frac{C_2}{2}.
+\end{align}
+SSIM je pak metrikou vizuální podobnosti kombinující informaci o podobnosti jasu, kontrastu a struktury.
 Můžeme si povšimnout, že $\operatorname{SSIM}(x, \tilde{x})$ není metrická vzdálenost.
-Budou-li obrázky stejné, nevyjde $0$, nýbrž $1$.
+Budou-li obrázky stejné, nevyjde $0$, nýbrž $1$ \cite{ssim}.
 Může se také stát, že SSIM vrátí zápornou hodnotu, která může vzniknout členem $\sigma_{x \tilde{x}}$.
 Jak volíme celkový SSIM pro barevné obrázky?
 Jako průměr přes kanály.
@@ -546,12 +611,11 @@ Jako průměr přes kanály.
 
 V minulé kapitole jsme viděli přehled metod, jak přistoupit k porovnávání dvou různých obrázků.
 Předvedli jsme, jak vyčíslit rozdíl mezi dvěma obrázky.
-Ne vždy se ovšem jedná o metriku vesmyslu matematickém,
+Ne vždy se ovšem jedná o metriku ve smyslu matematickém,
 což pro tvorbu adversariálních vzorků je záhodno,
 a ne vždy lze takovouto vzdálenost přímočaře spočíst.
 Proto uveďme, je-li to nutné, příslušné úkroky stranou, které nám umožní hledat adversariální vzorky,
 a to pokud možno v krátkém čase.
-Samotnou výslednou implementaci v podobě kódu v jazyce python lze nalézt v příloze v části týkající se souboru \emph{metrics.py}.
 
 \section{Metriky založené na $l_p$ normách}
 
@@ -574,36 +638,44 @@ Při dvou obrázcích blížících se k sobě bude tedy NPSR klesat, a to neome
 \section{Modifikace Wassersteinovy vzdálenosti}
 
 Abychom mohli s Wassersteinovou metrikou nakládat například v počítači, je nutné tuto metriku spočíst.
-Podíváme-li se do definice, znamená to vyřešit optimalizační problém.
+Podíváme-li se do definice (\ref{wass_def}), znamená to vyřešit optimalizační problém.
 Byť bychom se omezili hledání vzdáleností dvou vektorů o~rozměru $q$,
 měli bychom problém s časovou složitostí nejlépe $\mathcal{O}(q^3 \operatorname{log} q)$ \cite{wass_computation}.
-A~to je hodně.
+Bohužel takovou výpočetní kapacitou, která by toto zvládla rychle pro námi používané obrázky nemáme k dispozici.
 Proto se podívejme, jak Wassersteinovu vzdálenost spočíst rychleji, byť za ztráty přesnosti.
 
-Omezme se na prostory konečné dimenze. Potom mějme za úkol spočíst Wassersteinovu  (zvolme $p = 1$) vzdálenost vektorů
+Omezme se na prostory konečné dimenze. Potom mějme za úkol spočíst Wassersteinovu  (zvolme $p = 1$)
+vzdálenost vektorů s nezápornými prvky
 $\mu, \nu \in \mathbb{R}^q, \mu ^ T 1_q = \nu ^ T 1_q = 1$, kde $1_q$ je vektor rozměru $q$ složen pouze z jedniček.
 Potom $\mu, \nu$ lze chápat jako diskrétní pravděpodobnostní rozdělení.
 Označme jako $U(\mu, \nu)$ množinu všech matic $P \in \mathbb{R}^{q \times q}, P_{i,j} \geq 0$
 takových, že $P 1_q = \mu$ a $P^T 1_q = \nu$.
 Jako matici $C$ označme zadanou matici cen, která splňuje, že reprezentuje metriku.
 To znamená, že $C_{i, j} \geq 0$, $C_{i, j} = 0 \iff i = j$, $C_{i, j} = C_{j, i}$ a $C_{i, k} \leq C_{i, j} + C_{j, k}$.
+Tedy prvek matice $C_{i, j}$ určuje metrickou vzdálenost mezi prvkem $i$ a prvkem $j$.
 Potom lze napsat:
 \begin{equation}
     W (\mu, \nu) \equiv W_1 (\mu, \nu) = \min_{P \in U(\mu, \nu)} \langle P, C \rangle,
 \end{equation}
 kde $\langle P, C \rangle = \sum_{i, j = 1}^q P_{i, j} C_{i, j}$.
+Toto je důsledkem volby $p = 1$.
+To že infimum v definici (\ref{wass_def}) přechází v maimum je dáno tím,
+že $U(\mu, \nu)$ je kompaktní podmnožina $\mathbb{R}^{q \times q}$.
 
 Přejděme nyní od Wassersteinovy metriky k tzv. duální Sinkhornově metrice.
-Ta je pro pevně zvolené $\lambda > 0$ definována následovně:
+Ta je pro pevně zvolené $\xi > 0$ definována následovně:
 \begin{align}
-    W^\lambda (\mu, \nu) &= \langle P^\lambda, C \rangle, \\
-    kde \; P^\lambda &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \langle P, C \rangle - \frac{1}{\lambda} H(P),
+    W^\xi (\mu, \nu) &= \langle P^\xi, C \rangle, \\
+    kde \; P^\xi &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \langle P, C \rangle - \frac{1}{\xi} H(P),
 \end{align}
 kde $H(P)$ je entropie pravděpodobnostního rozdělení $P$, tedy 
 \begin{equation*}
     H(P) = - \sum_{i, j = 1}^q P_{i, j} \operatorname{log}(P_{i, j}).
 \end{equation*}
 Jedná se tedy o regularizovaný dopravní problém.
+Vliv parametru $\xi$ je potom následující:
+Máme-li $\xi$ dostatečně velké, je jeho převrácená hodnota blízká nule,
+a proto se řešení regularizovaného problému bude blížit Wassersteinově metrice.
 Tato úprava Wassersteinovy metriky je, jak se přesvědčíme, mnohem lépe vyčíslitelná.
 Nejdříve se ovšem podívejme na intuici za touto úpravou.
 
@@ -626,10 +698,10 @@ Potom lze definovat následující Sinkhornovu metriku:
 \begin{equation}
     W^\alpha (\mu, \nu) = \min_{P \in U_\alpha (\mu, \nu)} \langle P, M \rangle.
 \end{equation}
-Jaký je vztah mezi Sinkhornovou metrikou $W^\alpha$ a duální Sinkhornovou metrikou $W^\lambda$?
+Jaký je vztah mezi Sinkhornovou metrikou $W^\alpha$ a duální Sinkhornovou metrikou $W^\xi$?
 Přes téma duality matematického programování.
 Zatímco ve $W^\alpha$ figuruje parametr $\alpha$ v omezení definičního oboru, kde optimalizujeme,
-tak ve $W^\lambda$ figuruje parametr $\lambda$ jako Lagrangeův multiplikátor příslušné vazby.
+tak ve $W^\xi$ figuruje parametr $\xi$ jako Lagrangeův multiplikátor příslušné vazby.
 
 % Snadno lze nahlédnout na ekvivalentní definici $U_{\alpha} (\mu, \nu)$:
 % \begin{equation}
@@ -641,7 +713,7 @@ tak ve $W^\lambda$ figuruje parametr $\lambda$ jako Lagrangeův multiplikátor p
 %     \mathcal{L}(P, \lambda) = \langle P, M \rangle - \frac{1}{\lambda} ()
 % \end{equation}
 
-Článek \cite{wass_computation} poskytuje též nahlédnutí na fakt, že $W^\lambda$ a $W^\alpha$ jsou skutečně metriky.
+Článek \cite{wass_computation} poskytuje též nahlédnutí na fakt, že $W^\xi$ a $W^\alpha$ jsou skutečně metriky.
 
 Tento úkrok stranou pomocí entropické regularizace původního problému lineárního programování,
 jehož vyřešení je nutné pro výpočet Wassersteinovy vzdálenosti, poskytuje úlevu v oblasti časové složitosti pro výpočet.
@@ -650,34 +722,34 @@ jehož vyřešení je nutné pro výpočet Wassersteinovy vzdálenosti, poskytuj
 
 Konečný numerický algoritmus pro výpočet duální Sinkhornovy metriky potom vypadá následovně:
 Na vstupu algoritmus dostává pravděpodobnostní rozdělení $\mu$ a $\nu$, jejichž vzdálenost je hledaná,
-dále matici $C$ a regularizační parametr $\lambda$.
+dále matici $C$ a regularizační parametr $\xi$.
 \begin{enumerate}
-    \item $I = \mu > 0$ - tj. do proměnné $I$ uložme indexy, kde rozdělení $\mu$ je nenulové.
-    \item $\tilde{\mu} = \mu [I]$ - do proměnné $\tilde{\mu}$ uložíme právě nenulové prvky $\mu$.
-    \item $\tilde{C} = C [I, :]$ - do proměnné $\tilde{C}$ uložíme příslušné řádky matice cen.
-    \item $K = \operatorname{exp}(- \lambda * \tilde{C})$ - jako matici $K$ vezmeme matici,
-    která vznikne po prvcích jako exponenciála matice $- \lambda M$.
-    \item $u = \operatorname{ones}(\operatorname{len}(\tilde{\mu})) / \operatorname{len}(\tilde{\mu})$
-    - do proměnné $u$ uložíme rovnoměrné rozdělení délky $\tilde{\mu}$.
-    \item $\hat{K} = \operatorname{diag}(1 / \tilde{\mu}) @ K$
+    \item $\tilde{q} = \sum_{i=1}^q 1_{\mu_{i} \neq 0}$
+    \item $\tilde{\mu} \in \mathbb{R}^{\tilde{q}}, \tilde{\mu}_i = \mu_{j_i}$,
+    tj. do proměnné $\tilde{\mu}$ uložíme právě nenulové prvky $\mu$.
+    \item $\tilde{C} \in \mathbb{R}^{\tilde{q} \times q}, \tilde{C}_{i, j} = C_{i_k, j}$,
+    tj. do proměnné $\tilde{C}$ uložíme příslušné řádky matice cen.
+    \item $K = \operatorname{exp}(- \xi \tilde{C})$ - jako matici $K$ vezmeme matici,
+    která vznikne po prvcích jako exponenciála matice $- \xi M$.
+    \item $u = 1_{\tilde{q}} ./ \tilde{q}$,
+    tj. do proměnné $u$ uložíme rovnoměrné rozdělení délky $\tilde{q}$.
+    \item $\hat{K} = (1 ./ \tilde{\mu}) * K$
     \item Opakujme:
-    $u = 1 / (\hat{K} @ (\nu / (K^T @ u)))$ - dokud není dosaženo vhodné zastavovací kritérium.
-    \item $v = \nu / (K^T @ u)$.
-    \item $W^\lambda (\mu, \nu) = \operatorname{sum}(u * ((K * \tilde{C}) @ v))$.
+    $u = 1 ./ (\hat{K} (\nu ./ (K^T u)))$ - dokud není dosaženo vhodné zastavovací kritérium.
+    \item $v = \nu ./ (K^T u)$.
+    \item $W^\xi (\mu, \nu) = u ((K * \tilde{C}) v)$.
 \end{enumerate}
-Algoritmus byl napsán, aby syntakticky odpovídal programovacímu jazyku \emph{python}, který využívá knihoven jako je \emph{numpy}
-či \emph{PyTorch}.
+V algoritmu výše potom $./$, resp. $*$ znamená dělení, resp. násobení ve smyslu Hadamardově.
 
 \section{Structural dissimilarity}
 
-Nyní potřebujeme z indexu SSIM vykřesat metiku, resp. alespoň aby byla splněna podmínka, že když se dva obrázky blíží k sobě,
+Nyní potřebujeme z indexu SSIM získat metriku, resp. alespoň aby byla splněna podmínka, že když se dva obrázky blíží k sobě,
 tak jejich vzdálenost klesá.
 K tomu může dobře posloužit konstrukce \emph{DSSIM} (structural dissimilarity):
 \begin{equation}
     \operatorname{DSSIM}(x, \tilde{x}) = \frac{1 - \operatorname{SSIM}(x, \tilde{x})}{2}.
 \end{equation}
-Bohužel nezískáváme ryzí metriku, neboť není splněna trojúhelníková nerovnost.
-Máme ale vlastnost, že
+Máme vlastnost, že
 \begin{equation}
     \operatorname{DSSIM}(x, \tilde{x}) = 0 \iff x = \tilde{x},
 \end{equation}
@@ -687,30 +759,41 @@ která plyne z vlastnosti
 \end{equation}
 
 
-
+% Samotnou výslednou implementaci v podobě kódu v jazyce \emph{Python} lze nalézt v příloze v části týkající se souboru \emph{metrics.py}.
 
 \chapter{Adversariální vzorky a jejich tvorba}
 
 \section{Klasifikace v kontextu strojového učení}
 
-Mějme za úkol klasifikovat jakési vzorky do $m$ tříd.
+Pro účely definice adversariálních vzorků, které jsou pro tuto práci stěžejní, je potřeba uvést kontext,
+ve kterém o adversariálních vzorcích vůbec lze mluvit.
+Proto si vyberme jednu z klasických úloh strojového učení, to jest klasifikace.
+Jedná se o problém, kdy máme nějakou množinu vstupů neboli \emph{vzorků}
+a máme za úkol ke každému z nich přiřadit třídu, do které tento vzorek náleží.
+Vlastně máme za úkol rozdělit danou množinu na předem známý počet podmnožin, které názýváme třídy.
+
+Mějme tedy za úkol klasifikovat dané vzorky do $m$ tříd.
 Např. mějme za úkol na základě černobílého obrázku s číslicí říci, jaká že číslice je na daném obrázku vyobrazená.
 Máme-li dostatečný počet vzorků, o kterých víme, do jaké třídy náleží, můžeme využít různých metod strojového učení.
 Pro konkrétnost zvolme metodu neuronových sítí.
+
 To znamená, že vytvoříme zobrazení $F_\theta : X \rightarrow Y$, kde za $X$ bereme množinu všech možných vzorků,
 v případě klasifikace číslic na obrázku právě všechny možné obrázky příslušného rozměru.
+
 Dále za $Y$ berme množinu všech diskrétních pravděpodobnostních rozdělení na třídách,
-tedy v případě klasifikace číslic může být:
-\begin{equation*}
+tedy v případě klasifikace číslic to může být:
+\begin{equation} \label{Y}
     Y = \left\{ \, y \in \mathbb{R}^{10} \, | \, \forall i = 1, ..., 10: y_i \geq 0 \land \sum_{i=1}^{10} y_i = 1\right\}.
-\end{equation*}
-$F_\theta$ je potom daná neuronová síť parametrizovaná pomocí parametrů $\theta$.
+\end{equation}
+Pro úplnost, číslo $10$ v definici (\ref{Y}), protože máme deset číslic.
+
+$F_\theta$ je potom daný model parametrizovaný pomocí parametrů $\theta$, ku příkladu neuronová síť.
 Vhodné parametry $\theta$ se potom volí pomocí procesu \emph{učení}, což je řešení následujícího optimalizačního problému:
 \begin{equation} \label{nn_opt}
     \hat{\theta} = \operatornamewithlimits{argmin}_{\theta} J(\theta),
 \end{equation}
-kde $J$ je funkce na parametrech určující, jak moc je neuronová síť špatná má-li dané parametry $\theta$.
-Za funkci $J$ se standardně volí agregace typu průměr či součet dílčí ztrátové funkce $L$, která určuje,
+kde $J$ je funkce na parametrech určující, jak moc se neuronová síť má-li dané parametry $\theta$ mýlí.
+Za funkci $J$ se standardně volí agregace typu průměr dílčí ztrátové funkce $L$, která určuje,
 jak moc se neuronová síť mýlí na konkrétním vzorku.
 K tomu je tedy potřeba mít trénovací datovou sadu sestávající z dostatečného počtu vzorků se správnými odpověďmi, tedy značkami.
 Budiž trénovací datová sada označena $\mathbb{T} = \left(\mathbb{X}, \mathbb{Y}\right)$,
@@ -729,21 +812,24 @@ Procesu učení se zde nemusíme věnovat. Jedná se o řešení optimalizační
 
 Poslední objekt, který si zde v úvodní sekci kapitoly zadefinujeme, je samotná klasifikace.
 Jedná se o funkci $C: Y \rightarrow \{1, 2, ..., m\}$ definovanou přepisem:
-\begin{equation}
+\begin{equation} \label{classification}
     C(y) = \operatornamewithlimits{argmax}_{i \in \{1, ..., m\}} y_i.
 \end{equation}
+Definici v (\ref{classification}) lze interpretovat tak, že na základě celého pravděpodobnostního rozdělení $y \in Y$
+volíme za třídu, kterou $y$ reprezentuje, tu s největší pravděpodobnostní.
 
 \section{Adversariální vzorky}
 
 Jsme-li vybaveni metrikou $\rho$ na prostoru vzorků $X$,
 lze přistoupit k uvedení konceptu adversariálních vzorků.
 Nejprve však definujme vzorek \emph{benigní}.
-Jedná se o takový vzorek $x \in X$, že $C(F_\theta(x)) = C(y)$, kde $y$ je pravdivá třída vzorku $x$.
+Jedná se o takový vzorek $x \in X$, že $C(F_\theta(x)) = C(y)$, kde $y$ je pravděpodobnostní distribuce
+na třídách reprezentující třídu vzorku $x$.
 Máme-li takový benigní vzorek $x$, pak \emph{adversariální vzorek} k němu, je takový vzorek $\tilde{x}$,
 že vzorek $\tilde{x}$ je podobný benignímu vzorku $x$, ale je špatně klasifikovaný.
 Podobnost lze matematicky vyjádřit způsobem,
 že vzdálenost $\tilde{x}$ od $x$ je malá ve smyslu:
-$\rho(x, \tilde{x}) < \kappa$, kde $\kappa$ je pevně zvolený číselný práh,
+$\rho(x, \tilde{x}) \leq \kappa$, kde $\kappa$ je pevně zvolený číselný práh,
 neboli poloměr kulového okolí, ve kterém adversariální vzorek hledáme.
 Špatnou klasifikaci lze pak vyjádřit: $C(F_\theta (\tilde{x})) \neq C(F_\theta (x))$.
 Je-li sám vzorek $x$ špatně klasifikovaný, pak je sám vlastně adversariálním vzorkem.
@@ -793,19 +879,7 @@ Myšlenka je potom následující: Chtějme najít adversariální vzorek co nej
 Potom v optimalizačním problému (\ref{adv_opt}) nebo (\ref{adv_cw}) potřebujeme,
 aby byl kladen větší důraz na první člen $\rho(x, \hat{x})$, tedy aby $\lambda$ bylo co nejmenší.
 Zárověň ale potřebujeme, aby výsledek byl nesprávně klasifikován.
-Proto optimální hodnota parametru $\lambda$, označme ji jako $\lambda^*$, můžeme v případě CW útoku získat řešením
-\begin{align}
-    \lambda^* &= \operatornamewithlimits{argmin}_\lambda \rho(x, \tilde{x}^\lambda), \\
-    &C(F_\theta (\tilde{x}^\lambda)) \neq C(y),
-\end{align}
-kde
-\begin{equation}
-    \tilde{x}^\lambda = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
-\end{equation}
-Z intuice lze na $\rho(x, \tilde{x}^\lambda)$ nahlédnout jako na monotónní funkci v proměnné $\lambda$.
-Proto na hledání $\lambda$ lze užít metodu půlení intervalů.
 
-\chapter{Výsledky tvorby adversariálních vzorků}
 
 \section{Detaily implementace adversariálního útoku}
 
@@ -831,9 +905,11 @@ na základě realizace náhodné veličiny s rovnoměrným rozdělením $U(0,3;0
 Jak ale uvídíme z výsledků později, pro jednu z metrik je tato inicializace zcela nevyhovující,
 proto došlo i k implementaci speciální inicializace, kde byl za počáteční bod gradientního sestupu
 pro daný benigní vzorek $x$ vzat právě tento vzorek $x$.
-Na samotnou implementaci CW útoku lze nahlédnout v Listing \ref{cw_code}.
+% Na samotnou implementaci CW útoku lze nahlédnout v Listing \ref{cw_code}.
 
-\lstinputlisting[label=cw_code, language=Python, caption=adversarials.py, firstline=6]{../../code/adversarials.py}
+% \lstinputlisting[label=cw_code, language=Python, caption=adversarials.py, firstline=6]{../../code/adversarials.py}
+
+\chapter{Výsledky tvorby adversariálních vzorků}
 
 \section{Srovnání útoků pro různé metiky}
 
@@ -842,8 +918,7 @@ Pro vybranou metriku vizuální podobnosti a pevně zvolené $\lambda$, které s
 tj. prochází hodnoty $\lambda \in \left\{10^{-3}, 10^{-2}, 10^{-1}, 1, 10, 10^2, 10^3\right\}$,
 spustit generování adversariálních vzorků pro $20$ benigních vzorků
 z datové sady MNIST a zjistit pro danou metriku a dané $\lambda$ průměrnou úspěšnost útoku,
-dále ale i průměrnou vizuální podobnost (v té samé metrice, která byla použita v optimalizačním problému)
-vygenerovaných vzorků a následně jednotně pro všechny metriky průměrnou $l_2$ vzdálenost vygenerovaných vzorků
+dále ale i pro všechny metriky průměrnou $l_2$ vzdálenost vygenerovaných vzorků
 od původních benigních.
 
 Tento experiment vyžaduje, aby implementace dané metriky byla automaticky derivovatelná nástroji,
@@ -852,105 +927,57 @@ To bohužel nesplňuje Wassersteinova vzdálenost, resp. její modifikace duáln
 a to z důvodu jejího iterativního charakteru.
 Proto byla tato metrika vynechána z následujícího experimentu.
 
-V Tabulce (\ref{cw_table}), která se v textu nachází níže, jsou již uvedeny čísla reprezentující výše představené sledované údaje.
+V Tabulce \ref{cw_success_table} jsou již uvedena čísla reprezentující výše představenou úspěšnost útoku.
+V Tabulce \ref{cw_l_2_table} jsou potom hodnoty odpovídající průměrům $l_2$ vzdáleností získaných v experimentu.
 Jelikož metrika vizuální podobnosti DSSIM je založena na indexu SSIM, který je počítán postupně v podoknech
-a následně agregován, je u této metriky uvedena i velikost tohoto podokna.
+a následně agregován, je u názvu této metriky uvedena i velikost tohoto podokna.
 
-\begin{longtable}[c]{|c|c|c|c|c|}
-    \caption{Výsledky CW útoku na konvoluční neuronovou síť\label{cw_table}}\\
+\begin{table}
+    \centering
+    \begin{tabular}{|c||c c c c c c c|}
+        \hline
+        \multirow{2}{7em}{Metrika} & \multicolumn{7}{c|}{Hodnota parametru $\lambda$} \\
+        & $10^{-3}$ & $10^{-2}$ & $10^{-1}$ & $1$ & $10$ & $10^{2}$ & $10^{3}$ \\ \hline \hline
+        DSSIM 5 & 35 \% & 80 \% & 100 \% & 95 \% & 100 \% & 100 \% & 100 \% \\ \hline
+        DSSIM 13 & 0 \% & 55 \% & 80 \% & 90 \% & 100 \% & 100 \% & 100 \% \\ \hline
+        DSSIM 21 & 0 \% & 65 \% & 85 \% & 90 \% & 100 \% & 100 \% & 100 \% \\ \hline
+        DSSIM 28 & 0 \% & 75 \% & 90 \% & 100 \% & 100 \% & 100 \% & 100 \% \\ \hline
+        $l_1$ & 0 \% & 0 \% & 0 \% & 0 \% & 75 \% & 85 \% & 100 \% \\ \hline
+        $l_2$ & 0 \% & 0 \% & 0 \% & 75 \% & 95 \% & 100 \% & 100 \% \\ \hline
+        $l_\infty$ & 100 \% & 100 \% & 100 \% & 100 \% & 100 \% & 100 \% & 100 \% \\ \hline
+        $l_\infty$ specialní & 100 \% & 100 \% & 100 \% & 100 \% & 100 \% & 100 \% & 100 \% \\ \hline
+        NPSR & 0 \% & 0 \% & 0 \% & 0 \% & 0 \% & 5 \% & 15 \% \\ \hline
+    \end{tabular}
+    \caption{Úspěšnost CW útoku v závislosti na zvolené metrice a hodnotě parametru $\lambda$} \label{cw_success_table}
+\end{table}
 
-    \hline
-    \multicolumn{5}{| c |}{\textbf{Začátek tabulky}}\\
-    \hline
-    \textbf{Metrika} & \textbf{Parametr} $\lambda$ & \textbf{Úspěšnost útoku} & \textbf{Prům. vzdálenost} & \textbf{Prům. $l_2$ vzdálenost} \\ \hline
-    \endfirsthead
-    
-
-
-    \hline
-    \multicolumn{5}{| c |}{\textbf{Konec tabulky}}\\
-    \hline
-    \endlastfoot
-
-    \hline
-        \multirow{7}{7em}{DSSIM 5} & 1e-03 & 0.35 & 0.1700 & 3.5686 \\ 
-        & 1e-02 & 0.80 & 0.2061 & 8.7937 \\ 
-        & 1e-01 & 1.00 & 0.2243 & 10.8962 \\ 
-        & 1e+00 & 0.95 & 0.2282 & 11.2006 \\ 
-        & 1e+01 & 1.00 & 0.2359 & 12.1091 \\ 
-        & 1e+02 & 1.00 & 0.2397 & 11.8446 \\ 
-        & 1e+03 & 1.00 & 0.2443 & 11.3087 \\  \hline
-        \multirow{7}{7em}{DSSIM 13} & 1e-03 & 0.00 & 0.0032 & 0.5658 \\ 
-        & 1e-02 & 0.55 & 0.0091 & 1.2746 \\
-        & 1e-01 & 0.80 & 0.0218 & 2.0332 \\
-        & 1e+00 & 0.90 & 0.0325 & 2.6771 \\
-        & 1e+01 & 1.00 & 0.0387 & 3.0795 \\
-        & 1e+02 & 1.00 & 0.0439 & 3.3408 \\
-        & 1e+03 & 1.00 & 0.0514 & 3.6996 \\ \hline
-        \multirow{7}{7em}{DSSIM 21} & 1e-03 & 0.00 & 0.0002 & 0.2379 \\ 
-        & 1e-02 & 0.65 & 0.0068 & 1.1227 \\
-        & 1e-01 & 0.85 & 0.0179 & 1.9304 \\
-        & 1e+00 & 0.90 & 0.0245 & 2.3356 \\
-        & 1e+01 & 1.00 & 0.0319 & 2.8478 \\
-        & 1e+02 & 1.00 & 0.0351 & 3.0299 \\
-        & 1e+03 & 1.00 & 0.0402 & 3.2757 \\ \hline
-        \multirow{7}{7em}{DSSIM 28} & 1e-03 & 0.00 & 0.0010 & 0.3576 \\ 
-        & 1e-02 & 0.75 & 0.0088 & 1.4044 \\
-        & 1e-01 & 0.90 & 0.0157 & 1.9415 \\
-        & 1e+00 & 1.00 & 0.0229 & 2.4947 \\
-        & 1e+01 & 1.00 & 0.0272 & 2.7499 \\
-        & 1e+02 & 1.00 & 0.0314 & 2.9653 \\
-        & 1e+03 & 1.00 & 0.0351 & 3.1641 \\ \hline
-        
-        \multirow{7}{7em}{$l_1$} & 1e-03 & 0.00 & 3.9127 & 0.1612 \\
-        & 1e-02 & 0.00 & 3.9545 & 0.1625 \\ 
-        & 1e-01 & 0.00 & 3.9264 & 0.1619 \\ 
-        & 1e+00 & 0.00 & 3.9351 & 0.1623 \\ 
-        & 1e+01 & 0.75 & 15.6376 & 1.9642 \\ 
-        & 1e+02 & 0.85 & 20.6205 & 2.3534 \\ 
-        & 1e+03 & 1.00 & 27.6782 & 3.1174 \\  \hline
-        \multirow{7}{7em}{$l_2$} & 1e-03 & 0.00 & 0.1615 & 0.1615 \\
-         & 1e-02 & 0.00 & 0.1613 & 0.1613 \\
-         & 1e-01 & 0.00 & 0.1611 & 0.1611 \\
-         & 1e+00 & 0.75 & 1.5334 & 1.5334 \\
-         & 1e+01 & 0.95 & 2.1603 & 2.1603 \\
-         & 1e+02 & 1.00 & 2.4959 & 2.4959 \\
-         & 1e+03 & 1.00 & 2.6871 & 2.6871 \\ \hline
-         \multirow{7}{7em}{$l_\infty$} & 1e-03 & 1.00 & 1.1404 & 15.6282 \\
-         & 1e-02 & 1.00 & 1.1585 & 15.6439 \\ 
-         & 1e-01 & 1.00 & 1.1527 & 15.6620 \\ 
-         & 1e+00 & 1.00 & 1.1629 & 15.5520 \\ 
-         & 1e+01 & 1.00 & 1.1511 & 15.7462 \\ 
-         & 1e+02 & 1.00 & 1.1573 & 15.6811 \\ 
-         & 1e+03 & 1.00 & 1.1606 & 15.5801 \\  \hline
-         \multirow{7}{7em}{$l_\infty$ specialní} & 1e-03 & 1.00 & 0.7640 & 9.3911 \\
-         & 1e-02 & 1.00 & 0.7600 & 9.3717 \\ 
-         & 1e-01 & 1.00 & 0.7650 & 9.4483 \\ 
-         & 1e+00 & 1.00 & 0.7680 & 9.3663 \\ 
-         & 1e+01 & 1.00 & 0.7620 & 9.3416 \\ 
-         & 1e+02 & 1.00 & 0.7690 & 9.4340 \\ 
-         & 1e+03 & 1.00 & 0.7590 & 9.4688 \\  \hline
-         \multirow{7}{7em}{NPSR} & 1e-03 & 0.00 & $-\infty$ & 0.0000 \\
-         & 1e-02 & 0.00 & $-\infty$ & 0.0000 \\ 
-        & 1e-01 & 0.00 & $-\infty$ & 0.0000 \\ 
-        & 1e+00 & 0.00 & $-\infty$ & 0.0000 \\ 
-        & 1e+01 & 0.00 & $-\infty$ & 0.0052 \\ 
-        & 1e+02 & 0.05 & $-\infty$ & 0.0437 \\ 
-        & 1e+03 & 0.15 & $-\infty$ & 0.1282 \\ \hline
-        % & 1e+04 & 0.15 & $-\infty$ & 0.1666 \\ 
-        % & 1e+05 & 0.20 & $-\infty$ & 0.2699 \\ \hline
-
-    
-\end{longtable}
+\begin{table}
+    \centering
+    \begin{tabular}{|c||c c c c c c c|}
+        \hline
+        \multirow{2}{7em}{Metrika} & \multicolumn{7}{c|}{Hodnota parametru $\lambda$} \\
+        & $10^{-3}$ & $10^{-2}$ & $10^{-1}$ & $1$ & $10$ & $10^{2}$ & $10^{3}$ \\ \hline \hline
+        DSSIM 5 & 3.5686 & 8.7937 & 10.8962 & 11.2006 & 12.1091 & 11.8446 & 11.3087 \\ \hline
+        DSSIM 13 & 0.5658 & 1.2746 & 2.0332 & 2.6771 & 3.0795 & 3.3408 & 3.6996 \\ \hline
+        DSSIM 21 & 0.2379 & 1.1227 & 1.9304 & 2.3356 & 2.8478 & 3.0299 & 3.2757 \\ \hline
+        DSSIM 28 & 0.3576 & 1.4044 & 1.9415 & 2.4947 & 2.7499 & 2.9653 & 3.1641 \\ \hline
+        $l_1$ & 0.1612 & 0.1625 & 0.1619 & 0.1623 & 1.9642 & 2.3534 & 3.1174 \\ \hline
+        $l_2$ & 0.1615 & 0.1613 & 0.1611 & 1.5334 & 2.1603 & 2.4959 & 2.6871 \\ \hline
+        $l_\infty$ & 15.6282 & 15.6439 & 15.6620 & 15.5520 & 15.7462 & 15.6811 & 15.5801 \\ \hline
+        $l_\infty$ specialní & 9.3911 & 9.3717 & 9.4483 & 9.3663 & 9.3416 & 9.4340 & 9.4688 \\ \hline
+        NPSR & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0052 & 0.0437 & 0.1282 \\ \hline
+    \end{tabular}
+    \caption{Průměrná $l_2$ vzdálenost vzorku z CW útoku v závislosti na zvolené metrice a hodnotě parametru $\lambda$} \label{cw_l_2_table}
+\end{table}
 
 Ohledně počtu generovaných vzorků v experimentu lze poznamenat,
 že kvůli výpočetní náročnosti DSSIM na dostupných výpočetních zařízeních nebylo možné toto číslo navýšit.
 
-Na Obrázku (\ref{adv_pic}) lze spatřit adversariální vzorek vygenerovaný $l_2$ útokem s hodnotou parametru $\lambda = 10$.
+Na Obrázku \ref{adv_pic} lze spatřit adversariální vzorek vygenerovaný $l_2$ útokem s hodnotou parametru $\lambda = 10$.
 Jeho $l_2$ vzdálenost od původního vzorku je potom $1,75$.
 Toto je typický zástupce adversariálních vzorků: V obrázku jsou jakési artefakty,
 které pro lidské oko nepředstavují zatemnění informace, že se jedná o obrázek devítky.
-Klasifikátor v podobě naší neuronové sítě ovšem tyto artefakty interpretovall jinak,
+Klasifikátor v podobě naší neuronové sítě ovšem tyto artefakty interpretoval jinak,
 a to tak, že obrázek špatně klasifikoval.
 
 \begin{figure}[h]
@@ -960,17 +987,17 @@ a to tak, že obrázek špatně klasifikoval.
 \end{figure}
 
 Celkově lze z tabulky vyčíst, že například metrika vizuální podobnosti NPSR,
-tedy logaritmická transformace přeškálované metriky $l_2$, je naprosto nevhodná pro tvorbu adversariálních vzorků
+tedy logaritmická transformace přeškálované metriky $l_2$, je naprosto nevhodná pro tvorbu adversariálních vzorků.
 Toto je na první pohled způsobeno charakterem derivace logaritmu,
 jelikož tato derivace je pro argument klesající k nule až neomezená
 a v gradientních metodách optimalizace po čase vždy převáží při optimalizaci účelové funkce derivaci druhého členu v (\ref{adv_cw}).
 
-Z tabulky jako král úspěšnosti vychází útok prováděný s metrikou $l_\infty$.
-To je ovšem za cenu velikého znečištění obrázku, jak vidíme v Obrázku ()
+Z tabulky jako nejúspěšnější útok vychází útok prováděný s metrikou $l_\infty$.
+To je ovšem za cenu velikého znečištění obrázku, jak vidíme v Obrázku (\ref{linf_pic})
 a jak lze odvodit z průměrné $l_2$ vzdálenosti vygenerovaného vzorku od původního benigního,
 která je až řádově větší než v případě např. $l_2$ útoku s $\lambda = 10^3$, jenž má mimochodem
 též úspěšnost $100 \%$.
-Na Obrázku (\ref{linf_pic}) lze spatřit vlevo vzorek vygenerovaný $l_\infty$ útokem s normální inicializací
+Na Obrázku \ref{linf_pic} lze spatřit vlevo vzorek vygenerovaný $l_\infty$ útokem s normální inicializací
 a vpravo vzorek vygenerovaný $l_\infty$ útokem se speciální inicializací.
 Oba vzorky jsou značně poškozené, tedy mají velkou vzdálenost od půvoního benigního vzorku.
 To je dáno faktem, že při optimalizaci v CW útoku člen $\rho(x, \hat{x})$ záleží vlastně na jediné pixelu,
@@ -984,7 +1011,7 @@ Lze vlastně říci, že skoro pro všechny indexy $i$ (výjimkou je vždy jeden
 platí $\partial_{\hat{x}_i} \rho(x, \hat{x}) = 0$.
 Proto se při znaménkovém gradientním sestupu výsledek k původnímu vzorku prakticky vůbec nepřipližuje.
 
-\begin{figure}[b]
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.2\textwidth]{Images/linf_n.png}
     \includegraphics[width=0.2\textwidth]{Images/linf_s.png}
@@ -993,7 +1020,7 @@ Proto se při znaménkovém gradientním sestupu výsledek k původnímu vzorku 
 
 Další komentář se bude věnovat obdobnnému problému, který vyvstal pro DSSIM útok
 s parametrem velikosti výpočetního podokna $5$.
-Podle Obrázku (\ref{dssim_pic})
+Podle Obrázku \ref{dssim_pic}
 je okolí číslice silně znečištěno artefakty.
 Kupodivu samotná číslice a její bezprostřední okolí je relativně nedotknuté.
 Tento fenomén se vyskytl hlavně u volby velikosti výpočetního podokna $5$.
@@ -1004,7 +1031,7 @@ a to kvůli členu $\sigma_{x \tilde{x}}$ v čitateli.
 Není úplně nula díky konstantě $C_2$, která zde vystupuje kvůli dělení.
 Ta je ovšem dostatečně malá, aby byla převážena druhým členem gradientu.
 
-\begin{figure}[b]
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.2\textwidth]{Images/dssim.png}
     \caption{Příklad vzorku vygenerovaného DSSIM útokem} \label{dssim_pic}
@@ -1141,6 +1168,10 @@ Thirty-fifth Conference on Neural Information Processing Systems Datasets and Be
 \emph{Markov processes over denumerable products of spaces, describing large systems of automata}.
 Problemy Peredači Informacii 5, 1969.
 
+\bibitem{ssim}Z. Wang, A. C. Bovik, H. R. Sheikh:
+\emph{Image Quality Assessment: From Error Visibility to Structural Similarity}.
+IEEE Transactions on Image Processing, ročník 13, č. 4, April 2004: s. 600–612.
+
 \bibitem{wass_computation} M. Cuturi,
 \emph{Sinkhorn Distances: Lightspeed Computation of Optimal Transport}.
 Advances in Neural Information Processing Systems 26, 2013.
@@ -1185,9 +1216,9 @@ ECCV, 2020.
 
 \end{thebibliography}
 
-\chapter*{Příloha}
-\addcontentsline{toc}{chapter}{Příloha}
+% \chapter*{Příloha}
+% \addcontentsline{toc}{chapter}{Příloha}
 
-\lstinputlisting[language=Python, title=metrics.py]{../../code/metrics.py}
+% \lstinputlisting[language=Python, title=metrics.py]{../../code/metrics.py}
 
 \end{document}
