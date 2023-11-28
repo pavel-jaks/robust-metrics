@@ -71,7 +71,8 @@ def test(verbose=False):
         K1=1e-2,
         K2=3e-2
     )
-    ssim_my = metrics.StructuralSimilarityIndexMeasure(window_size=7, l=1)(image.unsqueeze(0), noised_image.unsqueeze(0))
+    ssim_ref = (1 - ssim_ref) / 2
+    ssim_my = metrics.StructuralDissimilarity(window_size=7, l=1)(image.unsqueeze(0), noised_image.unsqueeze(0))
     assert abs(ssim_ref - ssim_my) < 1e-5
     if verbose:
         print(f'SSIM:{ssim_ref};MySSIM:{ssim_my}')

@@ -344,7 +344,7 @@ class WassersteinApproximation(Metric):
     Implemantation of dual-Sinkhorn divergence
     """
 
-    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 5, iterations: int = 250, verbose: bool = False):
+    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 5, iterations: int = 250, division_const:float = 1e-8, verbose: bool = False, debug: bool = False):
         """
         Constructor
 
@@ -356,6 +356,8 @@ class WassersteinApproximation(Metric):
         self.regularization = regularization
         self.iterations = iterations
         self.verbose = verbose
+        self.debug = debug
+        self.division_const = division_const
 
     def compute(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
         if self.verbose:
@@ -413,22 +415,36 @@ class WassersteinApproximation(Metric):
 
         # u_vector_prev = torch.ones(x_non_zero_dim) / x_non_zero_dim
         u_vector = torch.ones(x_non_zero_dim) / x_non_zero_dim
-        K_matrix = (- self.regularization * cost_matrix[indices, :]).exp()
+        K_matrix = (- self.regularization * cost_matrix[indices, :]).exp() + self.division_const # * torch.exp(torch.tensor([1]))
         K_tilde_matrices = torch.diag(1 / x_non_zero) @ K_matrix
+
+        if self.debug:
+            print(f"u_vector: min={torch.min(u_vector)}, mean={torch.mean(u_vector)}, max={torch.max(u_vector)}")
+            print(f"K_matrix: min={torch.min(K_matrix)}, mean={torch.mean(K_matrix)}, max={torch.max(K_matrix)}")
+            print(f"K_tilde: min={torch.min(K_tilde_matrices)}, mean={torch.mean(K_tilde_matrices)}, max={torch.max(K_tilde_matrices)}")
 
         if self.verbose:
             print('-STARTING ITERATIONS')
 
         if not retain_all_iterations:
             for _ in range(self.iterations):
+                if self.debug:
+                    print(K_matrix.transpose(0, 1))
+                    print(K_matrix.transpose(0, 1) @ u_vector)
+                    print(y / (K_matrix.transpose(0, 1) @ u_vector))
+                    print(K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector + self.division_const)))
+                    print(1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector))))
                 u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+                if self.debug:
+                    print(f"u_vector: min={torch.min(u_vector)}, mean={torch.mean(u_vector)}, max={torch.max(u_vector)}")
             v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
+            
             dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
             return dist.sum()
         else:
             dists = []
             for _ in range(self.iterations):
-                u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+                u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector + self.division_const)))
                 v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
                 dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
                 dists.append(dist.sum())
