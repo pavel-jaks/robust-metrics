@@ -1,6 +1,8 @@
+from enum import Enum
 from typing import Union
 from abc import abstractmethod
 import itertools
+from math import sqrt
 
 import torch
 import torch.nn as nn
@@ -339,12 +341,27 @@ class StructuralDissimilarity(Metric):
         return (1 - out.mean(dim=(0, 2))) / 2
     
 
+class CostMatrixType(Enum):
+    L1 = 0
+    L2 = 1
+    HALF_L2_SQUARED = 2
+
+
 class WassersteinApproximation(Metric):
     """
     Implemantation of dual-Sinkhorn divergence
     """
 
-    def __init__(self, transform:Union[Transform, None] = None, regularization: float = 5, iterations: int = 250, division_const:float = 1e-8, verbose: bool = False, debug: bool = False):
+    def __init__(
+            self,
+            transform:Union[Transform, None] = None,
+            regularization: float = 5,
+            iterations: int = 250,
+            division_const: float = 1e-8,
+            cost_matrix_type: CostMatrixType = CostMatrixType.L1,
+            verbose: bool = False,
+            debug: bool = False
+        ):
         """
         Constructor
 
@@ -355,9 +372,10 @@ class WassersteinApproximation(Metric):
         super().__init__(transform)
         self.regularization = regularization
         self.iterations = iterations
+        self.division_const = division_const
+        self.cost_matrix_type = cost_matrix_type
         self.verbose = verbose
         self.debug = debug
-        self.division_const = division_const
 
     def compute(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
         if self.verbose:
@@ -384,17 +402,37 @@ class WassersteinApproximation(Metric):
         # Normalization -> into probability distribution
         x_norm, y_norm = (x / x.sum(dim=(2, 3), keepdim=True)).reshape(batch, width * height), \
             (y / y.sum(dim=(2, 3), keepdim=True)).reshape(batch, width * height)
-
-        cost_matrix = torch.tensor(
-            [
+        cost_matrix = None
+        if self.cost_matrix_type == CostMatrixType.L1:
+            cost_matrix = torch.tensor(
                 [
-                    abs(i // width - j // width) + abs(i % width - j % width) 
-                    for j in range(width * height)
+                    [
+                        abs(i // width - j // width) + abs(i % width - j % width) 
+                        for j in range(width * height)
+                    ]
+                    for i in range(width * height)
                 ]
-                for i in range(width * height)
-            ]
-        )
-        # cost_matrix = cost_matrix / cost_matrix.sum()
+            )
+        elif self.cost_matrix_type == CostMatrixType.L2:
+            cost_matrix = torch.tensor(
+                [
+                    [
+                        sqrt(abs(i // width - j // width) ** 2 + abs(i % width - j % width) ** 2) 
+                        for j in range(width * height)
+                    ]
+                    for i in range(width * height)
+                ]
+            )
+        else:
+            cost_matrix = torch.tensor(
+                [
+                    [
+                        (1 / 2) * (abs(i // width - j // width) ** 2 + abs(i % width - j % width) ** 2) 
+                        for j in range(width * height)
+                    ]
+                    for i in range(width * height)
+                ]
+            )
 
         dists = torch.zeros(batch)
 
