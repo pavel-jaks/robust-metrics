@@ -105,7 +105,7 @@ def transform_image_for_geomloss(x: torch.Tensor) -> torch.Tensor:
         for j in range(height):
             for k in range(int(pixels[i, j])):
                 cloud.append([i , j])
-    return torch.tensor(cloud)
+    return torch.tensor(cloud, dtype=torch.float32)
 
 
 def dual_sinkhorn(x: torch.Tensor, y: torch.Tensor, regularization: float) -> float:
