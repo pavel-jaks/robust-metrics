@@ -172,4 +172,5 @@ def test(verbose=False) -> None:
     if verbose:
         print(f'Wasserstein:{wasserstein_ref};MyWasserstein:{wasserstein_my}')
 
-test(True)
+if __name__ == '__main__':
+    test(True)
