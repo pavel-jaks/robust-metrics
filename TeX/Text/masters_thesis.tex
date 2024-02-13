@@ -640,14 +640,14 @@ Podíváme-li se do definice (\ref{wass_def}), znamená to vyřešit optimaliza�
 Byť bychom se omezili hledání vzdáleností dvou vektorů o~rozměru $q$,
 měli bychom problém s časovou složitostí nejlépe $\mathcal{O}(q^3 \operatorname{log} q)$ \cite{wass_computation}.
 Bohužel takovou výpočetní kapacitou, která by toto zvládla rychle pro námi používané obrázky nemáme k dispozici.
-Proto se podívejme, jak Wassersteinovu vzdálenost spočíst rychleji, byť za ztráty přesnosti.
+Proto se podívejme, jak Wassersteinovu vzdálenost spočíst rychleji, byť za cenu ztráty přesnosti.
 
-Omezme se na prostory konečné dimenze. Potom mějme za úkol spočíst Wassersteinovu  (zvolme $p = 1$)
-vzdálenost vektorů s nezápornými prvky
-$\mu, \nu \in \mathbb{R}^q, \mu ^ T 1_q = \nu ^ T 1_q = 1$, kde $1_q$ je vektor rozměru $q$ složen pouze z jedniček.
-Potom $\mu, \nu$ lze chápat jako diskrétní pravděpodobnostní rozdělení.
+V následujících odstavcích textu uvažujme, že chceme spočítat vzdálenost mezi diskrétními rozděleními,
+jejichž pravděpodobnostními vektory jsou $\mu \in \mathbb{R}^q$ a $\nu \in \mathbb{R}^q$, kde $q \in \mathbb{N}$.
+Dále označme $1_q$ vektor, jehož hodnoty v každé souřadnici jsou rovny $1$ a má dimenzi udanou v indexu.
+Platí tedy $\mu^T 1_q = \nu^T 1_q = 1$ a $\forall i \; \nu_i \geq 0$ a $\forall j \; \nu_j \geq 0$.
 Označme jako $U(\mu, \nu)$ množinu všech matic $P \in \mathbb{R}^{q \times q}, P_{i,j} \geq 0$
-takových, že $P 1_q = \mu$ a $P^T 1_q = \nu$.
+takových, že $P 1_q = \nu$ a $P^T 1_q = \mu$.
 Jako matici $C$ označme zadanou matici cen, která splňuje, že reprezentuje metriku.
 To znamená, že $C_{i, j} \geq 0$, $C_{i, j} = 0 \iff i = j$, $C_{i, j} = C_{j, i}$ a $C_{i, k} \leq C_{i, j} + C_{j, k}$.
 Tedy prvek matice $C_{i, j}$ určuje metrickou vzdálenost mezi prvkem $i$ a prvkem $j$.
@@ -660,16 +660,53 @@ Toto je důsledkem volby $p = 1$.
 To že infimum v definici (\ref{wass_def}) přechází v maimum je dáno tím,
 že $U(\mu, \nu)$ je kompaktní podmnožina $\mathbb{R}^{q \times q}$.
 
-Přejděme nyní od Wassersteinovy metriky k tzv. duální Sinkhornově metrice.
+
+\subsection{Sinkhornova metrika}
+
+Začněme s mírnou úpravou původního optimalizačního problému definujícího Wassersteinovu vzdálenost:
+Pro $\alpha > 0$ definujme jakési $\alpha$ okolí rozdělení $\mu \nu^T$
+(sdružené pravděpodobnostní rozdělení s marginálními $\mu$ a $\nu$, ve kterém $\mu$ a $\nu$ jsou nezávislá rozdělení) ve smyslu
+\emph{Kullback-Leiblerovy divergence}
+\begin{equation}
+    U_{\alpha} (\mu, \nu) = \{P \in U(\mu, \nu) | KL(P \| \mu \nu^T) \leq \alpha\}.
+\end{equation}
+Připomeňme definici Kullback-Leiblerovy divergence:
+\begin{equation*}
+    KL(\tilde{P} \| \hat{P}) = \sum_{i = 1}^q \sum_{j = 1}^q \tilde{P}_{i, j} \operatorname{log} \frac{\tilde{P}_{i, j}}{ \hat{P}_{i, j}}.
+\end{equation*}
+Pro dané $P \in U(\mu, \nu)$ lze na kvantitu $KL(P \| \mu \nu^T)$ nahlédnout jako na informaci mezi veličinami s rozděleními $\mu$ a $\nu$.
+Tedy $U_\alpha (\mu, \nu)$ vybírá ta rozdělení, která nesou malou vzájemnou informaci mezi $\mu$ a $\nu$ (ve smyslu menší než $\alpha$).
+Potom lze definovat Sinkhornovu metriku:
+\begin{equation}
+    W^\alpha (\mu, \nu) = \min_{P \in U_\alpha (\mu, \nu)} \langle P, C \rangle.
+\end{equation}
+Dále na výraz $KL(P \| \mu \nu^T)$ lze nahlédnout následovně:
+\begin{align*}
+    KL(P \| \mu \nu^T) &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \frac{P_{i, j}}{ \mu_i \nu_j}, \\
+    &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} P_{i, j} -  \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \mu_i - \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \nu_j, \\
+    &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} P_{i, j} -  \sum_{i = 1}^q \mu_i \operatorname{log} \mu_i - \sum_{j = 1}^q \nu_j \operatorname{log} \nu_j, \\
+    &= - H(P) + H(\mu) + H(\nu),
+\end{align*}
+kde $H$ značí entropii.
+Odtud můžeme vidět, že podmínka $KL(P \| \mu \nu^T) \leq \alpha$ znamená, že požadujeme po sdruženém rozdělení $P$,
+aby mělo velkou entropii.
+
+
+\subsection{Duální Sinkhornova metrika}
+
+% Omezme se na prostory konečné dimenze. Potom mějme za úkol spočíst Wassersteinovu  (zvolme $p = 1$)
+% vzdálenost vektorů s nezápornými prvky
+% $\mu, \nu \in \mathbb{R}^q, \mu ^ T 1_q = \nu ^ T 1_q = 1$, kde $1_q$ je vektor rozměru $q$ složen pouze z jedniček.
+% Potom $\mu, \nu$ lze chápat jako diskrétní pravděpodobnostní rozdělení.
+
+
+Přejděme nyní od Sinkhornovy metriky k tzv. duální Sinkhornově metrice.
 Ta je pro pevně zvolené $\xi > 0$ definována následovně:
 \begin{align}
     W^\xi (\mu, \nu) &= \langle P^\xi, C \rangle, \\
     kde \; P^\xi &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \langle P, C \rangle - \frac{1}{\xi} H(P),
 \end{align}
-kde $H(P)$ je entropie pravděpodobnostního rozdělení $P$, tedy 
-\begin{equation*}
-    H(P) = - \sum_{i, j = 1}^q P_{i, j} \operatorname{log}(P_{i, j}).
-\end{equation*}
+kde $H(P)$ je opět entropie pravděpodobnostního rozdělení $P$.
 Jedná se tedy o regularizovaný dopravní problém.
 Vliv parametru $\xi$ je potom následující:
 Máme-li $\xi$ dostatečně velké, je jeho převrácená hodnota blízká nule,
@@ -677,29 +714,10 @@ a proto se řešení regularizovaného problému bude blížit Wassersteinově m
 Tato úprava Wassersteinovy metriky je, jak se přesvědčíme, mnohem lépe vyčíslitelná.
 Nejdříve se ovšem podívejme na intuici za touto úpravou.
 
-Začněme s mírnou úpravou původního optimalizačního problému definujícího Wassersteinovu vzdálenost:
-Pro $\alpha > 0$ definujme jakési $\alpha$ okolí rozdělení $\mu \nu^T$
-(sdružené pravděpodobnostní rozdělení s marginálními $\mu$ a $\nu$, kde $\mu$ a $\nu$ jsou nezávislá rozdělení) ve smyslu
-\emph{Kullback-Leiblerovy divergence}
-\begin{equation}
-    U_{\alpha} (\mu, \nu) = \{P \in U(\mu, \nu) | KL(P \| \mu \nu^T) \leq \alpha\}.
-\end{equation}
-Připomeňme definici Kullback-Leiblerovy divergence:
-\begin{equation*}
-    KL(\tilde{P} \| \hat{P}) = \sum_{i, j = 1}^q P_{i, j} \operatorname{log} \frac{P_{i, j}}{ Q_{i, j}}.
-\end{equation*}
-Pro dané $P \in U(\mu, \nu)$ lze na kvantitu $KL(P \| \mu \nu^T)$ nahlédnout jako na informaci mezi veličinami s rozděleními $\mu$ a $\nu$.
-Tedy $U_\alpha (\mu, \nu)$ vybírá ta rozdělení, která nesou malou vzájemnou informaci mezi $\mu$ a $\nu$ (ve smyslu menší než $\alpha$).
-Dle \cite{wass_computation} lze tuto úpravu ospravedlnit pomocí \emph{principu maximální entropie}.
-
-Potom lze definovat následující Sinkhornovu metriku:
-\begin{equation}
-    W^\alpha (\mu, \nu) = \min_{P \in U_\alpha (\mu, \nu)} \langle P, M \rangle.
-\end{equation}
-Jaký je vztah mezi Sinkhornovou metrikou $W^\alpha$ a duální Sinkhornovou metrikou $W^\xi$?
-Přes téma duality matematického programování.
-Zatímco ve $W^\alpha$ figuruje parametr $\alpha$ v omezení definičního oboru, kde optimalizujeme,
-tak ve $W^\xi$ figuruje parametr $\xi$ jako Lagrangeův multiplikátor příslušné vazby.
+Přechod od Wassersteinovy metriky k Sinkhornově spočíval v restrikci definičního oboru, kde hledáme
+(v řeči dopravního problému) dopravní plán $P$, na takové dopravní plány, které mají velkou entropii.
+Tohoto lze ovšem docílit i jiným způsobem, a to použitím regularizace v samotné účelové funkci optimalizačního problému.
+Proto duální Sinkhornova metrika, u které máme to štěstí, že ji lze spočítat relativně rychle.
 
 % Snadno lze nahlédnout na ekvivalentní definici $U_{\alpha} (\mu, \nu)$:
 % \begin{equation}
@@ -711,16 +729,60 @@ tak ve $W^\xi$ figuruje parametr $\xi$ jako Lagrangeův multiplikátor příslu�
 %     \mathcal{L}(P, \lambda) = \langle P, M \rangle - \frac{1}{\lambda} ()
 % \end{equation}
 
-Článek \cite{wass_computation} poskytuje též nahlédnutí na fakt, že $W^\xi$ a $W^\alpha$ jsou skutečně metriky.
+% Článek \cite{wass_computation} poskytuje též nahlédnutí na fakt, že $W^\xi$ a $W^\alpha$ jsou skutečně metriky.
 
-Tento úkrok stranou pomocí entropické regularizace původního problému lineárního programování,
-jehož vyřešení je nutné pro výpočet Wassersteinovy vzdálenosti, poskytuje úlevu v oblasti časové složitosti pro výpočet.
+% Tento úkrok stranou pomocí entropické regularizace původního problému lineárního programování,
+% jehož vyřešení je nutné pro výpočet Wassersteinovy vzdálenosti, poskytuje úlevu v oblasti časové složitosti pro výpočet.
 % $W^\lambda$ lze totiž spočítat pomocí Sinkhornových iterací pevného bodu, která stojí na platnosti Sinkhornovy věty,
 % jejíž znění poskytuje při aplikaci na náš problém informaci, že matici 
 
-Konečný numerický algoritmus pro výpočet duální Sinkhornovy metriky potom vypadá následovně:
+\subsection{Řešení optimalizačního problému duální Sinkhornovy metriky}
+
+Jelikož Lagrangeova funkce daného optimalizačního problému vypadá následovně:
+\begin{equation*}
+    L(P; m, n) = \sum_{i,j} P_{i, j} C_{i, j} - \frac{1}{\lambda} H(P) + \sum_{i} m_i \left(\sum_{j} P_{i, j} - \mu_i\right) + \sum_{j} n_j \left(\sum_{i} P_{i, j} - \nu_j\right),
+\end{equation*}
+kde $m$ a $n$ jsou vektory Lagrangeových multiplikátorů,
+tak derivace této Lagrangeovy funkce dle $P_{i, j}$ bude vypadat následovně:
+\begin{equation*}
+    \frac{\partial L}{\partial P_{i, j}} = C_{i, j} + \frac{1}{\lambda} \operatorname{log}P_{i, j} + \frac{1}{\lambda} + m_i + n_j. 
+\end{equation*}
+Položme nyní tento gradient roven nule a vyjádřeme $P_{i, j}$:
+\begin{align*}
+    P_{i, j} &= \operatorname{exp}\left(-\lambda C_{i, j} - 1 - \lambda m_i - \lambda n_j\right) \\
+    &= \operatorname{exp}\left(\lambda m_i - \frac{1}{2}\right) \operatorname{exp}\left(\lambda C_{i, j}\right) \operatorname{exp}\left(\lambda n_j - \frac{1}{2}\right) 
+\end{align*}
+Označme $u \in \mathbb{R}^q$, pro který platí $u_i = \operatorname{exp} \left(- \lambda m_i - \frac{1}{2}\right)$
+a $v \in \mathbb{R}^q$, pro který platí $v_j = \operatorname{exp} \left(- \lambda n_j - \frac{1}{2}\right)$,
+dále jako $K \in \mathbb{R}^{q \times q}$ matici, pro kterou platí $K_{i, j} = \operatorname{exp} \left(- \lambda C_{i, j}\right)$.
+Dostáváme tedy, že řešení optimalizačního problému nalezneme ve tvaru součinu tří matic:
+\begin{equation} \label{criterium}
+    P = \operatorname{diag}(u) K \operatorname{diag} (v), 
+\end{equation}
+kde $\operatorname{diag}$ přiřadí vektoru čtvercovou matici, která má vektor v argumenu na diagonále.
+
+Podle Sinkhornovy věty \cite{sinkhorn_thm} potom platí, jelikož matice $K$ je čtvercová a má kladné prvky,
+že existuje jednoznačně (až na multiplikativní konstantu) matice $Q$, která je dvojtě stochastická,
+tedy že $\sum_{i} Q_{i, j} = \sum_{j} Q_{i, j} = 1$.
+Získáme-li tedy tuto matici, můžeme její řádky vynásobit prvky vektoru rozdělení $\mu$
+a její sloupce prvky vektoru rozdělení $\nu$.
+Tím získáme matici z $U(\mu, \nu)$, tedy z našeho definičního oboru, napsanou ve tvaru:
+\begin{equation*}
+    R = \operatorname{diag}(\mu) Q \operatorname{diag}(\nu).
+\end{equation*}
+Když tuto matici $R$ položíme za hledanou matici $P$ splníme kritérium (\ref{criterium}),
+jelikož nalezneme taková čísla $w_i$, $z_j$ že $u_i = \mu_i w_i$ a $v_j = \nu_j z_j$.
+Je ovšem otázkou, jestli je toto kritérium nejen nutné, nýbrž i postačující.
+Ano, je i postačující, a to z důvodu konvexity optimalizační úlohy,
+která plyne jednak z konvexity účelové funkce, kde první člen je lineární, tedy i konvexní,
+a druhý člen je ostře konvexní, což plyne z ostré konkávity entropie, jež je vzata s opačným znaménkem.
+Definiční obor je také konvexní z linearního charakteru výrazů pro jeho hranice.
+Tedy, najdeme-li $Q$ nalezneme i hledané $P$.
+
+
+V \cite{wass_computation} potom lze nalézt konečný numerický algoritmus pro výpočet duální Sinkhornovy metriky:
 Na vstupu algoritmus dostává pravděpodobnostní rozdělení $\mu$ a $\nu$, jejichž vzdálenost je hledaná,
-dále matici $C$ a regularizační parametr $\xi$.
+dále matici cen $C$ a regularizační parametr $\xi$.
 \begin{enumerate}
     \item $\tilde{q} = \sum_{i=1}^q 1_{\mu_{i} \neq 0}$
     \item $\tilde{\mu} \in \mathbb{R}^{\tilde{q}}, \tilde{\mu}_i = \mu_{j_i}$,
@@ -728,7 +790,7 @@ dále matici $C$ a regularizační parametr $\xi$.
     \item $\tilde{C} \in \mathbb{R}^{\tilde{q} \times q}, \tilde{C}_{i, j} = C_{i_k, j}$,
     tj. do proměnné $\tilde{C}$ uložíme příslušné řádky matice cen.
     \item $K = \operatorname{exp}(- \xi \tilde{C})$ - jako matici $K$ vezmeme matici,
-    která vznikne po prvcích jako exponenciála matice $- \xi M$.
+    která vznikne po prvcích jako exponenciála matice $- \xi \tilde{C}$.
     \item $u = 1_{\tilde{q}} ./ \tilde{q}$,
     tj. do proměnné $u$ uložíme rovnoměrné rozdělení délky $\tilde{q}$.
     \item $\hat{K} = (1 ./ \tilde{\mu}) * K$
@@ -1211,6 +1273,10 @@ ICML, 2020.
 \bibitem{SquareAttack}M. Andriushchenko, F. Croce, N. Flammarion, M. Hein:
 \emph{Square attack: a query-efficient black-box adversarial attack via random search}.
 ECCV, 2020.
+
+\bibitem{sinkhorn_thm}R. Sinkhorn:
+\emph{A relationship between arbitrary positive matrices and doubly stochastic matrices}.
+In The Annals of Mathematical Statistics 35, 876–879, 1964.
 
 \end{thebibliography}
 
