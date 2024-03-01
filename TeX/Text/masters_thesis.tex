@@ -780,7 +780,7 @@ Definiční obor je také konvexní z linearního charakteru výrazů pro jeho h
 Tedy, najdeme-li $Q$ nalezneme i hledané $P$.
 
 
-V \cite{wass_computation} potom lze nalézt konečný numerický algoritmus pro výpočet duální Sinkhornovy metriky:
+V \cite{wass_computation} potom lze nalézt algoritmus pro výpočet duální Sinkhornovy metriky:
 Na vstupu algoritmus dostává pravděpodobnostní rozdělení $\mu$ a $\nu$, jejichž vzdálenost je hledaná,
 dále matici cen $C$ a regularizační parametr $\xi$.
 \begin{enumerate}
@@ -800,6 +800,43 @@ dále matici cen $C$ a regularizační parametr $\xi$.
     \item $W^\xi (\mu, \nu) = u ((K * \tilde{C}) v)$.
 \end{enumerate}
 V algoritmu výše potom $./$, resp. $*$ znamená dělení, resp. násobení ve smyslu Hadamardově.
+
+\subsection{Výsledná implementace pro obrázky}
+
+V minulé kapitole jsme nastínily, jak Wassersteinovu metriku chápat jako vzdálenost mezi obrázky.
+Uvažme pro jednoduchost dva jednokanálové obrázky společné šířky $W$ a společné výšky $H$.
+Potom na daný obrázek lze nahlédnout jako na histogram nějakého diskrétního pravděpodobnostního rozdělení.
+Podmínkou tedy je, že obrázek přeškálujeme, aby součet hodnot všech pixelů byl roven jedné.
+Dále je třeba z takovéhoto obrázku, tedy vlastně matice vytvořit vektor.
+Udělejme to tak, že za sebe po řadě naskládáme řádky této matice do jednoho dlouhého řádku.
+Matematicky potom pro formální přesnost provedeme transpozici, abychom získali sloupcový vektor.
+Získáváme tedy $\mu, \nu \in \mathbb{R}^{W \cdot H}$.
+
+Další krok je na základě rozměrů původních obrázků určit matici cen,
+kterou budeme používat pro výpočet aproximace Wassersteinovy metriky.
+Definujme proto matici cen $C$ jako $C \in \mathbb{R}^{W \cdot H \times W \cdot H}$:
+\begin{equation} \label{costmatrix}
+    C_{i, j} = \left\| \, \begin{bmatrix}
+        i \operatorname{div} W \\
+        i \operatorname{mod} W 
+    \end{bmatrix} - \begin{bmatrix}
+        j \operatorname{div} W \\
+        j \operatorname{mod} W 
+    \end{bmatrix} \, \right\|,
+\end{equation}
+kde $x \operatorname{div} y$ značí dolní celou část podílu $\frac{x}{y}$.
+Jedná se tedy o matici, která obsahuje metrickou vzdálenost vždy mezi dvěma body v rovině.
+Za tuto metrickou vzdálenost volme metriku indukovanou $l_2$ či $l_1$ normou.
+V (\ref{costmatrix}) potom počítáme s indexováním od nuly.
+
+Potom lze pro daný regularizační parametr $\xi$ provádět algoritmus popsaný v předešlé podsekci.
+Bohužel ale v praxi narážíme na limity strojové přesnosti.
+Při provádění kroku 4 v algoritmu se stává, že ona vypočtená exponenciála je v počítači reprezentována nulou.
+Dokonce není ojedinělé, že je v počítači nulový celý sloupec vzniklé matice $K$.
+Toto způsobuje, že algoritmus selže, neboť se v kroku 7 potom nulou dělí.
+Proto do výsledné implementace vstupuje ještě další parametr, a to je kladná konstanta pro stabilitu dělení,
+kterou přičteme ke každému prvku matice $K$.
+Takto upravený algoritmus potom již vrací aproximaci Wassersteinovy vzdálenosti pro dva zadané obrázky.
 
 \section{Structural dissimilarity}
 
