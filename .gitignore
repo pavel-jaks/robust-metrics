@@ -3,6 +3,8 @@ venv
 .env
 mnist
 
+benchmarks
+
 *.aux
 *.fdb_latexmk
 *.toc
