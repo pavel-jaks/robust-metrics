@@ -1,0 +1,9 @@
+{
+    "project": "metrics",
+    "machines": { 
+        "my_machine": {}  }  ,
+    "environment_type": "virtualenv",
+    "repo": "https://github.com/pavel-jaks/robust-metrics.git",
+    "version": 1,
+    "branch": "main"
+}
