@@ -1,2 +1,2 @@
 # ...
-from metrics import *
+from metrics.metrics import *

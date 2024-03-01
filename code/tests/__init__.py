@@ -1,3 +1,3 @@
 # ...
 
-from mytest import *
+from tests.test_metrics import *

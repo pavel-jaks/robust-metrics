@@ -28,6 +28,7 @@ fsspec==2024.2.0
 geomloss==0.2.6
 idna==3.6
 imageio==2.34.0
+iniconfig==2.0.0
 ipykernel==6.29.2
 ipython==8.21.0
 ipywidgets==8.1.2
@@ -71,6 +72,7 @@ pandocfilters==1.5.1
 parso==0.8.3
 pillow==10.2.0
 platformdirs==4.2.0
+pluggy==1.4.0
 prometheus-client==0.19.0
 prompt-toolkit==3.0.43
 psutil==5.9.8
@@ -78,6 +80,7 @@ pure-eval==0.2.2
 pycparser==2.21
 Pygments==2.17.2
 pyparsing==3.1.1
+pytest==8.0.2
 python-dateutil==2.8.2
 python-json-logger==2.0.7
 pywin32==306

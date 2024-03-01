@@ -74,7 +74,7 @@ class Norm(nn.Module):
 
 class LpNorm(Norm):
     """
-    Implementation of a L_p norm for a given positive integer p
+    Implementation of an L_p norm for a given positive integer p
     """
 
     def __init__(self, p: int):
@@ -97,7 +97,7 @@ class LpNorm(Norm):
 
 class L2Norm(LpNorm):
     """
-    Special case of a LpNorm - L_2
+    Special case of an LpNorm - L_2
     """
     
     def __init__(self):
@@ -106,7 +106,7 @@ class L2Norm(LpNorm):
 
 class L1Norm(LpNorm):
     """
-    Special case of a LpNorm - L_1
+    Special case of an LpNorm - L_1
     """
     def __init__(self):
         super().__init__(1)
@@ -114,7 +114,7 @@ class L1Norm(LpNorm):
 
 class LinfNorm(Norm):
     """
-    Implementation of a L_infty norm
+    Implementation of an L_infty norm
     """
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -358,29 +358,24 @@ class WassersteinApproximation(Metric):
             regularization: float = 5,
             iterations: int = 250,
             division_const: float = 1e-8,
-            cost_matrix_type: CostMatrixType = CostMatrixType.L1,
-            verbose: bool = False,
-            debug: bool = False
+            cost_matrix_type: CostMatrixType = CostMatrixType.L1
         ):
         """
         Constructor
-
+        
+        :param transform: transformation made pre-computation
         :param regularization: regularization coefficient of the entropy term in the optimization problem
         :param iterations: fixed number of iterations
-        :param verbose: whether to be noisy or not - for debugging reasons
+        :param division_const: constant added to escape division by zero
+        :param cost_matrix_type: type of cost matrics to be used for the computation
         """
         super().__init__(transform)
         self.regularization = regularization
         self.iterations = iterations
         self.division_const = division_const
         self.cost_matrix_type = cost_matrix_type
-        self.verbose = verbose
-        self.debug = debug
 
     def compute(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
-        if self.verbose:
-            print('ENTERING WASSERSTEIN')
-
         if x.ndim != 4 or y.ndim != 4:
             raise ValueError("Not a batch of images")
         if x.shape != y.shape:
@@ -438,13 +433,9 @@ class WassersteinApproximation(Metric):
 
         for i in range(batch):
             dists[i] += self.compute_vectors_distance(x_norm[i].flatten(), y_norm[i].flatten(), cost_matrix)
-            if self.verbose:
-                print(f'-COMPUTED DISTANCE {i + 1 } out of {batch}')
-        if self.verbose:
-            print('LEAVING WASSERSTEIN')
         return torch.Tensor(dists)
         
-    def compute_vectors_distance(self, x, y, cost_matrix, retain_all_iterations: bool = False):
+    def compute_vectors_distance(self, x, y, cost_matrix):
         indices = (x != 0)
         x_non_zero = x[indices]
         x_non_zero_dim = x_non_zero.shape[0]
@@ -456,23 +447,9 @@ class WassersteinApproximation(Metric):
         K_matrix = (- self.regularization * cost_matrix[indices, :]).exp() + self.division_const
         K_tilde_matrices = torch.diag(1 / x_non_zero) @ K_matrix
 
-        if self.verbose:
-            print('-STARTING ITERATIONS')
-
-        if not retain_all_iterations:
-            for _ in range(self.iterations):
-                u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
-                if self.debug:
-                    print(f"u_vector: min={torch.min(u_vector)}, mean={torch.mean(u_vector)}, max={torch.max(u_vector)}")
-            v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
-            
-            dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
-            return dist.sum()
-        else:
-            dists = []
-            for _ in range(self.iterations):
-                u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
-                v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
-                dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
-                dists.append(dist.sum())
-            return dists
+        for _ in range(self.iterations):
+            u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+        v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
+        
+        dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
+        return dist.sum()

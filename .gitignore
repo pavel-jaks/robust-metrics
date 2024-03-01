@@ -10,4 +10,8 @@ mnist
 *.log
 *.fls
 
+.pytest_cache
+
 zadani_dp.pdf
+
+__pycache__
