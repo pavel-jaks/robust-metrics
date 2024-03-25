@@ -14,7 +14,7 @@
 \usepackage{graphicx}
 \usepackage{setspace}
 \usepackage{listings}
-\usepackage[dvipsnames]{xcolor}
+\usepackage[dvipsnames,table,xcdraw]{xcolor}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{pdfpages}
@@ -615,6 +615,9 @@ a ne vždy lze takovouto vzdálenost přímočaře spočíst.
 Proto uveďme, je-li to nutné, příslušné úkroky stranou, které nám umožní hledat adversariální vzorky,
 a to pokud možno v krátkém čase.
 
+Poznatky z této kapitoly nám potom pomáhají k vlastní implementaci metrik vizuální podobnosti
+v programovacím jazyce \emph{Python} \cite{python} za použití knihovny \emph{PyTorch} \cite{pytorch}.
+
 \section{Metriky založené na $l_p$ normách}
 
 Implementovat klasické $l_p$ normy je snadné, a tedy i metriky jimi indukované.
@@ -855,13 +858,90 @@ která plyne z vlastnosti
     \operatorname{SSIM}(x, \tilde{x}) = 1 \iff x = \tilde{x}.
 \end{equation}
 
-\chapter{Porovnání implementací metrik vizuální podobnosti}
+\chapter{Porovnání metrik vizuální podobnosti}
+
+V minulých kapitolách jsme představili různé metriky vizuální podobnosti.
+Tyto metriky se od sebe navzájem liší, a to jak v matematické podstatě,
+tak ve svých vlastnostech, jako jsou výpočetní časová složitost či
+robustnost těchto metrik vůči běžným transformacím obrázků,
+které lidské oko vyhodnotí jako nezávažné změny a informaci,
+kterou obrázek nese, nepoškodí.
+
+Proto se v této kapitole podívejme, jak je která metrika časově výpočetně náročná.
+Dále pak srovnejme implementované metriky podle toho, jak reagují na šum v obrázku
+a na transformace, kterými mohou být translace či rotace.
 
 \section{Časová náročnost výpočtu}
+
+Některé metriky vizuální podobnosti spočívají v zásadě na sečtení mocnin rozdílů hodnot pixelů
+v příslušných souřadnicích.
+Lze proto očekávat, že jejich výpočet bude rychlejší, než například výpočet
+Wassersteinovy metriky, resp. její duální-Sinkhornovy aproximace,
+výpočet které potom spočívá v numerickém řešení netriviálního optimalizačního problému.
+
+Udělejme tedy experiment, který spočívá ve spuštění výpočtu dané metriky vizuální podobnosti,
+resp. naší implementace, a změření, jak dlouho samotný výpočet trval.
+Použijeme přitom paradigma vlastní knihovně \emph{PyTorch} \cite{pytorch},
+které spočívá v paralelizaci výpočtu tak, že počítáme vzájemné vzdálenosti více než jedné dvojice obrázků.
+Chtějme tedy změřit čas výpočtu metrik pro po řadě $10$ dvojic, $100$ dvojic a $1000$ dvojic černobílých obrázků
+o rozměrech $28 \times 28$, což je rozměr, který odpovídá obrázkům datové sady MNIST \cite{MNIST}.
+Z této datové sady zárověň jeden obrázek z páru obrázků, jejichž vzdálenost měříme, vybereme.
+Druhý obrázek v páru bude náhodně zašuměný první obrázek.
+Takovýto výpočet pak pro každou metriku proveďme desetkrát a vezměme průměrnou délku výpočtu.
+
+Mezi metriky, jejichž časovou výpočetní náročnost speciálně zkoumáme, jsme zařadili
+metriku založenou na normách $l_1$, $l_2$, $l_\infty$ a pseudonormě $l_0$.
+Dále pak několik metrik vizuální podobnosti založených na indexu SSIM.
+Zařadili jsme sem structural dissimilarity s neomezenou velikostí okna,
+dále pak structural dissimilarity s velikostmi okna po řadě $5$, $10$ a $20$.
+A jako poslední zkoumanou metriku jsme použili Wassersteinovu metriku, resp. její aproximaci.
+
+
+
+\begin{table}[]
+    \centering
+    \begin{tabular}{|l|r|r|r|}
+        \hline
+    \textbf{Metrika} & \multicolumn{1}{l|}{\textbf{10 párů}}                      & \multicolumn{1}{l|}{\textbf{100 párů}} & \multicolumn{1}{l|}{\textbf{1000 párů}} \\ \hline
+    $l_1$                                       & 0,0007036000025                                               & 0,001901599811                            & 0,01818950009                              \\
+    $l_2$                                       & 0,001508200075                                                & 0,002845599782                            & 0,02182809985                              \\
+    $l_\infty$                                  & 0,001301499782                                                & 0,003312000073                            & 0,02696179994                              \\
+    $l_0$                                       & 0,0009137999732                                               & 0,003584200051                            & 0,03133830009                              \\
+    $DSSIM$                                     & 0,007755599916                                                & 0,02364749997                             & 0,1672595001                               \\
+    $DSSIM_5$                                   & 0,7095767001                                                  & 1,0184459                                 & 4,2418431                                  \\
+    $DSSIM_{10}$                                & 0,4807517                                                     & 1,1263735                                 & 8,7425058                                  \\
+    $DSSIM_{20}$                                & 0,1537327999                                                  & 0,7804290999                              & 5,4182493                                  \\
+    $Wasserstein$                               & 10,9496173                                                    & 92,0328169                                & 840,9704119                               \\ \hline
+\end{tabular}
+\caption{Časy výpočtu jednotlivých metrik v sekundách pro různý počet párů.} \label{times}
+\end{table}
+
+
+V Tabulce \ref{times} jsou potom samotné výsledky tohoto experimentu.
+Jak lze zpozorovat z dat, metriky založené na $l_p$ normách a pseudonormě $l_0$
+jsou vypočteny takřka okamžitě (z pohledu lidského uživatele) a to odpovídá intuici.
+
+Metrikami náročnějšími na výpočet jsou potom metriky založené na indexu SSIM,
+kde mimo jiné roli ve výsledném čase hraje i velikost okna použitého při výpočtu.
+Použijeme-li neomezenou velikost okna, tedy velikost obrázku je velikostí okna,
+lze nahlédnout, že výpočet je méně časově náročný.
+Je to logické, neboť namísto výpočtu několika vlastních indexů SSIM mezi výřezy obrázků a jejich následného průměrování,
+počítáme jen jeden jediný index SSIM.
+
+Poslední změřenou metrikou je výpočetně nejnáročnější aproximace Wassersteinovy metriky,
+jejíž výpočet pro deset párů probíhal zhruba deset sekund.
+Tato metrika je tedy velmi drahá ve smyslu délky výpočetního času.
+
 
 \section{Robustnost metrik vůči šumu v obrázku}
 
 \section{Robustnost metrik vůči transformacímm obrázku}
+
+\subsection{Translace}
+
+\subsection{Rotace}
+
+\subsection{Změna jasu}
 
 \section{Porovnání implementací s implementacemi veřejných knihoven}
 
@@ -1227,8 +1307,9 @@ ani najít, jak vhodně naučit model strojového učení tak, aby byl robustní
 Cílem bylo nahlédnout na tuto problematiku z pohledu různorodosti metrik vizuální podobnosti
 a poskytnout přehled, jak volba této metriky ovlivňuje tvorbu či podobu adversariálních vzorků.
 
-Představili jsme tedy různé metriky vizuální podobnosti a provedli jejich implementaci v programovacím jazyce \emph{Python}.
-Dále jsme s pomocí knihovny \emph{PyTorch} natrénovali jednoduchou neuronovou síť
+Představili jsme tedy různé metriky vizuální podobnosti
+a provedli jejich implementaci v programovacím jazyce \emph{Python} \cite{python}.
+Dále jsme s pomocí knihovny \emph{PyTorch} \cite{pytorch} natrénovali jednoduchou neuronovou síť
 pro klasifikaci číslic a tuto síť použili jako cíl námi implementovaného CW útoku
 s možností volby užité metriky vizuální podobnosti.
 
@@ -1324,6 +1405,16 @@ ECCV, 2020.
 \bibitem{sinkhorn_thm}R. Sinkhorn:
 \emph{A relationship between arbitrary positive matrices and doubly stochastic matrices}.
 In The Annals of Mathematical Statistics 35, 876–879, 1964.
+
+\bibitem{python}G. van Rossum:
+\emph{Python tutorial, Technical Report CS-R9526}.
+Centrum voor Wiskunde en Informatica (CWI), Amsterdam, 1995.
+
+\bibitem{pytorch}A. Paszke, S. Gross, F. Massa, A. Lerer, J. Bradbury, G. Chanan, T. Killeen, Z. Lin, N. Gimelshein,
+L. Antiga, A. Desmaison, A. Kopf, E. Yang,
+Z. DeVito, M. Raison, A. Tejani, S. Chilamkurthy, B. Steiner, L. Fang, J. Bai, S. Chintala:
+\emph{PyTorch: An Imperative Style, High-Performance Deep Learning Library}.
+Advances in Neural Information Processing Systems 32, 8024–8035, 2019.
 
 \end{thebibliography}
 
