@@ -41,7 +41,8 @@
         \item Klasifikace je potom zobrazení $C: Y \rightarrow \{1, 2, ..., m\}$
         \begin{itemize}
             \item $C(y) = \operatornamewithlimits{argmax}_{i \in \{1, ..., m\}} y_i$
-        \end{itemize} 
+        \end{itemize}
+        \item Přehled technik hlubokého učení v \cite{Goodfellow}
     \end{itemize}
 \end{frame}
 
@@ -51,10 +52,19 @@
     \frametitle{Adversariální vzorek}
     \begin{itemize}
         \item Szegedy a spol. objevili zvláštní chování klasifikačních sítí \cite{szegedy2014intriguing}
+        \begin{itemize}
+            \item Neuronové sítě nejsou robustní
+        \end{itemize}
         \item Pojmenujme \emph{benigním} takový vzorek, který je správně klasifikovaný
         \item Mějme benigní vzorek $x$, pak \emph{adversariální} vzorek $\tilde{x}$ je takový, že
         $\rho(x, \tilde{x}) \leq \kappa$ a $C(F_\theta(x)) \neq C(F_\theta(\tilde{x}))$
     \end{itemize}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.2\textwidth]{Images/adv_pic.png}
+        \centering
+        \caption{Adversariální vzorek}
+    \end{figure}
 \end{frame}
 
 % \subsection{Generování adversariálních vzorků}
@@ -80,40 +90,44 @@
     \begin{itemize}
         \item Metriky založené na $l_p$ normách
         \begin{itemize}
-            \item $l_1$, $l_2$, $l_\infty$
+            \item $l_1$, $l_2$
         \end{itemize}
         \item Metriky založené na indexu \emph{SSIM}
         \begin{itemize}
             \item Jezdící okno variabilní velikosti porovnávající jas, kontrast a strukturu dvou obrázků
         \end{itemize}
-        \item Metrika založená na $PSNR$
+        \item Wassersteinova metrika, resp. její aproximace
         \begin{itemize}
-            \item Logaritmická transformace metriky založené na $l_2$ normě
+            \item Vzdálenost obrázků měřena jako vzdálenost pravděpodobnostních rozdělení
         \end{itemize}
     \end{itemize}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Příklad vzorku $l_2$}
+    \frametitle{Příklady adversariálních vzorků}
     \begin{figure}
         \centering
-        \includegraphics[width=0.5\textwidth]{Images/adv_pic.png}
+        \begin{subfigure}[b]{\textwidth}
+            \centering
+            \includegraphics[width=0.2\textwidth]{Images/benign_4.png}
+            \includegraphics[width=0.2\textwidth]{Images/l1_10.png}
+            \includegraphics[width=0.2\textwidth]{Images/l2_10.png}
+            \includegraphics[width=0.2\textwidth]{Images/w_0.1.png}
+            
+        \end{subfigure}
+        \begin{subfigure}[b]{\textwidth}
+            \centering
+            \includegraphics[width=0.2\textwidth]{Images/d5_0.1.png}
+            \includegraphics[width=0.2\textwidth]{Images/d13_0.1.png}
+            \includegraphics[width=0.2\textwidth]{Images/d21_0.1.png}
+            \includegraphics[width=0.2\textwidth]{Images/d28_0.1.png}
+        \end{subfigure}
+        
         \centering
-        \caption{Vzorek vygenerovaný metodou CW za užití metriky založené na $l_2$}
+        \caption{Adversariální vzorky generované za použití různých metrik vizuální podobnosti}
+        \label{allgen}
     \end{figure}
 \end{frame}
-
-\begin{frame}
-    \frametitle{Příklad vzorku SSIM}
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.5\textwidth]{Images/dssim.png}
-        \centering
-        \caption{Vzorek vygenerovaný metodou CW za užití metriky založené na indexu SSIM (velikost jezdícího okna 5)}
-    \end{figure}
-\end{frame}
-
-
 
 \section*{Závěr}
 
@@ -129,48 +143,48 @@
 \begin{frame}
     \frametitle{Literatura}
     \begin{thebibliography}{1}
-        % \bibitem{Goodfellow}I. Goodfellow, Y. Bengio, A. Courville,
-        % \emph{Deep Learning}. MIT Press, 2016.
+        \bibitem{Goodfellow}I. Goodfellow, Y. Bengio, A. Courville:
+        \emph{Deep Learning}. MIT Press, 2016.
 
-        % \bibitem{MNIST} Y. Lecun, C. Cortes, C. J. Burges,
-        % \emph{The mnist database of handwritten digits}. 1998.
+        \bibitem{MNIST} Y. Lecun, C. Cortes, C. J. Burges:
+        \emph{The mnist database of handwritten digits}. 1998.
 
-        \bibitem{szegedy2014intriguing} C. Szegedy, W. Zaremba, I. Sutskever, J. Bruna, D. Erhan, I. Goodfellow, R. Fergus,
+        \bibitem{szegedy2014intriguing} C. Szegedy, W. Zaremba, I. Sutskever, J. Bruna, D. Erhan, I. Goodfellow, R. Fergus:
         \emph{Intriguing properties of neural networks}.
         arXiv, 2014.
 
-        % \bibitem{GoodfellowEtAl} I. Goodfellow, J. Shlens, C. Szegedy,
+        % \bibitem{GoodfellowEtAl} I. Goodfellow, J. Shlens, C. Szegedy:
         % \emph{Explaining and Harnessing Adversarial Examples}.
         % In 'International Conference on Learning Representations', ICLR 2015.
     \end{thebibliography}
 \end{frame}
 
-\section{Otázky}
+% \section{Otázky}
 
-\begin{frame}
-    \frametitle{Automatická derivace duální Sinkhornovy metriky}
-    \begin{itemize}
-        \item Q: Proč nebyla využita možnost naimplementovat derivaci duální Sinkhornovy metriky v knihoně Pytorch?
-        \item A: Technicky byla tato metrika sama o sobě automaticky derivovatelná, pouze vracela v gradientu hodnoty NaN.
-        Kdybych pak naimplementoval vlastní derivaci, očekával bych stejné chování.
-    \end{itemize}
-\end{frame}
+% \begin{frame}
+%     \frametitle{Automatická derivace duální Sinkhornovy metriky}
+%     \begin{itemize}
+%         \item Q: Proč nebyla využita možnost naimplementovat derivaci duální Sinkhornovy metriky v knihoně Pytorch?
+%         \item A: Technicky byla tato metrika sama o sobě automaticky derivovatelná, pouze vracela v gradientu hodnoty NaN.
+%         Kdybych pak naimplementoval vlastní derivaci, očekával bych stejné chování.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}
-    \frametitle{Vliv metrik na výsledné adversariální vzorky}
+% \begin{frame}
+%     \frametitle{Vliv metrik na výsledné adversariální vzorky}
 
-    \begin{itemize}
-        \item Q: Proč rozdílné optimalizační funkce generují jiné adversariální obrázky? Jaké vygenerované
-        obrázky můžeme očekávat pro jakou metriku?
-        \item A: Způsob implementace řešení optimalizačního problému generování adversariálních vzorků
-        spoléhal na gradientní sestup, resp. na jeho znaménkovou variantu. Různé metriky mají potom různé gradienty,
-        což je podstata různorodosti v obrázcích.
-        Často se stávalo (např. pro SSIM 5), že derivace metriky byla na některých místech nulová,
-        proto se neblížil daný obrázek v daném místě k původnímu, což vedlo ke znatelným artefaktům v obrázku.
-        Čili, lze očekávat, že metrika, která má derivaci řádově podobnou $\lambda$ násobku derivace ztrátové funkce,
-        bude produkovat obrázky velice podobné původním, ale s mírným poškozením.
-    \end{itemize}
+%     \begin{itemize}
+%         \item Q: Proč rozdílné optimalizační funkce generují jiné adversariální obrázky? Jaké vygenerované
+%         obrázky můžeme očekávat pro jakou metriku?
+%         \item A: Způsob implementace řešení optimalizačního problému generování adversariálních vzorků
+%         spoléhal na gradientní sestup, resp. na jeho znaménkovou variantu. Různé metriky mají potom různé gradienty,
+%         což je podstata různorodosti v obrázcích.
+%         Často se stávalo (např. pro SSIM 5), že derivace metriky byla na některých místech nulová,
+%         proto se neblížil daný obrázek v daném místě k původnímu, což vedlo ke znatelným artefaktům v obrázku.
+%         Čili, lze očekávat, že metrika, která má derivaci řádově podobnou $\lambda$ násobku derivace ztrátové funkce,
+%         bude produkovat obrázky velice podobné původním, ale s mírným poškozením.
+%     \end{itemize}
 
-\end{frame}
+% \end{frame}
 
 \end{document}

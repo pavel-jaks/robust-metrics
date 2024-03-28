@@ -358,7 +358,8 @@ class WassersteinApproximation(Metric):
             regularization: float = 5,
             iterations: int = 250,
             division_const: float = 1e-8,
-            cost_matrix_type: CostMatrixType = CostMatrixType.L1
+            cost_matrix_type: CostMatrixType = CostMatrixType.L1,
+            tolerance: float = 1e-5
         ):
         """
         Constructor
@@ -374,6 +375,7 @@ class WassersteinApproximation(Metric):
         self.iterations = iterations
         self.division_const = division_const
         self.cost_matrix_type = cost_matrix_type
+        self.tolerance = tolerance
 
     def compute(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
         if x.ndim != 4 or y.ndim != 4:
@@ -444,12 +446,18 @@ class WassersteinApproximation(Metric):
 
         # u_vector_prev = torch.ones(x_non_zero_dim) / x_non_zero_dim
         u_vector = torch.ones(x_non_zero_dim) / x_non_zero_dim
-        K_matrix = (- self.regularization * cost_matrix[indices, :]).exp() + self.division_const
+        K_matrix = (- self.regularization * cost_matrix[indices, :]).exp()
+        K_matrix[K_matrix < self.division_const] = self.division_const
         K_tilde_matrices = torch.diag(1 / x_non_zero) @ K_matrix
 
-        for _ in range(self.iterations):
+        for i in range(self.iterations):
+            u_prev = u_vector
             u_vector = 1 / (K_tilde_matrices @ (y / (K_matrix.transpose(0, 1) @ u_vector)))
+            if i > 0 and (u_prev - u_vector).norm() < self.tolerance:
+                break
         v_vector = y / (K_matrix.transpose(0, 1) @ u_vector)
         
+        
+
         dist = (u_vector * ((K_matrix * cost_matrix[indices, :]) @ v_vector))
         return dist.sum()
