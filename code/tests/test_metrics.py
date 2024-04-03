@@ -6,7 +6,7 @@ import torch
 import torchvision
 import skimage.metrics as skit
 import numpy as np
-import scipy.optimize as opt
+import cvxpy as cvx
 
 import metrics
 
@@ -81,26 +81,21 @@ def test_wasserstein():
 
         torch_im1, torch_im2 = torch.Tensor(image1), torch.Tensor(image2)
 
-        regularization = 7
-        wasserstein_ref = wasserstein_linear_program(
+        regularization = 5
+        wasserstein_ref = ref_wasserstein(
             torch_im1,
             torch_im2,
-            cost_matrix=torch.Tensor(
-                [
-                    [
-                        abs(i // width - j // width) + abs(i % width - j % width) 
-                        for j in range(width * height)
-                    ]
-                    for i in range(width * height)
-                ]
-            )
+            regularization
         )
         wasserstein_my = metrics.WassersteinApproximation(regularization=regularization, iterations=25000, tolerance=1e-30, division_const=1e-20)(torch_im1, torch_im2)
         print(f"Ref={wasserstein_ref}; My={wasserstein_my.item()}")
-        assert abs(wasserstein_my - wasserstein_ref) < 1e-2
+        assert abs(wasserstein_my - wasserstein_ref) < 1e-5
 
 def ref_wasserstein(image1: np.ndarray, image2: np.ndarray, regularization):
-    width, height = image1.shape
+    _, _, width, height = image1.shape
+    wh = width * height
+    wwhh = wh ** 2
+
     cost_matrix = np.array(
         [
             [
@@ -117,72 +112,17 @@ def ref_wasserstein(image1: np.ndarray, image2: np.ndarray, regularization):
     # print(image2_vector)
 
     # positive_constraint = opt.LinearConstraint(np.eye(width * width * height * height), 0, keep_feasible=True)
-    probability_constraint1 = opt.NonlinearConstraint(
-        lambda x: x.reshape(width * height, width * height).sum(0),
-        image1_vector,
-        image1_vector
-    )
-    probability_constraint2 = opt.NonlinearConstraint(
-        lambda x: x.reshape(width * height, width * height).sum(1),
-        image2_vector,
-        image2_vector
-    )
-    objective = lambda x: x.dot(cost_matrix.flatten()) - (1 / regularization) * (- x[x > 0] * np.log(x[x > 0])).sum()
-    init = (image2_vector.reshape(width * height, 1) @ image1_vector.reshape(1, width * height)).flatten() + np.random.randn(width * height * width * height) / (width ** 2 * height ** 2)
-    # init = np.ones(width ** 2 * height ** 2) + (1 / 3) * np.random.randn(width * height * width * height)
-    # init = abs(init)
-    # init /= init.sum()
-    init[init < 1e-3] = 1e-3
-    init[init > 1 - 1e-3] = 1 - 1e-3
 
+    x = cvx.Variable(wwhh)
+
+    objective = cvx.Minimize(cvx.sum(cvx.multiply(cost_matrix.flatten(), x)) - (1 / regularization) * cvx.sum(cvx.entr(x)))
+    constraints = [
+        x >= 0,
+        x.reshape((wh, wh)).sum(0) == image1_vector,
+        x.reshape((wh, wh)).sum(1) == image2_vector
+    ]
+
+    problem = cvx.Problem(objective, constraints)
+    _ = problem.solve(solver=cvx.ECOS)
     
-
-    # print(init)
-    initial = np.copy(init)
-
-    bounds = opt.Bounds(np.zeros((width ** 2 * height ** 2)), np.ones((width ** 2 * height ** 2)))
-
-    opt_res = opt.minimize(
-        objective,
-        initial,
-        method="trust-constr",
-        jac=lambda x: cost_matrix.flatten() + 1 / regularization + (np.array([z for z in map(lambda y: 0 if y <= 0 else np.log(y), x)])) / regularization,
-        hess=lambda x: np.diag((1 / regularization) / x),
-        constraints=(probability_constraint1, probability_constraint2),
-        bounds=bounds
-    )
-    # print(opt_res.x)
-    return opt_res.x.dot(cost_matrix.flatten())
-
-def wasserstein_linear_program(x, y, cost_matrix):
-    if x.ndim != 4 or y.ndim != 4:
-        raise ValueError("Not an image")
-    if x.shape != y.shape:
-        raise ValueError("Given images of different shapes")
-    
-    # batch = x.shape[0]
-    # channels = x.shape[1]
-    width = x.shape[2]
-    height = x.shape[3]
-
-    x_vector = x.flatten()
-    y_vector = y.flatten()
-    x_vector = x_vector / x_vector.sum()
-    y_vector = y_vector / y_vector.sum()
-
-    n = width * height
-
-    Ap, Aq = [], []
-    z = np.zeros((n, n))
-    z[:, 0] = 1
-
-    for i in range(n):
-        Ap.append(z.ravel())
-        Aq.append(z.transpose().ravel())
-        z = np.roll(z, 1, axis=1)
-
-    A = np.row_stack((Ap, Aq))[:-1]
-    b = np.concatenate((x_vector, y_vector))[:-1]
-
-    result = opt.linprog(cost_matrix.ravel(), A_eq=A, b_eq=b)
-    return np.sum(result.x.reshape((n, n)) * cost_matrix.numpy())
+    return (x.value * cost_matrix.flatten()).sum()
