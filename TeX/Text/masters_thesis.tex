@@ -20,6 +20,15 @@
 \usepackage{pdfpages}
 \usepackage{longtable}
 \usepackage{multirow}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=violet,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Moderní metody robustního strojového učení},
+    pdfpagemode=FullScreen,
+    }
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
@@ -419,7 +428,7 @@ Snadno lze nahlédnout, že takto zadané zobrazení je metrika.
 S metrikami, které jsou tzv. indukované normami dle předchozího se setkáme.
 
 
-\section{Metriky indukované $l_p$ normami}
+\section{Metriky indukované klasickými normami}
 
 Vzhledem k tomu, že obrázky, které jsou středem naší pozornosti,
 lze reprezentovat jako tenzory o rozměrech $C \times W \times H$,
@@ -618,7 +627,7 @@ a to pokud možno v krátkém čase.
 Poznatky z této kapitoly nám potom pomáhají k vlastní implementaci metrik vizuální podobnosti
 v programovacím jazyce \emph{Python} \cite{python} za použití knihovny \emph{PyTorch} \cite{pytorch}.
 
-\section{Metriky založené na $l_p$ normách}
+\section{Metriky založené na klasických normách}
 
 Implementovat klasické $l_p$ normy je snadné, a tedy i metriky jimi indukované.
 MSE a RMSE jsou též snadné na implementaci.
@@ -927,7 +936,39 @@ která plyne z vlastnosti
 
 \chapter{Implementace metrik vizuální podobnosti}
 
-\section{Příklady použití kódu}
+Součástí této práce je potom i samotná implementace metrik vizuální podobnosti uvedených a popsaných
+v předchozích kapitolách.
+Tato implementace je pak koncipována tak, aby bylo možné naimplementované metriky použít
+pro tvorbu tzv. adversariálních vzorků.
+Toto téma pak bude více osvětleno v jedné z následujících kapitol.
+Lze však nastínit, že se jedná o jednu z úloh strojového učení.
+
+Pro úlohy strojového učení je potom stěžejní, že je mnohdy lze provádět paralelizovaně.
+S tímto na mysli vznikla programovací knihovna \emph{PyTorch} \cite{pytorch}
+pro prostředí programovacího jazyka \emph{Python} \cite{python}.
+Použití knihovny PyTorch je potom pro tuto práci klíčové.
+Proto i metriky vizuální podobnosti, kterými se tato práce z nemalé části zabývá,
+jsou implementovány za využití prostředků, které tato knihovna nabízí,
+a principů, které tato knihovna prosazuje.
+
+\section{Veřejné úložiště kódu}
+
+Pro zpřístupnění naimplementovaných metrik vizuální podobnosti
+bylo zvoleno úložiště zdrojových kódů GitHub, které je kompatibilní se systémem správy verzí Git.
+Samotný repozitář, který kromě samotného textu této práce obsahuje taktéž i onu implementaci
+metrik vizuální podobnosti, lze nalézt na webové adrese
+\href{https://github.com/pavel-jaks/robust-metrics}{https://github.com/pavel-jaks/robust-metrics}.
+
+Repozitář obsahuje adresář \href{https://github.com/pavel-jaks/robust-metrics/tree/main/TeX}{TeX}, v němž se nachází tento text.
+Dále repozitář obsahuje stěžejní adresář \href{https://github.com/pavel-jaks/robust-metrics/tree/main/code}{code},
+ve kterém se nachází v adresáři \href{https://github.com/pavel-jaks/robust-metrics/tree/main/code/metrics}{metrics}
+soubor \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics/metrics.py}{metrics.py}.
+V tomto ouboru je potom samotná implementace metrik vizuální podobnosti.
+
+
+\section{Koncepty pro použití kódu}
+
+
 
 \section{Testování naimplementovaných metrik}
 
