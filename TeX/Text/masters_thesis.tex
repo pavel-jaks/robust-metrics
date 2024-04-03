@@ -605,7 +605,7 @@ Jako průměr přes kanály.
 
 
 
-\chapter{Implementace metrik vizuální podobnosti}
+\chapter{Detaily pro implementaci metrik vizuální podobnosti}
 
 V minulé kapitole jsme viděli přehled metod, jak přistoupit k porovnávání dvou různých obrázků.
 Předvedli jsme, jak vyčíslit rozdíl mezi dvěma obrázky.
@@ -648,9 +648,9 @@ Proto se podívejme, jak Wassersteinovu vzdálenost spočíst rychleji, byť za 
 V následujících odstavcích textu uvažujme, že chceme spočítat vzdálenost mezi diskrétními rozděleními,
 jejichž pravděpodobnostními vektory jsou $\mu \in \mathbb{R}^q$ a $\nu \in \mathbb{R}^q$, kde $q \in \mathbb{N}$.
 Dále označme $1_q$ vektor, jehož hodnoty v každé souřadnici jsou rovny $1$ a má dimenzi udanou v indexu.
-Platí tedy $\mu^T 1_q = \nu^T 1_q = 1$ a $\forall i \; \nu_i \geq 0$ a $\forall j \; \nu_j \geq 0$.
+Platí tedy $\mu^T 1_q = \nu^T 1_q = 1$ a $\forall i \; \mu_i \geq 0$ a $\forall j \; \nu_j \geq 0$.
 Označme jako $U(\mu, \nu)$ množinu všech matic $P \in \mathbb{R}^{q \times q}, P_{i,j} \geq 0$
-takových, že $P 1_q = \nu$ a $P^T 1_q = \mu$.
+takových, že $P 1_q = \mu$ a $P^T 1_q = \nu$.
 Jako matici $C$ označme zadanou matici cen, která splňuje, že reprezentuje metriku.
 To znamená, že $C_{i, j} \geq 0$, $C_{i, j} = 0 \iff i = j$, $C_{i, j} = C_{j, i}$ a $C_{i, k} \leq C_{i, j} + C_{j, k}$.
 Tedy prvek matice $C_{i, j}$ určuje metrickou vzdálenost mezi prvkem $i$ a prvkem $j$.
@@ -660,8 +660,10 @@ Potom lze napsat:
 \end{equation}
 kde $\langle P, C \rangle = \sum_{i, j = 1}^q P_{i, j} C_{i, j}$.
 Toto je důsledkem volby $p = 1$.
-To že infimum v definici (\ref{wass_def}) přechází v maimum je dáno tím,
+To že infimum v definici (\ref{wass_def}) přechází v minimum je dáno tím,
 že $U(\mu, \nu)$ je kompaktní podmnožina $\mathbb{R}^{q \times q}$.
+Dále poznamenejme, že $U(\mu, \nu)$ je také konvexní množina,
+což vychází z linearity jejích hraničních podmínek a faktu, že dvě nezáporná čísla se vždy sečtou opět na nezáporné číslo.
 
 
 \subsection{Sinkhornova metrika}
@@ -678,12 +680,17 @@ Připomeňme definici Kullback-Leiblerovy divergence:
     KL(\tilde{P} \| \hat{P}) = \sum_{i = 1}^q \sum_{j = 1}^q \tilde{P}_{i, j} \operatorname{log} \frac{\tilde{P}_{i, j}}{ \hat{P}_{i, j}}.
 \end{equation*}
 Pro dané $P \in U(\mu, \nu)$ lze na kvantitu $KL(P \| \mu \nu^T)$ nahlédnout jako na informaci mezi veličinami s rozděleními $\mu$ a $\nu$.
-Tedy $U_\alpha (\mu, \nu)$ vybírá ta rozdělení, která nesou malou vzájemnou informaci mezi $\mu$ a $\nu$ (ve smyslu menší než $\alpha$).
-Potom lze definovat Sinkhornovu metriku:
-\begin{equation}
+Tedy $U_\alpha (\mu, \nu)$ vybírá ta rozdělení,
+která nesou malou vzájemnou informaci mezi $\mu$ a $\nu$ (ve smyslu menší než $\alpha$).
+
+
+Potom lze definovat Sinkhornovu metriku pomocí zúžení definičního oboru jako
+\begin{equation} \label{sinkhorn_def}
     W^\alpha (\mu, \nu) = \min_{P \in U_\alpha (\mu, \nu)} \langle P, C \rangle.
 \end{equation}
-Dále na výraz $KL(P \| \mu \nu^T)$ lze nahlédnout následovně:
+Zde se tedy při hledání optimálního řešení $P^* = \operatornamewithlimits{argmin}_{P \in U_\alpha(\mu, \nu)} \langle P, C \rangle$
+omezíme na ta řešení, která nesou dostatečně malou vzájemnou informaci mezi rozděleními $\mu$ a $\nu$.
+Na výraz $KL(P \| \mu \nu^T)$ lze ale nahlédnout též následovně:
 \begin{align*}
     KL(P \| \mu \nu^T) &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \frac{P_{i, j}}{ \mu_i \nu_j}, \\
     &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} P_{i, j} -  \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \mu_i - \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \nu_j, \\
@@ -691,8 +698,51 @@ Dále na výraz $KL(P \| \mu \nu^T)$ lze nahlédnout následovně:
     &= - H(P) + H(\mu) + H(\nu),
 \end{align*}
 kde $H$ značí entropii.
-Odtud můžeme vidět, že podmínka $KL(P \| \mu \nu^T) \leq \alpha$ znamená, že požadujeme po sdruženém rozdělení $P$,
+Odtud můžeme vidět, že podmínka $KL(P \| \mu \nu^T) \leq \alpha$ znamená i to, že požadujeme po sdruženém rozdělení $P$,
 aby mělo velkou entropii.
+Abychom tedy osvětlili toto omezení definičního oboru hledání $P^*$, stačí si uvědomit,
+že na základě principu maximální entropie \cite{max_entropy}
+je jednodušší vybírat ta rozdělení, která mají entropii co největší.
+Avšak dodejme, že tato myšlenka je v protikladu s klasickým výsledkem linearního programování,
+jehož je v našem případě původní Wassersteinův problém instancí.
+Lineární programování totiž ukazuje, že řešení dopravního problému je takové rozdělení $P$,
+které je velmi podobné deterministickému,
+tedy, že entropie tohoto rozdělení je velmi nízká.
+
+Zkusme nyní nahlédnout na optimalizační problém v (\ref{sinkhorn_def}):
+\begin{align}
+    W^\alpha (\mu, \nu) &= \min_{P \in U (\mu, \nu)} \langle P, C \rangle, \\
+    &\, KL(P \| \mu \nu^T) - \alpha \leq 0.
+\end{align}
+Toto je instance konvexního optimalizačního problému,
+neboť účelová funkce je lineární, tedy i konvexní,
+dále Kullback-Leiblerova divergence je vzhledem ke svému prvnímu argumentu opět konvexní,
+což plyne z konvexity funkce $x \operatorname{ln} x$. To lze snadno ověřit výpočtem druhé derivace této funkce.
+A nakonec sám definiční obor je konvexní množina, jak již bylo poznamenáno.
+Dále uvažme, že $\mu \nu^T \in U(\mu, \nu)$ a zároveň $KL(\mu \nu^T \| \mu \nu^T) = 0$.
+Z tohoto vyplývá podle \cite{slater}, že pro tento problém platí silná dualita.
+
+Lagrangeova funkce tohoto problému vypadá následovně:
+\begin{equation}
+    \mathcal{L} (P, \lambda) = \langle P, C \rangle + \lambda \left( KL ( P \| \mu \nu^T) - \alpha \right).
+\end{equation}
+Na základě teorie optimalizace potom hledáme:
+\begin{equation}
+    \min_{P \in U(\mu, \nu)} \max_{\lambda \geq 0} \mathcal{L} (P, \lambda),
+\end{equation}
+což díky silné dualitě znamená, že hledáme:
+\begin{equation}
+    \max_{\lambda \geq 0} \min_{P \in U(\mu, \nu)} \mathcal{L} (P, \lambda),
+\end{equation}
+Tedy pro $\alpha > 0$ existuje $\lambda > 0$ takové, že $W^{\alpha} (\mu, \nu) = \min_{P \in U(\mu, \nu)} \mathcal{L}(P, \lambda)$.
+Což je ekvivalentní s tím, že existuje $\xi > 0$ takové,
+že $W^{\alpha} (\mu, \nu) = \min_{P \in U(\mu, \nu)} \mathcal{L}(P, \frac{1}{\xi})$.
+Když ještě rozepíšeme Lagrangeovu funkci:
+\begin{equation}
+    W^{\alpha} (\mu, \nu) = \min_{P \in U(\mu, \nu)} \left(\langle P, C \rangle - \frac{1}{\xi} H(P) \right)
+    + \frac{1}{\xi} \left(H(\mu) + H(\nu) - \alpha\right).
+\end{equation}
+
 
 
 \subsection{Duální Sinkhornova metrika}
@@ -707,10 +757,12 @@ Přejděme nyní od Sinkhornovy metriky k tzv. duální Sinkhornově metrice.
 Ta je pro pevně zvolené $\xi > 0$ definována následovně:
 \begin{align}
     W^\xi (\mu, \nu) &= \langle P^\xi, C \rangle, \\
-    kde \; P^\xi &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \langle P, C \rangle - \frac{1}{\xi} H(P),
+    kde \; P^\xi &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \left( \langle P, C \rangle - \frac{1}{\xi} H(P) \right),
 \end{align}
 kde $H(P)$ je opět entropie pravděpodobnostního rozdělení $P$.
-Jedná se tedy o regularizovaný dopravní problém.
+Jedná se tedy ve výsledku o regularizovaný dopravní problém,
+který je inspirován úvahami uvedenými v sekci o Sinkhornově metrice.
+
 Vliv parametru $\xi$ je potom následující:
 Máme-li $\xi$ dostatečně velké, je jeho převrácená hodnota blízká nule,
 a proto se řešení regularizovaného problému bude blížit Wassersteinově metrice.
@@ -719,8 +771,12 @@ Nejdříve se ovšem podívejme na intuici za touto úpravou.
 
 Přechod od Wassersteinovy metriky k Sinkhornově spočíval v restrikci definičního oboru, kde hledáme
 (v řeči dopravního problému) dopravní plán $P$, na takové dopravní plány, které mají velkou entropii.
-Tohoto lze ovšem docílit i jiným způsobem, a to použitím regularizace v samotné účelové funkci optimalizačního problému.
+Tohoto lze ovšem vlastně docílit i jiným způsobem, a to použitím regularizace v samotné účelové funkci optimalizačního problému.
 Proto duální Sinkhornova metrika, u které máme to štěstí, že ji lze spočítat relativně rychle.
+
+Optimalizační problém duální Sinkhornovy metriky je opět konvexní,
+coč vychází z konkávity entropické funkce, která je zde vzata s opačným znaménkem
+a z již komentované konvexity definičního oboru.
 
 % Snadno lze nahlédnout na ekvivalentní definici $U_{\alpha} (\mu, \nu)$:
 % \begin{equation}
@@ -743,21 +799,21 @@ Proto duální Sinkhornova metrika, u které máme to štěstí, že ji lze spo�
 
 Jelikož Lagrangeova funkce daného optimalizačního problému vypadá následovně:
 \begin{equation*}
-    L(P; m, n) = \sum_{i,j} P_{i, j} C_{i, j} - \frac{1}{\lambda} H(P) + \sum_{i} m_i \left(\sum_{j} P_{i, j} - \mu_i\right) + \sum_{j} n_j \left(\sum_{i} P_{i, j} - \nu_j\right),
+    L(P; m, n) = \sum_{i,j} P_{i, j} C_{i, j} - \frac{1}{\xi} H(P) + \sum_{i} m_i \left(\sum_{j} P_{i, j} - \mu_i\right) + \sum_{j} n_j \left(\sum_{i} P_{i, j} - \nu_j\right),
 \end{equation*}
 kde $m$ a $n$ jsou vektory Lagrangeových multiplikátorů,
 tak derivace této Lagrangeovy funkce dle $P_{i, j}$ bude vypadat následovně:
 \begin{equation*}
-    \frac{\partial L}{\partial P_{i, j}} = C_{i, j} + \frac{1}{\lambda} \operatorname{log}P_{i, j} + \frac{1}{\lambda} + m_i + n_j. 
+    \frac{\partial L}{\partial P_{i, j}} = C_{i, j} + \frac{1}{\xi} \operatorname{log}P_{i, j} + \frac{1}{\xi} + m_i + n_j. 
 \end{equation*}
 Položme nyní tento gradient roven nule a vyjádřeme $P_{i, j}$:
 \begin{align*}
-    P_{i, j} &= \operatorname{exp}\left(-\lambda C_{i, j} - 1 - \lambda m_i - \lambda n_j\right) \\
-    &= \operatorname{exp}\left(\lambda m_i - \frac{1}{2}\right) \operatorname{exp}\left(\lambda C_{i, j}\right) \operatorname{exp}\left(\lambda n_j - \frac{1}{2}\right) 
+    P_{i, j} &= \operatorname{exp}\left(-\xi C_{i, j} - 1 - \xi m_i - \xi n_j\right) \\
+    &= \operatorname{exp}\left(- \xi m_i - \frac{1}{2}\right) \operatorname{exp}\left(- \xi C_{i, j}\right) \operatorname{exp}\left(- \xi n_j - \frac{1}{2}\right) 
 \end{align*}
-Označme $u \in \mathbb{R}^q$, pro který platí $u_i = \operatorname{exp} \left(- \lambda m_i - \frac{1}{2}\right)$
-a $v \in \mathbb{R}^q$, pro který platí $v_j = \operatorname{exp} \left(- \lambda n_j - \frac{1}{2}\right)$,
-dále jako $K \in \mathbb{R}^{q \times q}$ matici, pro kterou platí $K_{i, j} = \operatorname{exp} \left(- \lambda C_{i, j}\right)$.
+Označme $u \in \mathbb{R}^q$, pro který platí $u_i = \operatorname{exp} \left(- \xi m_i - \frac{1}{2}\right)$
+a $v \in \mathbb{R}^q$, pro který platí $v_j = \operatorname{exp} \left(- \xi n_j - \frac{1}{2}\right)$,
+dále jako $K \in \mathbb{R}^{q \times q}$ matici, pro kterou platí $K_{i, j} = \operatorname{exp} \left(- \xi C_{i, j}\right)$.
 Dostáváme tedy, že řešení optimalizačního problému nalezneme ve tvaru součinu tří matic:
 \begin{equation} \label{criterium}
     P = \operatorname{diag}(u) K \operatorname{diag} (v), 
@@ -765,25 +821,36 @@ Dostáváme tedy, že řešení optimalizačního problému nalezneme ve tvaru s
 kde $\operatorname{diag}$ přiřadí vektoru čtvercovou matici, která má vektor v argumenu na diagonále.
 
 Podle Sinkhornovy věty \cite{sinkhorn_thm} potom platí, jelikož matice $K$ je čtvercová a má kladné prvky,
-že existuje jednoznačně (až na multiplikativní konstantu) matice $Q$, která je dvojtě stochastická,
+že existují matice $D_1, D_2 \in R^{q \times q}$,
+které jsou diagonální s kladnými prvky na diagonále,
+pro které platí, že matice $Q = D_1 K D_2$ je dvojitě stochastická,
 tedy že $\sum_{i} Q_{i, j} = \sum_{j} Q_{i, j} = 1$.
-Získáme-li tedy tuto matici, můžeme její řádky vynásobit prvky vektoru rozdělení $\mu$
+Tyto matice jsou jednoznačně určené až na multiplikativní konstantu, kterou lze jednu z matic vynásobit a druhou vydělit.
+
+
+Získáme-li tedy matici $Q$, můžeme její řádky vynásobit prvky vektoru rozdělení $\mu$
 a její sloupce prvky vektoru rozdělení $\nu$.
 Tím získáme matici z $U(\mu, \nu)$, tedy z našeho definičního oboru, napsanou ve tvaru:
-\begin{equation*}
-    R = \operatorname{diag}(\mu) Q \operatorname{diag}(\nu).
-\end{equation*}
+\begin{align*}
+    R &= \operatorname{diag}(\mu) Q \operatorname{diag}(\nu), \\
+    &= \operatorname{diag}(\mu) D_1 K D_2 \operatorname{diag}(\nu)
+\end{align*}
 Když tuto matici $R$ položíme za hledanou matici $P$ splníme kritérium (\ref{criterium}),
-jelikož nalezneme taková čísla $w_i$, $z_j$ že $u_i = \mu_i w_i$ a $v_j = \nu_j z_j$.
+jelikož matice $\operatorname{diag}(\mu) D_1$ a matice $\operatorname{diag}(\nu) D_2$ jsou diagonální.
 Je ovšem otázkou, jestli je toto kritérium nejen nutné, nýbrž i postačující.
-Ano, je i postačující, a to z důvodu konvexity optimalizační úlohy,
-která plyne jednak z konvexity účelové funkce, kde první člen je lineární, tedy i konvexní,
-a druhý člen je ostře konvexní, což plyne z ostré konkávity entropie, jež je vzata s opačným znaménkem.
-Definiční obor je také konvexní z linearního charakteru výrazů pro jeho hranice.
+Ano, je i postačující, a to z důvodu konvexity optimalizační úlohy.
 Tedy, najdeme-li $Q$ nalezneme i hledané $P$.
 
+K hledání této matice potom slouží algoritmus Sinkhornových iterací pevného bodu.
+Tento algoritmus je založen na postupném škálování řádků, resp. sloupečků původní matice (v našem případě matice $K$)
+tak, aby se řádky, resp. sloupečky sečetly na $1$.
+Detaily k tomuto algoritmu a rozbor jeho konvergence lze pak nalézt v \cite{sinkhorn_iters}.
+Ale jelikož původní problém nespočívá v nalezení matice, jež je dvojitě stochastická,
+nýbrž jež se nachází v $U(\mu, \nu)$, tak lze tyto iterace ještě upravit,
+aby výsledkem byla hledaná matice $P$, potažmo její Frobeniův součin s maticí cen,
+jež je hodnotou duální Sinkhornovy metriky.
 
-V \cite{wass_computation} potom lze nalézt algoritmus pro výpočet duální Sinkhornovy metriky:
+V \cite{wass_computation} potom lze nalézt onen algoritmus pro výpočet duální Sinkhornovy metriky:
 Na vstupu algoritmus dostává pravděpodobnostní rozdělení $\mu$ a $\nu$, jejichž vzdálenost je hledaná,
 dále matici cen $C$ a regularizační parametr $\xi$.
 \begin{enumerate}
@@ -837,8 +904,8 @@ Bohužel ale v praxi narážíme na limity strojové přesnosti.
 Při provádění kroku 4 v algoritmu se stává, že ona vypočtená exponenciála je v počítači reprezentována nulou.
 Dokonce není ojedinělé, že je v počítači nulový celý sloupec vzniklé matice $K$.
 Toto způsobuje, že algoritmus selže, neboť se v kroku 7 potom nulou dělí.
-Proto do výsledné implementace vstupuje ještě další parametr, a to je kladná konstanta pro stabilitu dělení,
-kterou přičteme ke každému prvku matice $K$.
+Proto do výsledné implementace vstupuje ještě další parametr, a to je malá kladná konstanta pro stabilitu dělení,
+kterou nahradíme každý prvek matice $K$, který je menší než ona zvolená konstanta.
 Takto upravený algoritmus potom již vrací aproximaci Wassersteinovy vzdálenosti pro dva zadané obrázky.
 
 \section{Structural dissimilarity}
@@ -857,6 +924,13 @@ která plyne z vlastnosti
 \begin{equation}
     \operatorname{SSIM}(x, \tilde{x}) = 1 \iff x = \tilde{x}.
 \end{equation}
+
+\chapter{Implementace metrik vizuální podobnosti}
+
+\section{Příklady použití kódu}
+
+\section{Testování naimplementovaných metrik}
+
 
 \chapter{Porovnání metrik vizuální podobnosti}
 
@@ -1415,6 +1489,18 @@ L. Antiga, A. Desmaison, A. Kopf, E. Yang,
 Z. DeVito, M. Raison, A. Tejani, S. Chilamkurthy, B. Steiner, L. Fang, J. Bai, S. Chintala:
 \emph{PyTorch: An Imperative Style, High-Performance Deep Learning Library}.
 Advances in Neural Information Processing Systems 32, 8024–8035, 2019.
+
+\bibitem{max_entropy}E. T. Jaynes:
+\emph{Information theory and statistical mechanics}.
+Phys. Rev., 106:620–630, 1957.
+
+\bibitem{slater}M. Slater:
+\emph{Lagrange Multipliers Revisited}.
+Cowles Commission Discussion Paper, 1950.
+
+\bibitem{sinkhorn_iters}R. Sinkhorn, P. Knopp:
+\emph{Concerning nonnegative matrices and doubly stochastic matrices}.
+Pacific J. Math. 21, 343–348, 1967.
 
 \end{thebibliography}
 
