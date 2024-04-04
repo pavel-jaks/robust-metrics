@@ -339,7 +339,7 @@ V první kapitole představujeme samotné metriky vizuální podobnosti.
 Jelikož obrázky v počítači, s nimiž pracujeme, lze chápat jako tenzory,
 lze se podívat na obrázky v klasické $l_p$ normě.
 Část této kapitoly se proto věnuje formální definici těchto $l_p$ norem
-a toho, jak z nich zkonstuovat metriku.
+a toho, jak z nich zkonstruovat metriku.
 Zmiňujeme i metriky založené na průměrování rozdílů prvků vektorů,
 tedy metriky MSE (\emph{mean squared error}) a RMSE (\emph{root mean squared error}),
 dále i jejich logaritmickou transformaci známou pod zkratkou PSNR (\emph{peak signal to noise ratio}).
@@ -968,6 +968,85 @@ V tomto ouboru je potom samotná implementace metrik vizuální podobnosti.
 
 \section{Koncepty pro použití kódu}
 
+Pro použití implementace metrik vizuální podobnosti, která je součástí této práce,
+je stěžejní mít osvojeny některé programovací koncepty.
+V první řadě se jedná o zvládnutí programovacího jazyka Python.
+Tento programovací jazyk je potom dynamicky typovaným jazyken,
+ve kterém se mísí několit paradigmat programování.
+Mezi tato paradigmata patří objektově orientované programování,
+dále pak proceduální či funkcionální programování.
+
+Pro knihovnu PyTorch, která je využita v implementaci metrik vizuální podobnosti,
+je potom klíčové ono objektově orientované programování.
+Z tohoto důvodu jsou všechny metriky napsány jako třídy,
+které jsou poděděny od abstraktní třídy, jež je součástí knihovny PyTorch,
+totiž od třídy \emph{Module}, která se v rámci knihovny PyTorch nachází v modulu s názvem \emph{nn}.
+Tato třída implementuje speciální metodu programovacího jazyka Python,
+jež se jmenuje \emph{\_\_call\_\_}.
+Její implementace nějakou třídou potom opravňuje uživatele dané třídy k zacházení s instancí této třídy jako s funkcí.
+Toto je praktika knihovně PyTorch vlastní.
+
+Třída \emph{Module} potom v rámci implementace metody \emph{\_\_call\_\_} spouští abstraktní metodu \emph{forward}.
+Tato metoda je potom přepsána v třídách implementující abstraktní třídu \emph{Module},
+tedy i třídou \emph{Metric}, která je bázovou abstraktní třídou pro třídy metrik vizuální podobnosti
+a součástí kódu příslušícího této práci.
+
+Další vlastností knihovny PyTorch je její přístup k masivní paralelizaci.
+Pro úlohy strojového učení je totiž typické, že je chceme provádět na vícero datech zárověň.
+Proto je pro tuto knihovnu standardem implementovat algoritmy tak,
+aby byly spustitelné pro celé dávky dat.
+K tomuto bylo přihlédnuto i v této práci,
+neboť třídy metrik nepočítají vzdálenost mezi jedinou dvojicí obrázků,
+nýbrž mezi dávkou dvojic.
+
+Neodmyslitelnou součástí knihovny PyTorch je potom její datový typ \emph{Tensor},
+což je třída, která zapouzdřuje v podstatě pole čísel libovolných rozměrů.
+Tato třída dále implementuje mnoho užitečných metod pro práci s poli čísel
+a přepisuje chování mnoha operátorů.
+Aby tedy bylo možné tyto funkcionality použít pro výpočet metrik vizuální podobnosti mezi páry obrázků,
+je metoda \emph{forward} tříd metrik napsána tak, že jako argumenty přijímá dva objekty právě typu \emph{Tensor}.
+
+Dále implementace metrik vizuální podobnosti umožňuje před samotným výpočtem provést libovolnou transformaci obrázků,
+která se předává metrice jako parametr konstruktoru.
+Příkladem může být přeškálování obrázků, aby měly jednotnou velikost.
+
+
+\section{Příklad použití metrik vizuální podobnosti}
+
+Nyní lze tedy přistoupit k nastínění použití kódu této práce.
+Po správném importu modulu \emph{metrics} či jeho několika exportovaných objektů,
+může uživatel zkonstruovat instanci metriky, přičemž zadá transformaci a parametry metrice vlastní.
+Dále pak snadno použije mtriku tak, že proměnnou, ve které je instance metriky uložena,
+zavolá jako funkci s dvěma parametry, kterými jsou instance třídy \emph{Tensor}.
+
+Uvažme, že chceme spočíst aproximaci Wassersteinovy vzdálenosti mezi náhodnými obrázky velikosti $20 \times 20$.
+Kód by potom mohl vypadat jako v Listing \ref{ex1}.
+
+\begin{lstlisting}[language=Python, caption=Příklad výpočtu aproximace Wassersteinovy vzdálenosti, label=ex1]
+# import knihovny PyTorch
+import torch
+
+# import tridy pro vypocet metriky
+from metrics import WassersteinApproximation
+
+# nahodne obrazky
+# Tensor rozmeru: davka x pocet kanalu x sirka x vyska
+image1 = torch.rand(1, 1, 20, 20)
+image2 = torch.rand(1, 1, 20, 20)
+
+# instance metriky
+metric = WassersteinApproximation(regularization=5)
+
+# samotny vypocet metriky
+distance = metric(image1, image2)
+\end{lstlisting}
+
+Samotná dokumentace ke všem implemntovaným metrikám,
+tedy i význam jednotlivých parametrů a jejich korespondence s matematickými koncepty metrik vizuální podobnosti,
+je dostupná v repozitáři této práce v souboru
+\href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics/README.md}{README.md}
+v adresáři \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics}{metrics}
+adresáře \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code}{code}.
 
 
 \section{Testování naimplementovaných metrik}
