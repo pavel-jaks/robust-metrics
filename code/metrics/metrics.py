@@ -174,7 +174,7 @@ class LpMetric(MetricFromNorm):
     Metric devived from a L_p norm
     """
     
-    def __init__(self, p, transform: Union[Transform, None] = None):
+    def __init__(self, p: int, transform: Union[Transform, None] = None):
         """
         Implementation of a constructor
         :param p: Positive integer p
@@ -369,6 +369,7 @@ class WassersteinApproximation(Metric):
         :param iterations: fixed number of iterations
         :param division_const: constant added to escape division by zero
         :param cost_matrix_type: type of cost matrics to be used for the computation
+        :param tolerance: Possible stopping criterion.
         """
         super().__init__(transform)
         self.regularization = regularization
