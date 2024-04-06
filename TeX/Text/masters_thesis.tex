@@ -764,9 +764,9 @@ Když ještě rozepíšeme Lagrangeovu funkci:
 
 Přejděme nyní od Sinkhornovy metriky k tzv. duální Sinkhornově metrice.
 Ta je pro pevně zvolené $\xi > 0$ definována následovně:
-\begin{align}
+\begin{align} \label{ds_metric}
     W^\xi (\mu, \nu) &= \langle P^\xi, C \rangle, \\
-    kde \; P^\xi &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \left( \langle P, C \rangle - \frac{1}{\xi} H(P) \right),
+    kde \; P^\xi &= \operatornamewithlimits{argmin}_{P \in U(\mu, \nu)} \left( \langle P, C \rangle - \frac{1}{\xi} H(P) \right), \label{ds_optim}
 \end{align}
 kde $H(P)$ je opět entropie pravděpodobnostního rozdělení $P$.
 Jedná se tedy ve výsledku o regularizovaný dopravní problém,
@@ -1050,6 +1050,32 @@ adresáře \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code}{co
 
 
 \section{Testování naimplementovaných metrik}
+
+Pro účely ověření správnosti implementace vybraných metrik vizuální podobnosti
+jsou součástí této práce i testy.
+Tyto testy jsou napsány tak, aby byly kompatibilní s veřejně dostupnou knihovnou \emph{Pytest}.
+Stěžejní je zejména otestovat metriku \emph{DSSIM} a \emph{aproximaci Wassersteinovy metriky},
+neboť kód implementace těchto metrik vizuální podobnosti je relativně dlouhý a je snadné při jeho psaní udělat chybu.
+
+Pro otestování funkčnosti implementací metrik vizuální podobnosti byl zvolen následující přístup.
+Pro několik obrázků náhodně vybraných z datové sady \emph{MNIST} \cite{MNIST} a jejich poškozené verze,
+oba velikosti $28 \times 28$
+(pro aproximaci Wassersteinovy vzdálenosti náhodné obrázky velikosti $5 \times 5$) je spočtena daná metrika vizuální podobnosti
+pomocí implementace, jež je součástí této práce, a pomocí alternativního kódu,
+který typicky neoperuje nad datovými typy knihovny PyTorch.
+Následně jsou tyto dvě hodnoty srovnány, a pokud se neliší o více než pevně stanovenou toleranci ($10^{-5}$),
+tak se test považuje za úspěšně splněný.
+
+Za alternativní kusy kódu, kterými ověřujeme správnost implementace spjaté s touto prací,
+je přednostně volena implementace těch samých metrik, byť pro jiné datové typy,
+které jsou k dispozici v jiných veřejně dostupných softwarových knihovnách.
+Takto byly napsány testy pro metriky \emph{MSE}, \emph{DSSIM} a \emph{PSNR}
+za pomoci knihovny \emph{scikit-image} \cite{skimage}.
+
+Kód pro testování aproximace Wassersteinovy metriky spočívá v přímém řešení optimalizačního problému (\ref{ds_optim})
+a následného dosazení jeho řešení do (\ref{ds_metric}).
+K vyřešení tohoto problému konvexní optimalizace je používána knihovna \emph{CVXPY} \cite{cvxpy1,cvxpy2},
+která na základě datových typů knihovny \emph{NumPy} \cite{numpy} takové problémy řeší.
 
 
 \chapter{Porovnání metrik vizuální podobnosti}
@@ -1612,7 +1638,7 @@ Advances in Neural Information Processing Systems 32, 8024–8035, 2019.
 
 \bibitem{max_entropy}E. T. Jaynes:
 \emph{Information theory and statistical mechanics}.
-Phys. Rev., 106:620–630, 1957.
+Phys. Rev. 106, 620–630, 1957.
 
 \bibitem{slater}M. Slater:
 \emph{Lagrange Multipliers Revisited}.
@@ -1621,6 +1647,24 @@ Cowles Commission Discussion Paper, 1950.
 \bibitem{sinkhorn_iters}R. Sinkhorn, P. Knopp:
 \emph{Concerning nonnegative matrices and doubly stochastic matrices}.
 Pacific J. Math. 21, 343–348, 1967.
+
+\bibitem{skimage}S. van der Walt, J. L. Schönberger, J. Nunez-Iglesias, F. Boulogne,
+J. D. Warner, N. Yager, E. Gouillart, T. Yu, scikit-image contributors:
+\emph{scikit-image: image processing in Python}.
+PeerJ 2:e453, 2014.
+
+\bibitem{cvxpy1}S. Diamond, S. Boyd:
+\emph{CVXPY: A Python-embedded modeling language for convex optimization}.
+Journal of Machine Learning Research 17, 1-5, 2016.
+
+\bibitem{cvxpy2}A. Agrawal, R. Verschueren, S. Diamond, S. Boyd:
+\emph{A rewriting system for convex optimization problems}.
+Journal of Control and Decision 5, 42-60, 2018.
+
+\bibitem{numpy}C. R. Harris, K. J. Millman, S. J. van der Walt, et al.:
+\emph{Array programming with NumPy}.
+Nature 585, 357–362, 2020.
+
 
 \end{thebibliography}
 
