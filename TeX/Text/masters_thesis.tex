@@ -369,6 +369,7 @@ snaží měřit programovací knihovny \emph{Foolbox} a \emph{RobustBench}.
 
 \pagestyle{headings}
 
+
 \chapter{Metriky vizuální podobnosti}
 
 Metrika vizuální podobnosti je nástroj, který umožňuje, jak napovídá sám název,
@@ -612,8 +613,6 @@ Může se také stát, že SSIM vrátí zápornou hodnotu, která může vznikno
 Jak volíme celkový SSIM pro barevné obrázky?
 Jako průměr přes kanály.
 
-
-
 \chapter{Detaily pro implementaci metrik vizuální podobnosti}
 
 V minulé kapitole jsme viděli přehled metod, jak přistoupit k porovnávání dvou různých obrázků.
@@ -697,19 +696,33 @@ Potom lze definovat Sinkhornovu metriku pomocí zúžení definičního oboru ja
 \begin{equation} \label{sinkhorn_def}
     W^\alpha (\mu, \nu) = \min_{P \in U_\alpha (\mu, \nu)} \langle P, C \rangle.
 \end{equation}
+Jelikož
+\begin{equation*}
+    \left(\forall P \in U_\alpha (\mu, \nu)\right) \left(P \in U(\mu, \nu)\right),
+\end{equation*}
+tak jistě
+\begin{equation*}
+    W^\alpha (\mu, \nu) \geq W(\mu, \nu).
+\end{equation*}
+Sinkhornova metrika je tedy horním odhadem Wassersteinovy metriky.
+
 Zde se tedy při hledání optimálního řešení $P^* = \operatornamewithlimits{argmin}_{P \in U_\alpha(\mu, \nu)} \langle P, C \rangle$
 omezíme na ta řešení, která nesou dostatečně malou vzájemnou informaci mezi rozděleními $\mu$ a $\nu$.
 Na výraz $KL(P \| \mu \nu^T)$ lze ale nahlédnout též následovně:
-\begin{align*}
+\begin{align}
     KL(P \| \mu \nu^T) &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \frac{P_{i, j}}{ \mu_i \nu_j}, \\
     &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} P_{i, j} -  \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \mu_i - \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \nu_j, \\
     &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} P_{i, j} -  \sum_{i = 1}^q \mu_i \operatorname{log} \mu_i - \sum_{j = 1}^q \nu_j \operatorname{log} \nu_j, \\
-    &= - H(P) + H(\mu) + H(\nu),
-\end{align*}
+    &= - H(P) + H(\mu) + H(\nu), \label{rewrite_constraint}
+\end{align}
 kde $H$ značí entropii.
 Odtud můžeme vidět, že podmínka $KL(P \| \mu \nu^T) \leq \alpha$ znamená i to, že požadujeme po sdruženém rozdělení $P$,
-aby mělo velkou entropii.
-Abychom tedy osvětlili toto omezení definičního oboru hledání $P^*$, stačí si uvědomit,
+aby mělo velkou entropii. Tedy:
+\begin{equation}
+    H(P) \geq H(\mu) + H(\nu) - \alpha.
+\end{equation}
+
+Abychom osvětlili toto omezení definičního oboru hledání $P^*$, stačí si uvědomit,
 že na základě principu maximální entropie \cite{max_entropy}
 je jednodušší vybírat ta rozdělení, která mají entropii co největší.
 Avšak dodejme, že tato myšlenka je v protikladu s klasickým výsledkem linearního programování,
@@ -746,7 +759,7 @@ což díky silné dualitě znamená, že hledáme:
 Tedy pro $\alpha > 0$ existuje $\lambda > 0$ takové, že $W^{\alpha} (\mu, \nu) = \min_{P \in U(\mu, \nu)} \mathcal{L}(P, \lambda)$.
 Což je ekvivalentní s tím, že existuje $\xi > 0$ takové,
 že $W^{\alpha} (\mu, \nu) = \min_{P \in U(\mu, \nu)} \mathcal{L}(P, \frac{1}{\xi})$.
-Když ještě rozepíšeme Lagrangeovu funkci:
+Když ještě rozepíšeme Lagrangeovu funkci při uvážení (\ref{rewrite_constraint}):
 \begin{equation}
     W^{\alpha} (\mu, \nu) = \min_{P \in U(\mu, \nu)} \left(\langle P, C \rangle - \frac{1}{\xi} H(P) \right)
     + \frac{1}{\xi} \left(H(\mu) + H(\nu) - \alpha\right).
@@ -828,6 +841,8 @@ Dostáváme tedy, že řešení optimalizačního problému nalezneme ve tvaru s
     P = \operatorname{diag}(u) K \operatorname{diag} (v), 
 \end{equation}
 kde $\operatorname{diag}$ přiřadí vektoru čtvercovou matici, která má vektor v argumenu na diagonále.
+S přihlédnutím k faktu, že matice $K$ je vzhledem k proměnným Lagrangeovy funkce nezávislá a konstantní,
+vidíme že hledáme vektory $u$ a $v$. Tyto vektory jsou potom transformacemi vektorů Lagrangeových multiplikátorů $m$ a $n$.
 
 Podle Sinkhornovy věty \cite{sinkhorn_thm} potom platí, jelikož matice $K$ je čtvercová a má kladné prvky,
 že existují matice $D_1, D_2 \in R^{q \times q}$,
@@ -933,240 +948,6 @@ která plyne z vlastnosti
 \begin{equation}
     \operatorname{SSIM}(x, \tilde{x}) = 1 \iff x = \tilde{x}.
 \end{equation}
-
-\chapter{Implementace metrik vizuální podobnosti}
-
-Součástí této práce je potom i samotná implementace metrik vizuální podobnosti uvedených a popsaných
-v předchozích kapitolách.
-Tato implementace je pak koncipována tak, aby bylo možné naimplementované metriky použít
-pro tvorbu tzv. adversariálních vzorků.
-Toto téma pak bude více osvětleno v jedné z následujících kapitol.
-Lze však nastínit, že se jedná o jednu z úloh strojového učení.
-
-Pro úlohy strojového učení je potom stěžejní, že je mnohdy lze provádět paralelizovaně.
-S tímto na mysli vznikla programovací knihovna \emph{PyTorch} \cite{pytorch}
-pro prostředí programovacího jazyka \emph{Python} \cite{python}.
-Použití knihovny PyTorch je potom pro tuto práci klíčové.
-Proto i metriky vizuální podobnosti, kterými se tato práce z nemalé části zabývá,
-jsou implementovány za využití prostředků, které tato knihovna nabízí,
-a principů, které tato knihovna prosazuje.
-
-\section{Veřejné úložiště kódu}
-
-Pro zpřístupnění naimplementovaných metrik vizuální podobnosti
-bylo zvoleno úložiště zdrojových kódů GitHub, které je kompatibilní se systémem správy verzí Git.
-Samotný repozitář, který kromě samotného textu této práce obsahuje taktéž i onu implementaci
-metrik vizuální podobnosti, lze nalézt na webové adrese
-\href{https://github.com/pavel-jaks/robust-metrics}{https://github.com/pavel-jaks/robust-metrics}.
-
-Repozitář obsahuje adresář \href{https://github.com/pavel-jaks/robust-metrics/tree/main/TeX}{TeX}, v němž se nachází tento text.
-Dále repozitář obsahuje stěžejní adresář \href{https://github.com/pavel-jaks/robust-metrics/tree/main/code}{code},
-ve kterém se nachází v adresáři \href{https://github.com/pavel-jaks/robust-metrics/tree/main/code/metrics}{metrics}
-soubor \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics/metrics.py}{metrics.py}.
-V tomto ouboru je potom samotná implementace metrik vizuální podobnosti.
-
-
-\section{Koncepty pro použití kódu}
-
-Pro použití implementace metrik vizuální podobnosti, která je součástí této práce,
-je stěžejní mít osvojeny některé programovací koncepty.
-V první řadě se jedná o zvládnutí programovacího jazyka Python.
-Tento programovací jazyk je potom dynamicky typovaným jazyken,
-ve kterém se mísí několit paradigmat programování.
-Mezi tato paradigmata patří objektově orientované programování,
-dále pak proceduální či funkcionální programování.
-
-Pro knihovnu PyTorch, která je využita v implementaci metrik vizuální podobnosti,
-je potom klíčové ono objektově orientované programování.
-Z tohoto důvodu jsou všechny metriky napsány jako třídy,
-které jsou poděděny od abstraktní třídy, jež je součástí knihovny PyTorch,
-totiž od třídy \emph{Module}, která se v rámci knihovny PyTorch nachází v modulu s názvem \emph{nn}.
-Tato třída implementuje speciální metodu programovacího jazyka Python,
-jež se jmenuje \emph{\_\_call\_\_}.
-Její implementace nějakou třídou potom opravňuje uživatele dané třídy k zacházení s instancí této třídy jako s funkcí.
-Toto je praktika knihovně PyTorch vlastní.
-
-Třída \emph{Module} potom v rámci implementace metody \emph{\_\_call\_\_} spouští abstraktní metodu \emph{forward}.
-Tato metoda je potom přepsána v třídách implementující abstraktní třídu \emph{Module},
-tedy i třídou \emph{Metric}, která je bázovou abstraktní třídou pro třídy metrik vizuální podobnosti
-a součástí kódu příslušícího této práci.
-
-Další vlastností knihovny PyTorch je její přístup k masivní paralelizaci.
-Pro úlohy strojového učení je totiž typické, že je chceme provádět na vícero datech zárověň.
-Proto je pro tuto knihovnu standardem implementovat algoritmy tak,
-aby byly spustitelné pro celé dávky dat.
-K tomuto bylo přihlédnuto i v této práci,
-neboť třídy metrik nepočítají vzdálenost mezi jedinou dvojicí obrázků,
-nýbrž mezi dávkou dvojic.
-
-Neodmyslitelnou součástí knihovny PyTorch je potom její datový typ \emph{Tensor},
-což je třída, která zapouzdřuje v podstatě pole čísel libovolných rozměrů.
-Tato třída dále implementuje mnoho užitečných metod pro práci s poli čísel
-a přepisuje chování mnoha operátorů.
-Aby tedy bylo možné tyto funkcionality použít pro výpočet metrik vizuální podobnosti mezi páry obrázků,
-je metoda \emph{forward} tříd metrik napsána tak, že jako argumenty přijímá dva objekty právě typu \emph{Tensor}.
-
-Dále implementace metrik vizuální podobnosti umožňuje před samotným výpočtem provést libovolnou transformaci obrázků,
-která se předává metrice jako parametr konstruktoru.
-Příkladem může být přeškálování obrázků, aby měly jednotnou velikost.
-
-
-\section{Příklad použití metrik vizuální podobnosti}
-
-Nyní lze tedy přistoupit k nastínění použití kódu této práce.
-Po správném importu modulu \emph{metrics} či jeho několika exportovaných objektů,
-může uživatel zkonstruovat instanci metriky, přičemž zadá transformaci a parametry metrice vlastní.
-Dále pak snadno použije mtriku tak, že proměnnou, ve které je instance metriky uložena,
-zavolá jako funkci s dvěma parametry, kterými jsou instance třídy \emph{Tensor}.
-
-Uvažme, že chceme spočíst aproximaci Wassersteinovy vzdálenosti mezi náhodnými obrázky velikosti $20 \times 20$.
-Kód by potom mohl vypadat jako v Listing \ref{ex1}.
-
-\begin{lstlisting}[language=Python, caption=Příklad výpočtu aproximace Wassersteinovy vzdálenosti, label=ex1]
-# import knihovny PyTorch
-import torch
-
-# import tridy pro vypocet metriky
-from metrics import WassersteinApproximation
-
-# nahodne obrazky
-# Tensor rozmeru: davka x pocet kanalu x sirka x vyska
-image1 = torch.rand(1, 1, 20, 20)
-image2 = torch.rand(1, 1, 20, 20)
-
-# instance metriky
-metric = WassersteinApproximation(regularization=5)
-
-# samotny vypocet metriky
-distance = metric(image1, image2)
-\end{lstlisting}
-
-Samotná dokumentace ke všem implemntovaným metrikám,
-tedy i význam jednotlivých parametrů a jejich korespondence s matematickými koncepty metrik vizuální podobnosti,
-je dostupná v repozitáři této práce v souboru
-\href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics/README.md}{README.md}
-v adresáři \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics}{metrics}
-adresáře \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code}{code}.
-
-
-\section{Testování naimplementovaných metrik}
-
-Pro účely ověření správnosti implementace vybraných metrik vizuální podobnosti
-jsou součástí této práce i testy.
-Tyto testy jsou napsány tak, aby byly kompatibilní s veřejně dostupnou knihovnou \emph{Pytest}.
-Stěžejní je zejména otestovat metriku \emph{DSSIM} a \emph{aproximaci Wassersteinovy metriky},
-neboť kód implementace těchto metrik vizuální podobnosti je relativně dlouhý a je snadné při jeho psaní udělat chybu.
-
-Pro otestování funkčnosti implementací metrik vizuální podobnosti byl zvolen následující přístup.
-Pro několik obrázků náhodně vybraných z datové sady \emph{MNIST} \cite{MNIST} a jejich poškozené verze,
-oba velikosti $28 \times 28$
-(pro aproximaci Wassersteinovy vzdálenosti náhodné obrázky velikosti $5 \times 5$) je spočtena daná metrika vizuální podobnosti
-pomocí implementace, jež je součástí této práce, a pomocí alternativního kódu,
-který typicky neoperuje nad datovými typy knihovny PyTorch.
-Následně jsou tyto dvě hodnoty srovnány, a pokud se neliší o více než pevně stanovenou toleranci ($10^{-5}$),
-tak se test považuje za úspěšně splněný.
-
-Za alternativní kusy kódu, kterými ověřujeme správnost implementace spjaté s touto prací,
-je přednostně volena implementace těch samých metrik, byť pro jiné datové typy,
-které jsou k dispozici v jiných veřejně dostupných softwarových knihovnách.
-Takto byly napsány testy pro metriky \emph{MSE}, \emph{DSSIM} a \emph{PSNR}
-za pomoci knihovny \emph{scikit-image} \cite{skimage}.
-
-Kód pro testování aproximace Wassersteinovy metriky spočívá v přímém řešení optimalizačního problému (\ref{ds_optim})
-a následného dosazení jeho řešení do (\ref{ds_metric}).
-K vyřešení tohoto problému konvexní optimalizace je používána knihovna \emph{CVXPY} \cite{cvxpy1,cvxpy2},
-která na základě datových typů knihovny \emph{NumPy} \cite{numpy} takové problémy řeší.
-
-
-\chapter{Porovnání metrik vizuální podobnosti}
-
-V minulých kapitolách jsme představili různé metriky vizuální podobnosti.
-Tyto metriky se od sebe navzájem liší, a to jak v matematické podstatě,
-tak ve svých vlastnostech, jako jsou výpočetní časová složitost či
-robustnost těchto metrik vůči běžným transformacím obrázků,
-které lidské oko vyhodnotí jako nezávažné změny a informaci,
-kterou obrázek nese, nepoškodí.
-
-Proto se v této kapitole podívejme, jak je která metrika časově výpočetně náročná.
-Dále pak srovnejme implementované metriky podle toho, jak reagují na šum v obrázku
-a na transformace, kterými mohou být translace či rotace.
-
-\section{Časová náročnost výpočtu}
-
-Některé metriky vizuální podobnosti spočívají v zásadě na sečtení mocnin rozdílů hodnot pixelů
-v příslušných souřadnicích.
-Lze proto očekávat, že jejich výpočet bude rychlejší, než například výpočet
-Wassersteinovy metriky, resp. její duální-Sinkhornovy aproximace,
-výpočet které potom spočívá v numerickém řešení netriviálního optimalizačního problému.
-
-Udělejme tedy experiment, který spočívá ve spuštění výpočtu dané metriky vizuální podobnosti,
-resp. naší implementace, a změření, jak dlouho samotný výpočet trval.
-Použijeme přitom paradigma vlastní knihovně \emph{PyTorch} \cite{pytorch},
-které spočívá v paralelizaci výpočtu tak, že počítáme vzájemné vzdálenosti více než jedné dvojice obrázků.
-Chtějme tedy změřit čas výpočtu metrik pro po řadě $10$ dvojic, $100$ dvojic a $1000$ dvojic černobílých obrázků
-o rozměrech $28 \times 28$, což je rozměr, který odpovídá obrázkům datové sady MNIST \cite{MNIST}.
-Z této datové sady zárověň jeden obrázek z páru obrázků, jejichž vzdálenost měříme, vybereme.
-Druhý obrázek v páru bude náhodně zašuměný první obrázek.
-Takovýto výpočet pak pro každou metriku proveďme desetkrát a vezměme průměrnou délku výpočtu.
-
-Mezi metriky, jejichž časovou výpočetní náročnost speciálně zkoumáme, jsme zařadili
-metriku založenou na normách $l_1$, $l_2$, $l_\infty$ a pseudonormě $l_0$.
-Dále pak několik metrik vizuální podobnosti založených na indexu SSIM.
-Zařadili jsme sem structural dissimilarity s neomezenou velikostí okna,
-dále pak structural dissimilarity s velikostmi okna po řadě $5$, $10$ a $20$.
-A jako poslední zkoumanou metriku jsme použili Wassersteinovu metriku, resp. její aproximaci.
-
-
-
-\begin{table}[]
-    \centering
-    \begin{tabular}{|l|r|r|r|}
-        \hline
-    \textbf{Metrika} & \multicolumn{1}{l|}{\textbf{10 párů}}                      & \multicolumn{1}{l|}{\textbf{100 párů}} & \multicolumn{1}{l|}{\textbf{1000 párů}} \\ \hline
-    $l_1$                                       & 0,0007036000025                                               & 0,001901599811                            & 0,01818950009                              \\
-    $l_2$                                       & 0,001508200075                                                & 0,002845599782                            & 0,02182809985                              \\
-    $l_\infty$                                  & 0,001301499782                                                & 0,003312000073                            & 0,02696179994                              \\
-    $l_0$                                       & 0,0009137999732                                               & 0,003584200051                            & 0,03133830009                              \\
-    $DSSIM$                                     & 0,007755599916                                                & 0,02364749997                             & 0,1672595001                               \\
-    $DSSIM_5$                                   & 0,7095767001                                                  & 1,0184459                                 & 4,2418431                                  \\
-    $DSSIM_{10}$                                & 0,4807517                                                     & 1,1263735                                 & 8,7425058                                  \\
-    $DSSIM_{20}$                                & 0,1537327999                                                  & 0,7804290999                              & 5,4182493                                  \\
-    $Wasserstein$                               & 10,9496173                                                    & 92,0328169                                & 840,9704119                               \\ \hline
-\end{tabular}
-\caption{Časy výpočtu jednotlivých metrik v sekundách pro různý počet párů.} \label{times}
-\end{table}
-
-
-V Tabulce \ref{times} jsou potom samotné výsledky tohoto experimentu.
-Jak lze zpozorovat z dat, metriky založené na $l_p$ normách a pseudonormě $l_0$
-jsou vypočteny takřka okamžitě (z pohledu lidského uživatele) a to odpovídá intuici.
-
-Metrikami náročnějšími na výpočet jsou potom metriky založené na indexu SSIM,
-kde mimo jiné roli ve výsledném čase hraje i velikost okna použitého při výpočtu.
-Použijeme-li neomezenou velikost okna, tedy velikost obrázku je velikostí okna,
-lze nahlédnout, že výpočet je méně časově náročný.
-Je to logické, neboť namísto výpočtu několika vlastních indexů SSIM mezi výřezy obrázků a jejich následného průměrování,
-počítáme jen jeden jediný index SSIM.
-
-Poslední změřenou metrikou je výpočetně nejnáročnější aproximace Wassersteinovy metriky,
-jejíž výpočet pro deset párů probíhal zhruba deset sekund.
-Tato metrika je tedy velmi drahá ve smyslu délky výpočetního času.
-
-
-\section{Robustnost metrik vůči šumu v obrázku}
-
-\section{Robustnost metrik vůči transformacímm obrázku}
-
-\subsection{Translace}
-
-\subsection{Rotace}
-
-\subsection{Změna jasu}
-
-\section{Porovnání implementací s implementacemi veřejných knihoven}
-
-
-% Samotnou výslednou implementaci v podobě kódu v jazyce \emph{Python} lze nalézt v příloze v části týkající se souboru \emph{metrics.py}.
 
 \chapter{Adversariální vzorky a jejich tvorba}
 
@@ -1316,6 +1097,324 @@ pro daný benigní vzorek $x$ vzat právě tento vzorek $x$.
 
 % \lstinputlisting[label=cw_code, language=Python, caption=adversarials.py, firstline=6]{../../code/adversarials.py}
 
+\chapter{Robustnost neuronové sítě}
+
+Předvedli jsme jev existence adversariálních vzorků
+a z jeho vlastní povahy je zřejmé, že se jedná o nežádoucí jev.
+Na tento fenomén potom odpovídá \emph{robustní strojové učení},
+které se ve své podstatě snaží při učení neuronové sítě
+danou neuronovou síť naučit tak, aby, pokud možno, k existenci adversariálních vzorků nedocházelo.
+Obor robustního strojového učení potom nabízí řadu metod,
+které k tomu mohou dopomoci.
+Otázkou ale je, jak takovou metodu zařadit mezi ostatní ve smyslu jejího srovnání s ostatními metodami.
+Potřebujeme proto ideálně číselné vyjádření toho,
+jak si na tom daná neuronová síť, která byla učena daným algoritmem robustního strojového učení,
+stojí ve smyslu náchylnosti na přítomnost jevu adversariálních vzorků.
+
+\section{Přístup knihovny Foolbox}
+
+Jednou z programovacích knihoven, která se snaží osvětlit tuto tématiku
+a přinést nástroj pro výše nastíněné měření robustnosti modelu neuronové sítě,
+je knihovna \emph{Foolbox} \cite{foolbox}.
+Její přístup spočívá v implementaci pěti základních stavebních kamenů pro tvorbu
+adversariálních vzorků.
+Jsou to:
+\begin{itemize}
+    \item \emph{Model}, implementace rozhraní, které zajišťuje kompatibilitu knihovny s populárními
+    knihovnami strojového učení (jako je i \emph{PyTorch});
+    \item \emph{kritérium}, totiž pravidlo, podle kterého se rozhoduje, zda daný vzorek je adversariální
+    či nikoliv;
+    \item \emph{metrická vzdálenost}, to jest funkce, která vyjadřuje velikost perturbace
+    potenciálního adversariálního vzorku (rozdíl $\tilde{x} - x$, užijeme-li zavedeného značení);
+    \item \emph{algoritmus útoku}, způsob, jakým budou potenciální adversariální vzorky vyráběny;
+    \item samotná \emph{adversariální perturbace}, což je výsledek algoritmu útoku.
+\end{itemize}
+
+Za komentář stojí, jaká že kritéria mohou být užita k určení adversariality vzorku.
+S jedním jsme se již setkali v minulých kapitolách, totiž kritérium \emph{nesprávné klasifikace},
+které spočívá ve vyhodnocení vzorku jako adversariálního právě při určení modelu,
+že daný vzorek je v jiné třídě než původní vzorek, podle kterého je vzorek adversariální
+tvořen.
+Nemusíme zůstat pouze u tohoto kritéria.
+Další kritéria lze odvodit při hlubším studiu pravděpodobnostního rozdělení, které model produkuje.
+Takže např. kritérium \emph{top-k nesprávné klasifikace} spočívá v tom,
+že vzorek je adversariální, pokud původní třída není mezi $k$~nejpravděpodobnějšími třídami.
+
+Za zmíňku též stojí fakt, že knihovna Foolbox implementuje celou řadu různých adversariálních útoků.
+
+\section{Přístup knihovny RobustBench}
+
+Další programovací knihovnou, která se věnuje tématu robustnosti neuronových sítí
+je knihovna \emph{RobustBench} \cite{robustbench}.
+Tato knihovna jde o krok dál než knihovna Foolbox,
+neboť její snahou je vyvinout jednotnotný test, který pro všechna nastavavení produkuje
+jediné číslo, které lze tudíž hladce porovnat s ostatními výsledky.
+Těchto testů je několik druhů, totiž pro datové sady \emph{CIFAR-10}, \emph{CIFAR-100} \cite{CIFAR}
+a \emph{ImageNet} \cite{ImageNet}.
+Následně podle zkoumané metriky jsou testy pro $l_\infty$ či $l_2$ útoky.
+Výsledné číslo se potom nazývá \emph{robustní úspěšnost} (z angl. \emph{robust accuracy}),
+jehož vyhodnocení spočívá ve vyčíslení průměrné úspěšnosti klasifikace poškozených vzorků
+zkoumaným modelem v daném nastavení experimentu.
+Tyto poškozené vzorky jsou postupně generovány procesem \emph{AutoAttack} \cite{AutoAttack},
+který spočívá v postupném provádění čtyř typů adversariálních útoků.
+Nejprve benigní vzorky projdou úpravou v podobě \emph{projected gradient descent} (\emph{PGD}) \cite{PGD}
+s adaptivní velikostí kroku a ztrátou křížové entropie.
+Dále vzorky, které zůstanou správně klasifikované projdou
+obdobně procesem PGD, ale s jinou ztrátovou funkcí,
+a to ztrátou rozdílu podílů hodnot funkce logit.
+Poté je proveden \emph{cílený FAB útok} \cite{FAB},
+následně \emph{black-box square attack} \cite{SquareAttack}.
+Následně se výsledky agregují v již zmíněnou adversariální úspěšnost.
+Tímm pádem lze metody robustního strojového učení mezi sebou porovnávat.
+
+
+\chapter{Implementace metrik vizuální podobnosti}
+
+Součástí této práce je potom i samotná implementace metrik vizuální podobnosti uvedených a popsaných
+v předchozích kapitolách.
+Tato implementace je pak koncipována tak, aby bylo možné naimplementované metriky použít
+pro tvorbu tzv. adversariálních vzorků.
+Toto téma pak bude více osvětleno v jedné z následujících kapitol.
+Lze však nastínit, že se jedná o jednu z úloh strojového učení.
+
+Pro úlohy strojového učení je potom stěžejní, že je mnohdy lze provádět v paralelním nastavení.
+Takovým úkolem potom může například být stochastický gradientní sestup,
+resp. od něho odvozené numerické algoritmy učení neuronových sítí.
+Pro tuto úlohu je totiž typické počítat výstup té samé neuronové sítě pro více vzorků,
+přičemž výstup neuronové sítě pro daný vzorek je nezávislý na běhu pro jiný vzorek
+či jakékoliv jiné informaci ohledně postupu neuronové sítě v instanci jiného vzorku.
+Proto je snadné tuto úlohu paralelizovat.
+
+S tímto na mysli vznikla programovací knihovna \emph{PyTorch} \cite{pytorch}
+pro prostředí programovacího jazyka \emph{Python} \cite{python}.
+Použití knihovny PyTorch je potom pro tuto práci klíčové.
+Proto i metriky vizuální podobnosti, kterými se tato práce z nemalé části zabývá,
+jsou implementovány za využití prostředků, které tato knihovna nabízí,
+a principů, které tato knihovna prosazuje.
+
+\section{Veřejné úložiště kódu}
+
+Pro zpřístupnění naimplementovaných metrik vizuální podobnosti
+bylo zvoleno úložiště zdrojových kódů GitHub, které je kompatibilní se systémem správy verzí Git.
+Samotný repozitář, který kromě samotného textu této práce obsahuje taktéž i onu implementaci
+metrik vizuální podobnosti, lze nalézt na webové adrese
+\href{https://github.com/pavel-jaks/robust-metrics}{https://github.com/pavel-jaks/robust-metrics}.
+
+Repozitář obsahuje adresář \href{https://github.com/pavel-jaks/robust-metrics/tree/main/TeX}{TeX}, v němž se nachází tento text.
+Dále repozitář obsahuje stěžejní adresář \href{https://github.com/pavel-jaks/robust-metrics/tree/main/code}{code},
+ve kterém se nachází v adresáři \href{https://github.com/pavel-jaks/robust-metrics/tree/main/code/metrics}{metrics}
+soubor \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics/metrics.py}{metrics.py}.
+V tomto souboru je potom samotná implementace metrik vizuální podobnosti.
+
+
+\section{Koncepty pro použití kódu}
+
+Pro použití implementace metrik vizuální podobnosti, která je součástí této práce,
+je stěžejní mít osvojeny některé programovací koncepty.
+V první řadě se jedná o zvládnutí programovacího jazyka Python.
+Tento programovací jazyk je potom dynamicky typovaným jazyken,
+ve kterém se mísí několit paradigmat programování.
+Mezi tato paradigmata patří objektově orientované programování,
+dále pak proceduální či funkcionální programování.
+
+Pro knihovnu PyTorch, která je využita v implementaci metrik vizuální podobnosti,
+je potom klíčové ono objektově orientované programování.
+Z tohoto důvodu jsou všechny metriky napsány jako třídy,
+které jsou poděděny od abstraktní třídy, jež je součástí knihovny PyTorch,
+totiž od třídy \emph{Module}, která se v rámci knihovny PyTorch nachází v modulu s názvem \emph{nn}.
+Tato třída implementuje speciální metodu programovacího jazyka Python,
+jež se jmenuje \emph{\_\_call\_\_}.
+Její implementace nějakou třídou potom opravňuje uživatele dané třídy k zacházení s instancí této třídy jako s funkcí.
+Toto je praktika knihovně PyTorch vlastní.
+
+Třída \emph{Module} potom v rámci implementace metody \emph{\_\_call\_\_} spouští abstraktní metodu \emph{forward}.
+Tato metoda je potom přepsána v třídách implementující abstraktní třídu \emph{Module},
+tedy i třídou \emph{Metric}, která je bázovou abstraktní třídou pro třídy metrik vizuální podobnosti
+a součástí kódu příslušícího této práci.
+
+Další vlastností knihovny PyTorch je její přístup k masivní paralelizaci.
+Pro úlohy strojového učení je totiž typické, jak již bylo výše zmíněno, že je chceme provádět na vícero datech zárověň.
+Proto je pro tuto knihovnu standardem implementovat algoritmy tak,
+aby byly spustitelné pro celé dávky dat.
+K tomuto bylo přihlédnuto i v této práci,
+neboť třídy metrik nepočítají vzdálenost mezi jedinou dvojicí obrázků,
+nýbrž mezi dávkou dvojic.
+
+Neodmyslitelnou součástí knihovny PyTorch je potom její datový typ \emph{Tensor},
+což je třída, která zapouzdřuje v podstatě pole čísel libovolných rozměrů.
+Tato třída dále implementuje mnoho užitečných metod pro práci s poli čísel
+a přepisuje chování mnoha operátorů.
+Aby tedy bylo možné tyto funkcionality použít pro výpočet metrik vizuální podobnosti mezi páry obrázků,
+je metoda \emph{forward} tříd metrik napsána tak, že jako argumenty přijímá dva objekty právě typu \emph{Tensor}.
+
+Dále implementace metrik vizuální podobnosti umožňuje před samotným výpočtem provést libovolnou transformaci obrázků,
+která se předává metrice jako parametr konstruktoru.
+Příkladem může být přeškálování obrázků, aby měly jednotnou velikost.
+
+
+\section{Příklad použití metrik vizuální podobnosti}
+
+Nyní lze tedy přistoupit k nastínění použití kódu této práce.
+Po správném importu modulu \emph{metrics} či jeho několika exportovaných objektů,
+může uživatel zkonstruovat instanci metriky, přičemž zadá transformaci a parametry metrice vlastní.
+Dále pak snadno použije mtriku tak, že proměnnou, ve které je instance metriky uložena,
+zavolá jako funkci s dvěma parametry, kterými jsou instance třídy \emph{Tensor}.
+
+Uvažme, že chceme spočíst aproximaci Wassersteinovy vzdálenosti mezi náhodnými obrázky velikosti $20 \times 20$.
+Kód by potom mohl vypadat jako v Listing \ref{ex1}.
+
+\begin{lstlisting}[language=Python, caption=Příklad výpočtu aproximace Wassersteinovy vzdálenosti, label=ex1]
+# import knihovny PyTorch
+import torch
+
+# import tridy pro vypocet metriky
+from metrics import WassersteinApproximation
+
+# nahodne obrazky
+# Tensor rozmeru: davka x pocet kanalu x sirka x vyska
+image1 = torch.rand(1, 1, 20, 20)
+image2 = torch.rand(1, 1, 20, 20)
+
+# instance metriky
+metric = WassersteinApproximation(regularization=5)
+
+# samotny vypocet metriky
+distance = metric(image1, image2)
+\end{lstlisting}
+
+Samotná dokumentace ke všem implemntovaným metrikám,
+tedy i význam jednotlivých parametrů a jejich korespondence s matematickými koncepty metrik vizuální podobnosti,
+je dostupná v repozitáři této práce v souboru
+\href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics/README.md}{README.md}
+v adresáři \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code/metrics}{metrics}
+adresáře \href{https://github.com/pavel-jaks/robust-metrics/blob/main/code}{code}.
+
+
+\section{Testování naimplementovaných metrik}
+
+Pro účely ověření správnosti implementace vybraných metrik vizuální podobnosti
+jsou součástí této práce i testy.
+Tyto testy jsou napsány tak, aby byly kompatibilní s veřejně dostupnou knihovnou \emph{Pytest}.
+Stěžejní je zejména otestovat metriku \emph{DSSIM} a \emph{aproximaci Wassersteinovy metriky},
+neboť kód implementace těchto metrik vizuální podobnosti je relativně dlouhý a je snadné při jeho psaní udělat chybu.
+
+Pro otestování funkčnosti implementací metrik vizuální podobnosti byl zvolen následující přístup.
+Pro několik obrázků náhodně vybraných z datové sady \emph{MNIST} \cite{MNIST} a jejich poškozené verze,
+oba velikosti $28 \times 28$
+(pro aproximaci Wassersteinovy vzdálenosti náhodné obrázky velikosti $5 \times 5$) je spočtena daná metrika vizuální podobnosti
+pomocí implementace, jež je součástí této práce, a pomocí alternativního kódu,
+který typicky neoperuje nad datovými typy knihovny PyTorch.
+Následně jsou tyto dvě hodnoty srovnány, a pokud se neliší o více než pevně stanovenou toleranci ($10^{-5}$),
+tak se test považuje za úspěšně splněný.
+
+Za alternativní kusy kódu, kterými ověřujeme správnost implementace spjaté s touto prací,
+je přednostně volena implementace těch samých metrik, byť pro jiné datové typy,
+které jsou k dispozici v jiných veřejně dostupných softwarových knihovnách.
+Takto byly napsány testy pro metriky \emph{MSE}, \emph{DSSIM} a \emph{PSNR}
+za pomoci knihovny \emph{scikit-image} \cite{skimage}.
+
+Kód pro testování aproximace Wassersteinovy metriky spočívá v přímém řešení optimalizačního problému (\ref{ds_optim})
+a následného dosazení jeho řešení do (\ref{ds_metric}).
+K vyřešení tohoto problému konvexní optimalizace je používána knihovna \emph{CVXPY} \cite{cvxpy1,cvxpy2},
+která na základě datových typů knihovny \emph{NumPy} \cite{numpy} takové problémy řeší.
+
+Takto byly napsány čtyři testovací funkce,
+jež ověřují správnost implementací metrik vizuální podobnosti \emph{MSE},
+\emph{DSSIM}, \emph{NPSR} a aproximace Wassersteinovy vzdálenosti.
+Všechny tyto testy byly úspěšně splněny a potvrdily korektnost implementací oněch metrik vizuální podobnosti.
+
+
+\chapter{Porovnání metrik vizuální podobnosti}
+
+V minulých kapitolách jsme představili různé metriky vizuální podobnosti.
+Tyto metriky se od sebe navzájem liší, a to jak v matematické podstatě,
+tak ve svých vlastnostech, jako jsou výpočetní časová složitost či
+robustnost těchto metrik vůči běžným transformacím obrázků,
+které lidské oko vyhodnotí jako nezávažné změny a informaci,
+kterou obrázek nese, nepoškodí.
+
+Proto se v této kapitole podívejme, jak je která metrika časově výpočetně náročná.
+Dále pak srovnejme implementované metriky podle toho, jak reagují na šum v obrázku
+a na transformace, kterými mohou být translace či rotace.
+
+\section{Časová náročnost výpočtu}
+
+Některé metriky vizuální podobnosti spočívají v zásadě na sečtení mocnin rozdílů hodnot pixelů
+v příslušných souřadnicích.
+Lze proto očekávat, že jejich výpočet bude rychlejší, než například výpočet
+Wassersteinovy metriky, resp. její duální-Sinkhornovy aproximace,
+výpočet které potom spočívá v numerickém řešení netriviálního optimalizačního problému.
+
+Udělejme tedy experiment, který spočívá ve spuštění výpočtu dané metriky vizuální podobnosti,
+resp. naší implementace, a změření, jak dlouho samotný výpočet trval.
+Použijeme přitom paradigma vlastní knihovně \emph{PyTorch} \cite{pytorch},
+které spočívá v paralelizaci výpočtu tak, že počítáme vzájemné vzdálenosti více než jedné dvojice obrázků.
+Chtějme tedy změřit čas výpočtu metrik pro po řadě $10$ dvojic, $100$ dvojic a $1000$ dvojic černobílých obrázků
+o rozměrech $28 \times 28$, což je rozměr, který odpovídá obrázkům datové sady MNIST \cite{MNIST}.
+Z této datové sady zárověň jeden obrázek z páru obrázků, jejichž vzdálenost měříme, vybereme.
+Druhý obrázek v páru bude náhodně zašuměný první obrázek.
+Takovýto výpočet pak pro každou metriku proveďme desetkrát a vezměme průměrnou délku výpočtu.
+
+Mezi metriky, jejichž časovou výpočetní náročnost speciálně zkoumáme, jsme zařadili
+metriku založenou na normách $l_1$, $l_2$, $l_\infty$ a pseudonormě $l_0$.
+Dále pak několik metrik vizuální podobnosti založených na indexu SSIM.
+Zařadili jsme sem structural dissimilarity s neomezenou velikostí okna,
+dále pak structural dissimilarity s velikostmi okna po řadě $5$, $10$ a $20$.
+A jako poslední zkoumanou metriku jsme použili Wassersteinovu metriku, resp. její aproximaci.
+
+
+
+\begin{table}[]
+    \centering
+    \begin{tabular}{|l|r|r|r|}
+        \hline
+    \textbf{Metrika} & \multicolumn{1}{l|}{\textbf{10 párů}}                      & \multicolumn{1}{l|}{\textbf{100 párů}} & \multicolumn{1}{l|}{\textbf{1000 párů}} \\ \hline
+    $l_1$                                       & 0,0007036000025                                               & 0,001901599811                            & 0,01818950009                              \\
+    $l_2$                                       & 0,001508200075                                                & 0,002845599782                            & 0,02182809985                              \\
+    $l_\infty$                                  & 0,001301499782                                                & 0,003312000073                            & 0,02696179994                              \\
+    $l_0$                                       & 0,0009137999732                                               & 0,003584200051                            & 0,03133830009                              \\
+    $DSSIM$                                     & 0,007755599916                                                & 0,02364749997                             & 0,1672595001                               \\
+    $DSSIM_5$                                   & 0,7095767001                                                  & 1,0184459                                 & 4,2418431                                  \\
+    $DSSIM_{10}$                                & 0,4807517                                                     & 1,1263735                                 & 8,7425058                                  \\
+    $DSSIM_{20}$                                & 0,1537327999                                                  & 0,7804290999                              & 5,4182493                                  \\
+    $Wasserstein$                               & 10,9496173                                                    & 92,0328169                                & 840,9704119                               \\ \hline
+\end{tabular}
+\caption{Časy výpočtu jednotlivých metrik v sekundách pro různý počet párů.} \label{times}
+\end{table}
+
+
+V Tabulce \ref{times} jsou potom samotné výsledky tohoto experimentu.
+Jak lze zpozorovat z dat, metriky založené na $l_p$ normách a pseudonormě $l_0$
+jsou vypočteny takřka okamžitě (z pohledu lidského uživatele) a to odpovídá intuici.
+
+Metrikami náročnějšími na výpočet jsou potom metriky založené na indexu SSIM,
+kde mimo jiné roli ve výsledném čase hraje i velikost okna použitého při výpočtu.
+Použijeme-li neomezenou velikost okna, tedy velikost obrázku je velikostí okna,
+lze nahlédnout, že výpočet je méně časově náročný.
+Je to logické, neboť namísto výpočtu několika vlastních indexů SSIM mezi výřezy obrázků a jejich následného průměrování,
+počítáme jen jeden jediný index SSIM.
+
+Poslední změřenou metrikou je výpočetně nejnáročnější aproximace Wassersteinovy metriky,
+jejíž výpočet pro deset párů probíhal zhruba deset sekund.
+Tato metrika je tedy velmi drahá ve smyslu délky výpočetního času.
+
+
+\section{Robustnost metrik vůči šumu v obrázku}
+
+\section{Robustnost metrik vůči transformacímm obrázku}
+
+\subsection{Translace}
+
+\subsection{Rotace}
+
+\subsection{Změna jasu}
+
+\section{Porovnání implementací s implementacemi veřejných knihoven}
+
+
+% Samotnou výslednou implementaci v podobě kódu v jazyce \emph{Python} lze nalézt v příloze v části týkající se souboru \emph{metrics.py}.
+
+
 \chapter{Výsledky tvorby adversariálních vzorků}
 
 \section{Srovnání útoků pro různé metiky}
@@ -1444,75 +1543,6 @@ Ta je ovšem dostatečně malá, aby byla převážena druhým členem gradientu
     \caption{Příklad vzorku vygenerovaného DSSIM útokem} \label{dssim_pic}
 \end{figure}
 
-\chapter{Robustnost neuronové sítě}
-
-Předvedli jsme jev existence adversariálních vzorků
-a z jeho vlastní povahy je zřejmé, že se jedná o nežádoucí jev.
-Na tento fenomén potom odpovídá \emph{robustní strojové učení},
-které se ve své podstatě snaží při učení neuronové sítě
-danou neuronovou síť naučit tak, aby, pokud možno, k existenci adversariálních vzorků nedocházelo.
-Obor robustního strojového učení potom nabízí řadu metod,
-které k tomu mohou dopomoci.
-Otázkou ale je, jak takovou metodu zařadit mezi ostatní ve smyslu jejího srovnání s ostatními metodami.
-Potřebujeme proto ideálně číselné vyjádření toho,
-jak si na tom daná neuronová síť, která byla učena daným algoritmem robustního strojového učení,
-stojí ve smyslu náchylnosti na přítomnost jevu adversariálních vzorků.
-
-\section{Přístup knihovny Foolbox}
-
-Jednou z programovacích knihoven, která se snaží osvětlit tuto tématiku
-a přinést nástroj pro výše nastíněné měření robustnosti modelu neuronové sítě,
-je knihovna \emph{Foolbox} \cite{foolbox}.
-Její přístup spočívá v implementaci pěti základních stavebních kamenů pro tvorbu
-adversariálních vzorků.
-Jsou to:
-\begin{itemize}
-    \item \emph{Model}, implementace rozhraní, které zajišťuje kompatibilitu knihovny s populárními
-    knihovnami strojového učení (jako je i \emph{PyTorch});
-    \item \emph{kritérium}, totiž pravidlo, podle kterého se rozhoduje, zda daný vzorek je adversariální
-    či nikoliv;
-    \item \emph{metrická vzdálenost}, to jest funkce, která vyjadřuje velikost perturbace
-    potenciálního adversariálního vzorku (rozdíl $\tilde{x} - x$, užijeme-li zavedeného značení);
-    \item \emph{algoritmus útoku}, způsob, jakým budou potenciální adversariální vzorky vyráběny;
-    \item samotná \emph{adversariální perturbace}, což je výsledek algoritmu útoku.
-\end{itemize}
-
-Za komentář stojí, jaká že kritéria mohou být užita k určení adversariality vzorku.
-S jedním jsme se již setkali v minulých kapitolách, totiž kritérium \emph{nesprávné klasifikace},
-které spočívá ve vyhodnocení vzorku jako adversariálního právě při určení modelu,
-že daný vzorek je v jiné třídě než původní vzorek, podle kterého je vzorek adversariální
-tvořen.
-Nemusíme zůstat pouze u tohoto kritéria.
-Další kritéria lze odvodit při hlubším studiu pravděpodobnostního rozdělení, které model produkuje.
-Takže např. kritérium \emph{top-k nesprávné klasifikace} spočívá v tom,
-že vzorek je adversariální, pokud původní třída není mezi $k$~nejpravděpodobnějšími třídami.
-
-Za zmíňku též stojí fakt, že knihovna Foolbox implementuje celou řadu různých adversariálních útoků.
-
-\section{Přístup knihovny RobustBench}
-
-Další programovací knihovnou, která se věnuje tématu robustnosti neuronových sítí
-je knihovna \emph{RobustBench} \cite{robustbench}.
-Tato knihovna jde o krok dál než knihovna Foolbox,
-neboť její snahou je vyvinout jednotnotný test, který pro všechna nastavavení produkuje
-jediné číslo, které lze tudíž hladce porovnat s ostatními výsledky.
-Těchto testů je několik druhů, totiž pro datové sady \emph{CIFAR-10}, \emph{CIFAR-100} \cite{CIFAR}
-a \emph{ImageNet} \cite{ImageNet}.
-Následně podle zkoumané metriky jsou testy pro $l_\infty$ či $l_2$ útoky.
-Výsledné číslo se potom nazývá \emph{robustní úspěšnost} (z angl. \emph{robust accuracy}),
-jehož vyhodnocení spočívá ve vyčíslení průměrné úspěšnosti klasifikace poškozených vzorků
-zkoumaným modelem v daném nastavení experimentu.
-Tyto poškozené vzorky jsou postupně generovány procesem \emph{AutoAttack} \cite{AutoAttack},
-který spočívá v postupném provádění čtyř typů adversariálních útoků.
-Nejprve benigní vzorky projdou úpravou v podobě \emph{projected gradient descent} (\emph{PGD}) \cite{PGD}
-s adaptivní velikostí kroku a ztrátou křížové entropie.
-Dále vzorky, které zůstanou správně klasifikované projdou
-obdobně procesem PGD, ale s jinou ztrátovou funkcí,
-a to ztrátou rozdílu podílů hodnot funkce logit.
-Poté je proveden \emph{cílený FAB útok} \cite{FAB},
-následně \emph{black-box square attack} \cite{SquareAttack}.
-Následně se výsledky agregují v již zmíněnou adversariální úspěšnost.
-Tímm pádem lze metody robustního strojového učení mezi sebou porovnávat.
 
 
 \chapter*{Závěr}
