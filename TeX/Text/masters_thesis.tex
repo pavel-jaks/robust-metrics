@@ -951,38 +951,59 @@ která plyne z vlastnosti
 
 \chapter{Adversariální vzorky a jejich tvorba}
 
-\section{Klasifikace v kontextu strojového učení}
+Adversariální vzorky jsou fenomén spjatý s algoritmy strojového učení.
+Jedná se v zásadě o jednoduchou možnost, jak takový algoritmus strojového učení lze rozbít.
+Ve zkratce lze na adversariální vzorky nahlédnout jako na data taková,
+že při vstupu do modelu strojového učení produkují aplikované algoritmy daného modelu špatné výsledky,
+a to i přes to, že se v jistém slova smyslu neliší od dat, které byly použity pro samotné učení.
+V této kapitole se potom zaměříme na korektnější formulaci toho, čím vlastně adversariální vzorky jsou.
+Tohoto pak docílíme při výběru úlohy klasifikace obrázků a následném výběru řešení tohoto problému,
+a to pomocí neuronových sítí.
 
-Pro účely definice adversariálních vzorků, které jsou pro tuto práci stěžejní, je potřeba uvést kontext,
+\section{Úvod do problematiky klasifikačních neuronových sítí}
+
+Pro účely definice pojmu adversariálního vzorku, který je svým charakterem pro tuto práci stěžejní, je potřeba uvést kontext,
 ve kterém o adversariálních vzorcích vůbec lze mluvit.
-Proto si vyberme jednu z klasických úloh strojového učení, to jest klasifikace.
+Jak již bylo uvedeno v úvodu této kapitoly,
+vybrali jsme jednu z klasických úloh strojového učení, to jest klasifikaci obrázků.
 Jedná se o problém, kdy máme nějakou množinu vstupů neboli \emph{vzorků}
 a máme za úkol ke každému z nich přiřadit třídu, do které tento vzorek náleží.
-Vlastně máme za úkol rozdělit danou množinu na předem známý počet podmnožin, které názýváme třídy.
+Vlastně máme za úkol rozdělit danou množinu obrázků na předem známý počet podmnožin,
+které názýváme třídy.
 
-Mějme tedy za úkol klasifikovat dané vzorky do $m$ tříd.
-Např. mějme za úkol na základě černobílého obrázku s číslicí říci, jaká že číslice je na daném obrázku vyobrazená.
+Mějme tedy za úkol klasifikovat dané obrázky do $m$ tříd.
+Např. mějme za úkol na základě šedotónového obrázku s číslicí říci, jaká že číslice je na daném obrázku vyobrazená.
 Máme-li dostatečný počet vzorků, o kterých víme, do jaké třídy náleží, můžeme využít různých metod strojového učení.
-Pro konkrétnost zvolme metodu neuronových sítí.
+V úvodu této kapitoly jsme potom nastínily použití neuronových sítí pro řešení této úlohy.
 
-To znamená, že vytvoříme zobrazení $F_\theta : X \rightarrow Y$, kde za $X$ bereme množinu všech možných vzorků,
+Neuronová síť je potom v zásadě univerzální aproximátor spojitých zobrazení z kompaktních podmnožin $\mathbb{R}^n$
+do $\mathbb{R}^m$ v našem případě.
+Dále požadujeme od neuronové sítě, aby měla předem danou strukturu, typicky potom strukturu složeného zobrazení,
+kde dílčí zobrazení jsou co do výpočtu jednoduchá.
+Stěžejní pak je pro neuronovou síť fakt, že tato dílčí zobrazení, ze kterých neuronová síť sestává,
+mají v předpisu parametry.
+Tyto parametry potom podléhají změnám při procesu učení neuronové sítě.
+Pro více informací o možných architekturách neuronových sítí lze nahlédnout do \cite{deeplearning}.
+
+Tedy, vytvoříme zobrazení $F_\theta : X \rightarrow Y$, kde za $X$ bereme množinu všech možných vzorků,
 v případě klasifikace číslic na obrázku právě všechny možné obrázky příslušného rozměru.
-
 Dále za $Y$ berme množinu všech diskrétních pravděpodobnostních rozdělení na třídách,
 tedy v případě klasifikace číslic to může být:
 \begin{equation} \label{Y}
     Y = \left\{ \, y \in \mathbb{R}^{10} \, | \, \forall i = 1, ..., 10: y_i \geq 0 \land \sum_{i=1}^{10} y_i = 1\right\}.
 \end{equation}
 Pro úplnost, číslo $10$ v definici (\ref{Y}), protože máme deset číslic.
+Kdybychom bývali zůstali u problému klasifikace do $m$ tříd, namísto čísla $10$ bychom měli $m$.
 
-$F_\theta$ je potom daný model parametrizovaný pomocí parametrů $\theta$, ku příkladu neuronová síť.
+$F_\theta$ je potom daný model neuronové sítě parametrizovaný pomocí parametrů $\theta$.
 Vhodné parametry $\theta$ se potom volí pomocí procesu \emph{učení}, což je řešení následujícího optimalizačního problému:
 \begin{equation} \label{nn_opt}
     \hat{\theta} = \operatornamewithlimits{argmin}_{\theta} J(\theta),
 \end{equation}
-kde $J$ je funkce na parametrech určující, jak moc se neuronová síť má-li dané parametry $\theta$ mýlí.
+kde $J$ je funkce parametrů určující, jak moc se neuronová síť má-li dané parametry $\theta$ mýlí.
 Za funkci $J$ se standardně volí agregace typu průměr dílčí ztrátové funkce $L$, která určuje,
 jak moc se neuronová síť mýlí na konkrétním vzorku.
+
 K tomu je tedy potřeba mít trénovací datovou sadu sestávající z dostatečného počtu vzorků se správnými odpověďmi, tedy značkami.
 Budiž trénovací datová sada označena $\mathbb{T} = \left(\mathbb{X}, \mathbb{Y}\right)$,
 kde $\mathbb{X} = \left(x^{(i)} \in X\right)_{i = 1}^{N}$ a $\mathbb{Y} = \left(y^{(i)} \in Y\right)_{i = 1}^{N}$.
@@ -996,9 +1017,11 @@ Jelikož prvky $Y$ jsou diskrétní pravděpodobnostní distribuce, za dílčí 
     L(y, \hat{y}) = - \sum_{i=1}^{m} y_i \operatorname{log} \left(\hat{y}_i\right).
 \end{equation}
 
-Procesu učení se zde nemusíme věnovat. Jedná se o řešení optimalizačního problému (\ref{nn_opt}).
+Proces učení potom je řešení optimalizačního problému (\ref{nn_opt}),
+který se typicky řeší pomocí stochastického gradientního sestupu, resp.
+pomocí algoritmů od stochastického gradientního sestupu odvozených.
 
-Poslední objekt, který si zde v úvodní sekci kapitoly zadefinujeme, je samotná klasifikace.
+Poslední objekt, který si zde v této sekci kapitoly zadefinujeme, je samotná klasifikace.
 Jedná se o funkci $C: Y \rightarrow \{1, 2, ..., m\}$ definovanou přepisem:
 \begin{equation} \label{classification}
     C(y) = \operatornamewithlimits{argmax}_{i \in \{1, ..., m\}} y_i.
@@ -1009,23 +1032,31 @@ volíme za třídu, kterou $y$ reprezentuje, tu s největší pravděpodobnostn�
 \section{Adversariální vzorky}
 
 Jsme-li vybaveni metrikou $\rho$ na prostoru vzorků $X$,
-lze přistoupit k uvedení konceptu adversariálních vzorků.
+lze přistoupit ke korektnímu zadefinování adversariálních vzorků.
+
 Nejprve však definujme vzorek \emph{benigní}.
 Jedná se o takový vzorek $x \in X$, že $C(F_\theta(x)) = C(y)$, kde $y$ je pravděpodobnostní distribuce
 na třídách reprezentující třídu vzorku $x$.
-Máme-li takový benigní vzorek $x$, pak \emph{adversariální vzorek} k němu, je takový vzorek $\tilde{x}$,
-že vzorek $\tilde{x}$ je podobný benignímu vzorku $x$, ale je špatně klasifikovaný.
+Je to tedy správně klasifikovaný vzorek.
+
+\emph{Adversariální vzorek} potom je takový vzorek $\tilde{x}$,
+že k němu existuje benigní vzorek $x$ tak, že vzorek $\tilde{x}$ je podobný vzorku $x$,
+ale vzorek $\tilde{x}$ je špatně klasifikovaný.
 Podobnost lze matematicky vyjádřit způsobem,
 že vzdálenost $\tilde{x}$ od $x$ je malá ve smyslu:
-$\rho(x, \tilde{x}) \leq \kappa$, kde $\kappa$ je pevně zvolený číselný práh,
-neboli poloměr kulového okolí, ve kterém adversariální vzorek hledáme.
-Špatnou klasifikaci lze pak vyjádřit: $C(F_\theta (\tilde{x})) \neq C(F_\theta (x))$.
-Je-li sám vzorek $x$ špatně klasifikovaný, pak je sám vlastně adversariálním vzorkem.
+\begin{equation}
+    \rho(x, \tilde{x}) \leq \kappa,    
+\end{equation}
+kde $\kappa$ je pevně zvolený číselný práh.
+Špatnou klasifikaci lze pak vyjádřit jako
+\begin{equation}
+    C(F_\theta (\tilde{x})) \neq C(F_\theta (x)).    
+\end{equation}
 
 Problematika adversariálních vzorků představuje v oboru strojového učení úskalí,
 neboť vhodně zvolený adversariální vzorek dokáže v praxi,
 kde algoritmy strojového učení mohou sehrávat roli při automatizaci bezpečnostně kritických úkolů,
-daný algoritmus, rozbít.
+daný algoritmus rozbít.
 
 Zatím jsme adversariální vzorky představili pouze jako teoretický koncept.
 V následujích sekcích textu se podívejme na jejich konkrétní tvorbu
@@ -1068,36 +1099,7 @@ Potom v optimalizačním problému (\ref{adv_opt}) nebo (\ref{adv_cw}) potřebuj
 aby byl kladen větší důraz na první člen $\rho(x, \hat{x})$, tedy aby $\lambda$ bylo co nejmenší.
 Zárověň ale potřebujeme, aby výsledek byl nesprávně klasifikován.
 
-
-\section{Detaily implementace adversariálního útoku}
-
-Pro předvedení adversariálního útoku jsme zvolili metodu \emph{CW} s pevným parametrem $\lambda$.
-Pro připomenutí: Metoda útoku CW je založena na řešení problému
-\begin{equation}
-    \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
-\end{equation}
-Tento problém jsme se rozhodli řešit \emph{znaménkovým gradientním sestupem}
-(v angl. literatuře uváděný jako \emph{sign gradient descent}),
-a to s pevným počtem iterací ($100$) a s pevným krokem $10^{-2}$,
-který je pro obrázky lineárně přeškálované do intervalu $[0, 1]$ akorát dostačující.
-Jako ukázkovou úlohu jsme zvolili klasifikaci číslic na datové sadě \emph{MNIST} \cite{MNIST}
-(jednokanálové obrázky o rozměru $28 \times 28$),
-která je v komunitě strojového učení notoricky známá.
-Pro řešení původního problému klasifikace jsme natrénovali (algoritmem \emph{RMSProp} \cite{RMSProp})
-jednoduchou konvoluční neuronovou síť,
-která na testovací datové sadě dosáhla úspěšnosti $96,9 \%$.
-Inicializace startovního bodu znaménkového gradientního sestupu probíhala v dvojím režimu:
-V normálním a speciálním.
-Normální inicializace spočívala v náhodné inicializaci každého pixelu v okolí hodnoty $0,5$
-na základě realizace náhodné veličiny s rovnoměrným rozdělením $U(0,3;0,8)$.
-Jak ale uvídíme z výsledků později, pro jednu z metrik je tato inicializace zcela nevyhovující,
-proto došlo i k implementaci speciální inicializace, kde byl za počáteční bod gradientního sestupu
-pro daný benigní vzorek $x$ vzat právě tento vzorek $x$.
-% Na samotnou implementaci CW útoku lze nahlédnout v Listing \ref{cw_code}.
-
-% \lstinputlisting[label=cw_code, language=Python, caption=adversarials.py, firstline=6]{../../code/adversarials.py}
-
-\chapter{Robustnost neuronové sítě}
+\section{Robustnost neuronové sítě}
 
 Předvedli jsme jev existence adversariálních vzorků
 a z jeho vlastní povahy je zřejmé, že se jedná o nežádoucí jev.
@@ -1111,7 +1113,7 @@ Potřebujeme proto ideálně číselné vyjádření toho,
 jak si na tom daná neuronová síť, která byla učena daným algoritmem robustního strojového učení,
 stojí ve smyslu náchylnosti na přítomnost jevu adversariálních vzorků.
 
-\section{Přístup knihovny Foolbox}
+\subsection{Přístup knihovny Foolbox}
 
 Jednou z programovacích knihoven, která se snaží osvětlit tuto tématiku
 a přinést nástroj pro výše nastíněné měření robustnosti modelu neuronové sítě,
@@ -1142,7 +1144,7 @@ Takže např. kritérium \emph{top-k nesprávné klasifikace} spočívá v tom,
 
 Za zmíňku též stojí fakt, že knihovna Foolbox implementuje celou řadu různých adversariálních útoků.
 
-\section{Přístup knihovny RobustBench}
+\subsection{Přístup knihovny RobustBench}
 
 Další programovací knihovnou, která se věnuje tématu robustnosti neuronových sítí
 je knihovna \emph{RobustBench} \cite{robustbench}.
@@ -1417,6 +1419,31 @@ Tato metrika je tedy velmi drahá ve smyslu délky výpočetního času.
 
 \chapter{Výsledky tvorby adversariálních vzorků}
 
+\section{Detaily implementace adversariálního útoku}
+
+Pro předvedení adversariálního útoku jsme zvolili metodu \emph{CW} s pevným parametrem $\lambda$.
+Pro připomenutí: Metoda útoku CW je založena na řešení problému
+\begin{equation}
+    \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
+\end{equation}
+Tento problém jsme se rozhodli řešit \emph{znaménkovým gradientním sestupem}
+(v angl. literatuře uváděný jako \emph{sign gradient descent}),
+a to s pevným počtem iterací ($100$) a s pevným krokem $10^{-2}$,
+který je pro obrázky lineárně přeškálované do intervalu $[0, 1]$ akorát dostačující.
+Jako ukázkovou úlohu jsme zvolili klasifikaci číslic na datové sadě \emph{MNIST} \cite{MNIST}
+(jednokanálové obrázky o rozměru $28 \times 28$),
+která je v komunitě strojového učení notoricky známá.
+Pro řešení původního problému klasifikace jsme natrénovali (algoritmem \emph{RMSProp} \cite{RMSProp})
+jednoduchou konvoluční neuronovou síť,
+která na testovací datové sadě dosáhla úspěšnosti $96,9 \%$.
+Inicializace startovního bodu znaménkového gradientního sestupu probíhala v dvojím režimu:
+V normálním a speciálním.
+Normální inicializace spočívala v náhodné inicializaci každého pixelu v okolí hodnoty $0,5$
+na základě realizace náhodné veličiny s rovnoměrným rozdělením $U(0,3;0,8)$.
+Jak ale uvídíme z výsledků později, pro jednu z metrik je tato inicializace zcela nevyhovující,
+proto došlo i k implementaci speciální inicializace, kde byl za počáteční bod gradientního sestupu
+pro daný benigní vzorek $x$ vzat právě tento vzorek $x$.
+
 \section{Srovnání útoků pro různé metiky}
 
 Přistupme nyní k vyhodnocení experimentu, který spočíval v následujícím:
@@ -1585,6 +1612,10 @@ a do budoucna lze tuto práci rozšířit jednak o další metriky vizuální po
 
 \begin{thebibliography}{1}
 \addcontentsline{toc}{chapter}{Literatura}
+
+\bibitem{deeplearning}I. Goodfellow, Y. Bengio, A. Courville:
+\emph{Deep Learning}.
+MIT Press, 2016.
 
 \bibitem{advances}N. Akhtar, A. Mian, N. Kardan, M. Shah:
 \emph{Advances in adversarial attacks and defenses in computer vision: A survey}.
