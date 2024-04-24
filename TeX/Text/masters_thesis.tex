@@ -13,6 +13,8 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{setspace}
+\usepackage{caption}
+\usepackage{subcaption}
 \usepackage{listings}
 \usepackage[dvipsnames,table,xcdraw]{xcolor}
 \usepackage[T1]{fontenc}
@@ -578,7 +580,7 @@ a $\sigma_{x \tilde{x}}$ kovarianci.
 Potom definujeme:
 % Pod zkratkou \emph{SSIM} (\emph{Structural Similarity Index Measure})
 % se rozumí následující vzdálenost:
-\begin{equation}
+\begin{equation} \label{ssimm_def}
     \operatorname{SSIM}(x, \tilde{x}) = \frac{(2 \mu_x \mu_{\tilde{x}} + C_1)(2 \sigma_{x \tilde{x}} + C_2)}{(\mu_x^2 + \mu_{\tilde{x}}^2 + C_1)(\sigma_x^2 + \sigma_{\tilde{x}}^2 + C_2)},
 \end{equation}
 % kde $\mu$ je průměr hodnot pixelů $x$, resp. $\tilde{x}$,
@@ -1068,23 +1070,45 @@ Dostaneme-li benigní vzorek $x$ s pravdivou značkou $y$
 a máme-li za úkol k němu pro daný klasifikátor najít adversariální vzorek $\tilde{x}$,
 mějme v první řadě na mysli, že chceme, zachovat podobnost $x$ a $\tilde{x}$, tak aby oba vzorky
 měly stejnou třídu reprezentovanou značkou $y$.
-Tedy jedna část úkolu bude minimalizovat $\rho(x, \tilde{x})$.
+Tedy jedna část úkolu bude minimalizovat $\rho(x, \tilde{x})$, tak aby $\rho (x, \tilde{x}) \leq \kappa$.
 V další části úkolu máme na výběr ze dvou možností.
 
-Lze k tomuto úkolu přistoupit tak, že si vybereme falešnou značku $\tilde{y}$, která reprezentuje jinou třídu než $y$.
+Jedna možnost spočívá v tom, že si vybereme falešnou značku $\tilde{y}$, která reprezentuje jinou třídu než $y$.
 Dále se budeme snažit pohybovat s $\tilde{x}$ tak, abychom $F_\theta (\tilde{x})$ přiblížili k $\tilde{y}$,
 budeme tedy minimalizovat $L(\tilde{y}, F_\theta (\tilde{x}))$, kde $L$ je dílčí ztrátová funkce na množině značek.
-Máme tedy dvě hodnoty, které chceme minimalizovat. Jak je ale dát dohromady? Tradice hovoří o zavedení nezáporného parametru $\lambda$,
-který nám dá:
-\begin{equation} \label{adv_opt}
-    \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) + \lambda \cdot L(\tilde{y}, F_\theta (\hat{x})).
-\end{equation}
-Zavedený parametr $\lambda$ pak hraje roli v určování toho, zda požadujeme, aby výsledek (\ref{adv_opt}) byl velmi blízký $x$,
-nebo aby tento výsledek byl jistě nesprávně klasifikovaný.
-Tento způsob je představen v původním článku, který osvětluje problematiku adversariálních vzorků \cite{adv_opt}.
+Tento princip se pak zazývá cílený adversariální útok.
 
-Druhý přístup spočívá v tom, že se snažíme namísto minimalizace ztráty k falešné značce
-maximalizovat ztrátu od původní značky $y$.
+Druhý přístup spočívá v myšlence, že chceme klasifikaci $F_\theta (\tilde{x})$ co nejvíce vzdálit od původní
+správné značky, tedy že chceme maximalizovat $L(y, F_\theta (\tilde{x}))$.
+Případně lze uvážit minimalizaci $- L(y, F_\theta (\tilde{x}))$.
+Tato úvaha potom vede na necílený adversariální útok.
+
+Jak potom tato dvě kritéria (podobnost adversariálního vzorku k benignímu a špatná klasifikace)
+složíme dohromady?
+Opět máme na výběr ze dvou možností.
+Uveďme je na příkladu necíleného adversariálního útoku.
+
+První přístup spočívá maximalizaci $L(y, F_\theta (\tilde{x}))$ za podmínky, že $\rho (x, \tilde{x}) \leq \kappa$.
+Tedy:
+\begin{equation} \label{hard_constr}
+    \tilde{x} = \operatornamewithlimits{argmax}_{\hat{x}} L(y, F_\theta (\hat{x})),  \\
+    \, kde \, \rho (x, \hat{x}) \leq \kappa.
+\end{equation}
+Tento problém lze snadno řešit pro volbu $\rho (x, \tilde{x}) = \|x - \tilde{x}\|_\infty$
+pomocí metod jako je \emph{PGD} (\cite{PGD}; zkratka anglického \emph{projected gradient descent}).
+
+Druhý přístup spočívá regularizaci vazebné podmínky problému (\ref{hard_constr}).
+% Máme tedy dvě hodnoty, které chceme minimalizovat. Jak je ale dát dohromady? Tradice hovoří o zavedení nezáporného parametru $\lambda$,
+% který nám dá:
+% \begin{equation} \label{adv_opt}
+%     \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) + \lambda \cdot L(\tilde{y}, F_\theta (\hat{x})).
+% \end{equation}
+% Zavedený parametr $\lambda$ pak hraje roli v určování toho, zda požadujeme, aby výsledek (\ref{adv_opt}) byl velmi blízký $x$,
+% nebo aby tento výsledek byl jistě nesprávně klasifikovaný.
+% Tento způsob je představen v původním článku, který osvětluje problematiku adversariálních vzorků \cite{adv_opt}.
+% 
+% Druhý přístup spočívá v tom, že se snažíme namísto minimalizace ztráty k falešné značce
+% maximalizovat ztrátu od původní značky $y$.
 Tedy:
 \begin{equation} \label{adv_cw}
     \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
@@ -1095,9 +1119,11 @@ Jak nastavit parametr $\lambda$?
 Buď můžeme parametr $\lambda$ chápat jako hyper-parametr, tedy jako něco, co musíme ručně ladit,
 nebo lze hledat optimální hodnotu parametru $\lambda$ vhodně vybraným kritériem.
 Myšlenka je potom následující: Chtějme najít adversariální vzorek co nejblíže původnímu benignímu vzorku.
-Potom v optimalizačním problému (\ref{adv_opt}) nebo (\ref{adv_cw}) potřebujeme,
+Potom v optimalizačním problému (\ref{adv_cw}) potřebujeme,
 aby byl kladen větší důraz na první člen $\rho(x, \hat{x})$, tedy aby $\lambda$ bylo co nejmenší.
 Zárověň ale potřebujeme, aby výsledek byl nesprávně klasifikován.
+
+
 
 \section{Robustnost neuronové sítě}
 
@@ -1168,6 +1194,8 @@ Poté je proveden \emph{cílený FAB útok} \cite{FAB},
 následně \emph{black-box square attack} \cite{SquareAttack}.
 Následně se výsledky agregují v již zmíněnou adversariální úspěšnost.
 Tímm pádem lze metody robustního strojového učení mezi sebou porovnávat.
+
+\subsection{Robustní učení}
 
 
 \chapter{Implementace metrik vizuální podobnosti}
@@ -1506,70 +1534,1139 @@ a následně agregován, je u názvu této metriky uvedena i velikost tohoto pod
 Ohledně počtu generovaných vzorků v experimentu lze poznamenat,
 že kvůli výpočetní náročnosti DSSIM na dostupných výpočetních zařízeních nebylo možné toto číslo navýšit.
 
-Na Obrázku \ref{adv_pic} lze spatřit adversariální vzorek vygenerovaný $l_2$ útokem s hodnotou parametru $\lambda = 10$.
-Jeho $l_2$ vzdálenost od původního vzorku je potom $1,75$.
-Toto je typický zástupce adversariálních vzorků: V obrázku jsou jakési artefakty,
-které pro lidské oko nepředstavují zatemnění informace, že se jedná o obrázek devítky.
-Klasifikátor v podobě naší neuronové sítě ovšem tyto artefakty interpretoval jinak,
-a to tak, že obrázek špatně klasifikoval.
+\section{Adversariální útok za použití metriky indukované $l_2$ normou}
 
-\begin{figure}[h]
+
+% L2
+\begin{figure}
     \centering
-    \includegraphics[width=0.2\textwidth]{Images/adv_pic.png}
-    \caption{Příklad adversariálního vzorku} \label{adv_pic}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_L2_lambda=0.001_dist=0.14701637625694275_d2=0.14701637625694275.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_L2_lambda=0.01_dist=0.14034487307071686_d2=0.14034487307071686.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_L2_lambda=0.1_dist=0.13645605742931366_d2=0.13645605742931366.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_L2_lambda=1_dist=3.6876015663146973_d2=3.6876015663146973.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_L2_lambda=10_dist=3.885240316390991_d2=3.885240316390991.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_L2_lambda=100_dist=3.901284694671631_d2=3.901284694671631.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_L2_lambda=1000_dist=4.259927749633789_d2=4.259927749633789.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_L2_lambda=0.001_dist=0.15390264987945557_d2=0.15390264987945557.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_L2_lambda=0.01_dist=0.1547030210494995_d2=0.1547030210494995.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_L2_lambda=0.1_dist=0.15015043318271637_d2=0.15015043318271637.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_L2_lambda=1_dist=1.18540358543396_d2=1.18540358543396.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_L2_lambda=10_dist=1.706949234008789_d2=1.706949234008789.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_L2_lambda=100_dist=1.6205685138702393_d2=1.6205685138702393.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_L2_lambda=1000_dist=1.9389005899429321_d2=1.9389005899429321.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_L2_lambda=0.001_dist=0.1467229276895523_d2=0.1467229276895523.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_L2_lambda=0.01_dist=0.15243536233901978_d2=0.15243536233901978.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_L2_lambda=0.1_dist=0.13260038197040558_d2=0.13260038197040558.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_L2_lambda=1_dist=1.901193618774414_d2=1.901193618774414.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_L2_lambda=10_dist=1.9523085355758667_d2=1.9523085355758667.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_L2_lambda=100_dist=2.1156904697418213_d2=2.1156904697418213.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_L2_lambda=1000_dist=2.36792254447937_d2=2.36792254447937.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_L2_lambda=0.001_dist=0.14068274199962616_d2=0.14068274199962616.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_L2_lambda=0.01_dist=0.14493106305599213_d2=0.14493106305599213.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_L2_lambda=0.1_dist=0.13621939718723297_d2=0.13621939718723297.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_L2_lambda=1_dist=2.523918628692627_d2=2.523918628692627.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_L2_lambda=10_dist=2.559863805770874_d2=2.559863805770874.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_L2_lambda=100_dist=2.717525005340576_d2=2.717525005340576.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_L2_lambda=1000_dist=2.893979549407959_d2=2.893979549407959.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_L2_lambda=0.001_dist=0.13505950570106506_d2=0.13505950570106506.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_L2_lambda=0.01_dist=0.1562836468219757_d2=0.1562836468219757.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_L2_lambda=0.1_dist=0.16468484699726105_d2=0.16468484699726105.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_L2_lambda=1_dist=1.8425648212432861_d2=1.8425648212432861.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_L2_lambda=10_dist=1.8296877145767212_d2=1.8296877145767212.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_L2_lambda=100_dist=1.9413517713546753_d2=1.9413517713546753.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_L2_lambda=1000_dist=2.39263916015625_d2=2.39263916015625.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_L2_lambda=0.001_dist=0.14381442964076996_d2=0.14381442964076996.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_L2_lambda=0.01_dist=0.1451040655374527_d2=0.1451040655374527.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_L2_lambda=0.1_dist=0.16168451309204102_d2=0.16168451309204102.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_L2_lambda=1_dist=0.3215978443622589_d2=0.3215978443622589.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_L2_lambda=10_dist=3.3893277645111084_d2=3.3893277645111084.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_L2_lambda=100_dist=3.7630810737609863_d2=3.7630810737609863.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_L2_lambda=1000_dist=3.95320200920105_d2=3.95320200920105.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_L2_lambda=0.001_dist=0.15017886459827423_d2=0.15017886459827423.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_L2_lambda=0.01_dist=0.15716511011123657_d2=0.15716511011123657.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_L2_lambda=0.1_dist=0.13287559151649475_d2=0.13287559151649475.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_L2_lambda=1_dist=2.4251952171325684_d2=2.4251952171325684.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_L2_lambda=10_dist=2.5936362743377686_d2=2.5936362743377686.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_L2_lambda=100_dist=2.5497589111328125_d2=2.5497589111328125.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_L2_lambda=1000_dist=2.828904390335083_d2=2.828904390335083.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_L2_lambda=0.001_dist=0.13506628572940826_d2=0.13506628572940826.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_L2_lambda=0.01_dist=0.1388508528470993_d2=0.1388508528470993.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_L2_lambda=0.1_dist=0.14036525785923004_d2=0.14036525785923004.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_L2_lambda=1_dist=2.7284634113311768_d2=2.7284634113311768.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_L2_lambda=10_dist=2.872725486755371_d2=2.872725486755371.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_L2_lambda=100_dist=2.918837070465088_d2=2.918837070465088.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_L2_lambda=1000_dist=3.1405227184295654_d2=3.1405227184295654.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L2_lambda=0.001_dist=0.1464889645576477_d2=0.1464889645576477.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L2_lambda=0.01_dist=0.15887826681137085_d2=0.15887826681137085.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L2_lambda=0.1_dist=0.12859991192817688_d2=0.12859991192817688.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L2_lambda=1_dist=0.15008991956710815_d2=0.15008991956710815.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_L2_lambda=10_dist=2.7434496879577637_d2=2.7434496879577637.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_L2_lambda=100_dist=3.0015370845794678_d2=3.0015370845794678.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_L2_lambda=1000_dist=3.1302969455718994_d2=3.1302969455718994.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_L2_lambda=0.001_dist=0.13593007624149323_d2=0.13593007624149323.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_L2_lambda=0.01_dist=0.14051811397075653_d2=0.14051811397075653.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_L2_lambda=0.1_dist=0.14687930047512054_d2=0.14687930047512054.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L2_lambda=1_dist=1.0900646448135376_d2=1.0900646448135376.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L2_lambda=10_dist=1.3691350221633911_d2=1.3691350221633911.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L2_lambda=100_dist=1.546129822731018_d2=1.546129822731018.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L2_lambda=1000_dist=1.5453290939331055_d2=1.5453290939331055.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití metriky indukované $l_2$ normou}
+	\label{cw_L2}
 \end{figure}
 
-Celkově lze z tabulky vyčíst, že například metrika vizuální podobnosti NPSR,
-tedy logaritmická transformace přeškálované metriky $l_2$, je naprosto nevhodná pro tvorbu adversariálních vzorků.
-Toto je na první pohled způsobeno charakterem derivace logaritmu,
-jelikož tato derivace je pro argument klesající k nule až neomezená
-a v gradientních metodách optimalizace po čase vždy převáží při optimalizaci účelové funkce derivaci druhého členu v (\ref{adv_cw}).
 
-Z tabulky jako nejúspěšnější útok vychází útok prováděný s metrikou $l_\infty$.
-To je ovšem za cenu velikého znečištění obrázku, jak vidíme v Obrázku (\ref{linf_pic})
-a jak lze odvodit z průměrné $l_2$ vzdálenosti vygenerovaného vzorku od původního benigního,
-která je až řádově větší než v případě např. $l_2$ útoku s $\lambda = 10^3$, jenž má mimochodem
-též úspěšnost $100 \%$.
-Na Obrázku \ref{linf_pic} lze spatřit vlevo vzorek vygenerovaný $l_\infty$ útokem s normální inicializací
-a vpravo vzorek vygenerovaný $l_\infty$ útokem se speciální inicializací.
-Oba vzorky jsou značně poškozené, tedy mají velkou vzdálenost od půvoního benigního vzorku.
-To je dáno faktem, že při optimalizaci v CW útoku člen $\rho(x, \hat{x})$ záleží vlastně na jediné pixelu,
-proto při každém kroku znaménkového gradientního sestupu algoritmus přiblíží k původnímu vzorku
-maximálně pouze jeden jediný pixel.
-Ohledně $l_\infty$ útoku lze též poznamenat,
-že ať v nastavení s normální inicializací, nebo v nastavení se specialní inicializací
-zdánlivě nezávisí na parametru $\lambda$.
-Souvisí to s předchozím.
-Lze vlastně říci, že skoro pro všechny indexy $i$ (výjimkou je vždy jeden jediný)
-platí $\partial_{\hat{x}_i} \rho(x, \hat{x}) = 0$.
-Proto se při znaménkovém gradientním sestupu výsledek k původnímu vzorku prakticky vůbec nepřipližuje.
+Na Obrázku \ref{cw_L2} lze spatřit vzorky vygenerované CW útokem
+za použití metriky indukované $l_2$ normou.
+V každém z řádků je potom prvním obrázkem původní benigní vzorek.
+Následující obrázky v řádku jsou pootom obrázky vygenerované CW útokem pro variabilní hodnotu parametru $\lambda$.
+Tato hodnota parametru $\lambda$ je potom po řadě $10^{-3}$, $10^{-2}$, $10^{-1}$, $1$, $10$, $100$ a $1000$.
+V takovémto formátu potom jsou prezentovány i další obrázky.
 
-\begin{figure}[h]
+Z Obrázku \ref{cw_L2} si lze odnést jednoznačně potvrzení prezentované matematické intuice
+ohledně volby parametru $\lambda$ v CW útoku, který spočívá v řešení (\ref{adv_cw}).
+Čím větší je totiž parametr $\lambda$,
+tím menší důraz je kladen na minimalizaci metriky vizuální podobnosti mezi původním benigním vzorkem a generovaným vzorkem.
+Proto s rostoucí hodnotou parametru $\lambda$ narůstá míra vizuálního poškození oproti původnímu obrázku.
+
+\section{Adversariální útok za použití metriky indukované $l_1$ normou}
+
+% L1
+\begin{figure}
     \centering
-    \includegraphics[width=0.2\textwidth]{Images/linf_n.png}
-    \includegraphics[width=0.2\textwidth]{Images/linf_s.png}
-    \caption{Příklady vzorků vygenerovaných $l_\infty$ útokem} \label{linf_pic}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_L1_lambda=0.001_dist=2.1123158931732178_d2=0.13503792881965637.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_L1_lambda=0.01_dist=2.2541632652282715_d2=0.14029383659362793.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_L1_lambda=0.1_dist=2.164498805999756_d2=0.13702493906021118.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_L1_lambda=1_dist=2.2262306213378906_d2=0.13875721395015717.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_L1_lambda=10_dist=27.19317626953125_d2=4.186177730560303.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_L1_lambda=100_dist=30.345487594604492_d2=4.266388416290283.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_L1_lambda=1000_dist=39.962013244628906_d2=4.580175399780273.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_L1_lambda=0.001_dist=2.3379104137420654_d2=0.14730338752269745.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_L1_lambda=0.01_dist=2.6827871799468994_d2=0.1587119698524475.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_L1_lambda=0.1_dist=2.671137809753418_d2=0.1585993617773056.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_L1_lambda=1_dist=2.3518543243408203_d2=0.1481785923242569.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_L1_lambda=10_dist=12.21181583404541_d2=1.7675739526748657.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_L1_lambda=100_dist=13.533018112182617_d2=1.817665934562683.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_L1_lambda=1000_dist=20.231225967407227_d2=2.2448954582214355.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_L1_lambda=0.001_dist=2.2423954010009766_d2=0.13853515684604645.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_L1_lambda=0.01_dist=2.1699607372283936_d2=0.1371910721063614.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_L1_lambda=0.1_dist=2.651066780090332_d2=0.1523362696170807.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_L1_lambda=1_dist=2.4909517765045166_d2=0.14790132641792297.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_L1_lambda=10_dist=17.9833984375_d2=2.5667717456817627.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_L1_lambda=100_dist=20.346904754638672_d2=2.6776912212371826.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_L1_lambda=1000_dist=28.94110870361328_d2=2.9921469688415527.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_L1_lambda=0.001_dist=2.1820151805877686_d2=0.13565431535243988.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_L1_lambda=0.01_dist=2.4119343757629395_d2=0.1439496874809265.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_L1_lambda=0.1_dist=2.2867329120635986_d2=0.1399593949317932.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_L1_lambda=1_dist=2.1649885177612305_d2=0.13583070039749146.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_L1_lambda=10_dist=27.574554443359375_d2=3.2078564167022705.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_L1_lambda=100_dist=29.116031646728516_d2=3.192244291305542.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_L1_lambda=1000_dist=29.945934295654297_d2=3.262796401977539.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_L1_lambda=0.001_dist=2.981707811355591_d2=0.16678394377231598.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_L1_lambda=0.01_dist=2.4039759635925293_d2=0.1483311653137207.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_L1_lambda=0.1_dist=2.8642685413360596_d2=0.1634032130241394.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_L1_lambda=1_dist=2.610167980194092_d2=0.15477555990219116.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_L1_lambda=10_dist=15.790398597717285_d2=2.1837830543518066.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_L1_lambda=100_dist=23.057170867919922_d2=2.7984237670898438.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_L1_lambda=1000_dist=20.822385787963867_d2=2.3107895851135254.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_L1_lambda=0.001_dist=2.3076510429382324_d2=0.14183330535888672.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_L1_lambda=0.01_dist=2.5378406047821045_d2=0.15009833872318268.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_L1_lambda=0.1_dist=2.410611152648926_d2=0.14579333364963531.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_L1_lambda=1_dist=2.5475614070892334_d2=0.15072689950466156.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_L1_lambda=10_dist=3.56191349029541_d2=0.5998944640159607.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_L1_lambda=100_dist=33.78354263305664_d2=4.158044815063477.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_L1_lambda=1000_dist=42.122066497802734_d2=4.326496601104736.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_L1_lambda=0.001_dist=2.1245415210723877_d2=0.13561014831066132.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_L1_lambda=0.01_dist=2.361963987350464_d2=0.14437228441238403.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_L1_lambda=0.1_dist=2.5869898796081543_d2=0.15171116590499878.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_L1_lambda=1_dist=2.2592079639434814_d2=0.14099909365177155.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_L1_lambda=10_dist=22.019609451293945_d2=2.975619077682495.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_L1_lambda=100_dist=27.41433334350586_d2=3.1519129276275635.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_L1_lambda=1000_dist=33.84744644165039_d2=3.2057480812072754.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_L1_lambda=0.001_dist=2.0468955039978027_d2=0.1336158961057663.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_L1_lambda=0.01_dist=2.4102141857147217_d2=0.14693641662597656.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_L1_lambda=0.1_dist=2.42751145362854_d2=0.14749430119991302.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_L1_lambda=1_dist=2.2019050121307373_d2=0.1394798457622528.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_L1_lambda=10_dist=29.234840393066406_d2=3.302190065383911.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_L1_lambda=100_dist=31.231565475463867_d2=3.2983813285827637.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_L1_lambda=1000_dist=36.032676696777344_d2=3.603574514389038.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L1_lambda=0.001_dist=2.0222933292388916_d2=0.13158689439296722.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L1_lambda=0.01_dist=1.9499961137771606_d2=0.1292506903409958.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L1_lambda=0.1_dist=2.5400733947753906_d2=0.15101462602615356.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L1_lambda=1_dist=2.835761070251465_d2=0.15978097915649414.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_L1_lambda=10_dist=1.8253750801086426_d2=0.12419386208057404.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_L1_lambda=100_dist=25.795658111572266_d2=3.6265883445739746.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_L1_lambda=1000_dist=33.083152770996094_d2=3.5952515602111816.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_L1_lambda=0.001_dist=2.362851858139038_d2=0.14393684267997742.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_L1_lambda=0.01_dist=2.286245584487915_d2=0.14126403629779816.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_L1_lambda=0.1_dist=2.4285104274749756_d2=0.1457786113023758.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_L1_lambda=1_dist=2.4015541076660156_d2=0.1451183259487152.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L1_lambda=10_dist=8.838101387023926_d2=1.755147099494934.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L1_lambda=100_dist=12.764104843139648_d2=1.7609970569610596.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L1_lambda=1000_dist=13.054327011108398_d2=1.8567101955413818.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití metriky indukované $l_1$ normou}
+	\label{cw_L1}
 \end{figure}
 
-Další komentář se bude věnovat obdobnnému problému, který vyvstal pro DSSIM útok
+Na Obrázku \ref{cw_L1} lze pak spatřit vzorky vygenerované CW útokem,
+který používal metriku vizuální podobnosti indukovanou $l_1$ normou.
+Na první pohled při srovnání s Obrázkem \ref{cw_L2} lze vidět,
+že vzorky generované za použití metriky indukované $l_1$ normou
+jsou poněkud kostrbatější.
+Tak jinak, že artefakty v okolí číslic mají výrazně větší rozdíly v hodnotách dvou sousedních pixelů.
+
+\section{Adversariální útok za použití metriky vizuální podobnosti DSSIM}
+
+Podívejme se nyní na vzorky vygenerované CW útokem, ve kterém roli metriky vizuální podobnosti
+hrála metrika vizuální podobnosti \emph{DSSIM}.
+Předvedli jsme, že tato metrika sama o sobě je parametrizovaná velikostí výpočetního podokna.
+Proto se věnujme různým velikostem výpočetního podokna zvlášť.
+
+\subsection{Velikost výpočetního podokna 5}
+
+% DSSIM-ws=5
+\begin{figure}
+    \centering
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_DSSIM-ws=5_lambda=0.001_dist=0.012907654047012329_d2=0.25780388712882996.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=5_lambda=0.01_dist=0.1795159876346588_d2=8.1172456741333.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=5_lambda=0.1_dist=0.1948918104171753_d2=8.852614402770996.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=5_lambda=1_dist=0.19347989559173584_d2=9.060647010803223.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=5_lambda=10_dist=0.2138414978981018_d2=9.165953636169434.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=5_lambda=100_dist=0.19990432262420654_d2=8.26209831237793.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=5_lambda=1000_dist=0.22542142868041992_d2=9.986775398254395.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=5_lambda=0.001_dist=0.20210552215576172_d2=5.204440593719482.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=5_lambda=0.01_dist=0.23129743337631226_d2=6.779479503631592.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=5_lambda=0.1_dist=0.23670092225074768_d2=6.842749118804932.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=5_lambda=1_dist=0.24890384078025818_d2=9.283989906311035.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=5_lambda=10_dist=0.26059892773628235_d2=10.350024223327637.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=5_lambda=100_dist=0.2678776979446411_d2=10.019732475280762.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=5_lambda=1000_dist=0.2762296497821808_d2=9.126455307006836.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_DSSIM-ws=5_lambda=0.001_dist=0.015439987182617188_d2=0.28457263112068176.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=5_lambda=0.01_dist=0.18845707178115845_d2=9.144709587097168.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=5_lambda=0.1_dist=0.1839909553527832_d2=8.517693519592285.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=5_lambda=1_dist=0.2086554765701294_d2=9.226920127868652.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=5_lambda=10_dist=0.20963367819786072_d2=8.942191123962402.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=5_lambda=100_dist=0.20310166478157043_d2=8.989212036132812.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=5_lambda=1000_dist=0.2108789086341858_d2=8.91487979888916.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_DSSIM-ws=5_lambda=0.001_dist=0.027407854795455933_d2=0.17754097282886505.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=5_lambda=0.01_dist=0.1511649191379547_d2=9.185309410095215.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=5_lambda=0.1_dist=0.1671978235244751_d2=9.506505012512207.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=5_lambda=1_dist=0.16220921277999878_d2=8.844636917114258.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=5_lambda=10_dist=0.17757141590118408_d2=9.711848258972168.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=5_lambda=100_dist=0.17280831933021545_d2=9.6594877243042.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=5_lambda=1000_dist=0.1959558129310608_d2=10.52166748046875.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=5_lambda=0.001_dist=0.1294924020767212_d2=3.768853187561035.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=5_lambda=0.01_dist=0.13068458437919617_d2=2.879298210144043.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=5_lambda=0.1_dist=0.21812522411346436_d2=7.8325700759887695.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=5_lambda=1_dist=0.21592074632644653_d2=8.568694114685059.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=5_lambda=10_dist=0.22601446509361267_d2=7.854658603668213.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=5_lambda=100_dist=0.22503170371055603_d2=8.015763282775879.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=5_lambda=1000_dist=0.22725751996040344_d2=8.192279815673828.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=5_lambda=0.001_dist=0.13633859157562256_d2=7.0264105796813965.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=5_lambda=0.01_dist=0.17612865567207336_d2=7.836599826812744.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=5_lambda=0.1_dist=0.2083093523979187_d2=9.700610160827637.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=5_lambda=1_dist=0.21543562412261963_d2=9.925210952758789.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=5_lambda=10_dist=0.2163827121257782_d2=9.466742515563965.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=5_lambda=100_dist=0.23258158564567566_d2=10.717977523803711.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=5_lambda=1000_dist=0.23164480924606323_d2=10.952765464782715.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_DSSIM-ws=5_lambda=0.001_dist=0.0901041328907013_d2=1.0241386890411377.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=5_lambda=0.01_dist=0.20872414112091064_d2=9.780447006225586.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=5_lambda=0.1_dist=0.23172414302825928_d2=9.859075546264648.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=5_lambda=1_dist=0.23727938532829285_d2=9.169720649719238.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=5_lambda=10_dist=0.23269423842430115_d2=9.417067527770996.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=5_lambda=100_dist=0.24606120586395264_d2=9.927529335021973.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=5_lambda=1000_dist=0.2311561107635498_d2=9.109362602233887.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_DSSIM-ws=5_lambda=0.001_dist=0.1831589937210083_d2=6.411322593688965.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=5_lambda=0.01_dist=0.1912754774093628_d2=8.928193092346191.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=5_lambda=0.1_dist=0.241008460521698_d2=9.046478271484375.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=5_lambda=1_dist=0.2372835874557495_d2=9.185465812683105.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=5_lambda=10_dist=0.2498740255832672_d2=9.531346321105957.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=5_lambda=100_dist=0.25761061906814575_d2=9.553542137145996.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=5_lambda=1000_dist=0.2655770182609558_d2=9.616020202636719.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=5_lambda=0.001_dist=0.005824416875839233_d2=0.40162259340286255.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=5_lambda=0.01_dist=0.17005816102027893_d2=9.058201789855957.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=5_lambda=0.1_dist=0.18513870239257812_d2=9.558727264404297.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=5_lambda=1_dist=0.2054150104522705_d2=10.678581237792969.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=5_lambda=10_dist=0.21524208784103394_d2=10.966041564941406.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=5_lambda=100_dist=0.20919692516326904_d2=9.878133773803711.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=5_lambda=1000_dist=0.2026299238204956_d2=9.93602180480957.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_DSSIM-ws=5_lambda=0.001_dist=0.1539323627948761_d2=2.0178327560424805.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=5_lambda=0.01_dist=0.1953158974647522_d2=8.86357307434082.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=5_lambda=0.1_dist=0.20213571190834045_d2=8.9537353515625.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=5_lambda=1_dist=0.2150484323501587_d2=8.490336418151855.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=5_lambda=10_dist=0.218455970287323_d2=8.784497261047363.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=5_lambda=100_dist=0.21162065863609314_d2=9.035633087158203.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=5_lambda=1000_dist=0.22423532605171204_d2=9.380809783935547.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 5}
+	\label{cw_DSSIM-ws5}
+\end{figure}
+
+Tento komentář se bude věnovat jevu, který vyvstal pro DSSIM útok
 s parametrem velikosti výpočetního podokna $5$.
-Podle Obrázku \ref{dssim_pic}
-je okolí číslice silně znečištěno artefakty.
+Podle Obrázku \ref{cw_DSSIM-ws5}
+bývá po tomto útoku okolí číslice silně znečištěno artefakty.
 Kupodivu samotná číslice a její bezprostřední okolí je relativně nedotknuté.
 Tento fenomén se vyskytl hlavně u volby velikosti výpočetního podokna $5$.
 Vysvětlení zní jednoduše.
 Neboť je původní benigní obrázek dál od číslice roven v každém pixelu nule,
 pak SSIM index příslušných dvou podoken dál od číslice vychází konstantně skoro nula,
-a to kvůli členu $\sigma_{x \tilde{x}}$ v čitateli.
+a to kvůli členu $\sigma_{x \tilde{x}}$ v čitateli ve výrazu v (\ref{ssimm_def}).
 Není úplně nula díky konstantě $C_2$, která zde vystupuje kvůli dělení.
 Ta je ovšem dostatečně malá, aby byla převážena druhým členem gradientu.
 
-\begin{figure}[h]
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.2\textwidth]{Images/dssim.png}
+%     \caption{Příklad vzorku vygenerovaného DSSIM útokem} \label{dssim_pic}
+% \end{figure}
+
+\subsection{Velikost výpočetního podokna 10}
+
+% DSSIM-ws=10
+\begin{figure}
     \centering
-    \includegraphics[width=0.2\textwidth]{Images/dssim.png}
-    \caption{Příklad vzorku vygenerovaného DSSIM útokem} \label{dssim_pic}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_DSSIM-ws=10_lambda=0.001_dist=7.164478302001953e-05_d2=0.1196574941277504.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_DSSIM-ws=10_lambda=0.01_dist=6.490945816040039e-05_d2=0.11181505769491196.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=10_lambda=0.1_dist=0.09023252129554749_d2=4.325859069824219.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=10_lambda=1_dist=0.087883859872818_d2=4.236833572387695.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=10_lambda=10_dist=0.09423938393592834_d2=4.4223833084106445.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=10_lambda=100_dist=0.09321200847625732_d2=4.364864826202393.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=10_lambda=1000_dist=0.13410040736198425_d2=5.532363414764404.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_DSSIM-ws=10_lambda=0.001_dist=0.017471134662628174_d2=0.19093060493469238.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=10_lambda=0.01_dist=0.06740507483482361_d2=2.2929306030273438.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=10_lambda=0.1_dist=0.10999441146850586_d2=5.145431041717529.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=10_lambda=1_dist=0.12007474899291992_d2=5.114199638366699.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=10_lambda=10_dist=0.12638157606124878_d2=4.356586933135986.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=10_lambda=100_dist=0.1350964605808258_d2=5.028470516204834.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=10_lambda=1000_dist=0.1326221525669098_d2=5.161792755126953.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_DSSIM-ws=10_lambda=0.001_dist=0.002175360918045044_d2=0.25739526748657227.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_DSSIM-ws=10_lambda=0.01_dist=0.0023291707038879395_d2=0.4006381928920746.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=10_lambda=0.1_dist=0.018177270889282227_d2=2.0069732666015625.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=10_lambda=1_dist=0.026419639587402344_d2=2.4049811363220215.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=10_lambda=10_dist=0.031520992517471313_d2=2.572556257247925.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=10_lambda=100_dist=0.033131688833236694_d2=2.678351879119873.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=10_lambda=1000_dist=0.04540678858757019_d2=3.215731620788574.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_DSSIM-ws=10_lambda=0.001_dist=0.0015662908554077148_d2=0.20423398911952972.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_DSSIM-ws=10_lambda=0.01_dist=0.02069556713104248_d2=1.627138614654541.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=10_lambda=0.1_dist=0.049358636140823364_d2=2.785853385925293.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=10_lambda=1_dist=0.04892030358314514_d2=2.8331410884857178.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=10_lambda=10_dist=0.06899017095565796_d2=3.4474456310272217.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=10_lambda=100_dist=0.06778690218925476_d2=3.5352752208709717.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=10_lambda=1000_dist=0.0722944438457489_d2=3.744856595993042.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_DSSIM-ws=10_lambda=0.001_dist=0.024586230516433716_d2=0.26586347818374634.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_DSSIM-ws=10_lambda=0.01_dist=0.007821112871170044_d2=0.26596349477767944.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=10_lambda=0.1_dist=0.07514217495918274_d2=1.7968941926956177.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=10_lambda=1_dist=0.07844454050064087_d2=2.122070550918579.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=10_lambda=10_dist=0.08278557658195496_d2=2.23720383644104.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=10_lambda=100_dist=0.10463014245033264_d2=3.0959529876708984.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=10_lambda=1000_dist=0.0930790901184082_d2=2.5392844676971436.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=10_lambda=0.001_dist=0.0004194676876068115_d2=0.2766514718532562.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=10_lambda=0.01_dist=0.0011091232299804688_d2=0.46529316902160645.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=10_lambda=0.1_dist=0.00199735164642334_d2=0.6264770030975342.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=10_lambda=1_dist=0.08404785394668579_d2=3.7348978519439697.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=10_lambda=10_dist=0.10273027420043945_d2=4.203285217285156.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=10_lambda=100_dist=0.10273781418800354_d2=4.272779941558838.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=10_lambda=1000_dist=0.12482860684394836_d2=4.878007411956787.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_DSSIM-ws=10_lambda=0.001_dist=0.0028899013996124268_d2=0.23144745826721191.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_DSSIM-ws=10_lambda=0.01_dist=0.005318164825439453_d2=0.9649099707603455.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=10_lambda=0.1_dist=0.0436931848526001_d2=2.6055681705474854.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=10_lambda=1_dist=0.044647812843322754_d2=2.7104287147521973.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=10_lambda=10_dist=0.05327048897743225_d2=2.9401633739471436.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=10_lambda=100_dist=0.055208444595336914_d2=3.0852527618408203.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=10_lambda=1000_dist=0.06357496976852417_d2=3.401062250137329.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_DSSIM-ws=10_lambda=0.001_dist=0.003778219223022461_d2=0.18980194628238678.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=10_lambda=0.01_dist=0.024834126234054565_d2=2.495858669281006.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=10_lambda=0.1_dist=0.05835437774658203_d2=2.9837288856506348.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=10_lambda=1_dist=0.06087943911552429_d2=3.158695936203003.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=10_lambda=10_dist=0.05943310260772705_d2=3.026944160461426.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=10_lambda=100_dist=0.08003544807434082_d2=3.451349973678589.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=10_lambda=1000_dist=0.09739726781845093_d2=3.9389090538024902.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=10_lambda=0.001_dist=0.00010055303573608398_d2=0.12951572239398956.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=10_lambda=0.01_dist=0.00012806057929992676_d2=0.14641311764717102.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=10_lambda=0.1_dist=0.007791578769683838_d2=0.34231916069984436.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=10_lambda=1_dist=0.09383758902549744_d2=4.385049819946289.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=10_lambda=10_dist=0.09834852814674377_d2=5.586298942565918.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=10_lambda=100_dist=0.10602039098739624_d2=5.25981330871582.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=10_lambda=1000_dist=0.12272489070892334_d2=6.162153244018555.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_DSSIM-ws=10_lambda=0.001_dist=0.00419771671295166_d2=0.20414355397224426.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=10_lambda=0.01_dist=0.00973406434059143_d2=1.317968726158142.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=10_lambda=0.1_dist=0.013548970222473145_d2=1.3641301393508911.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=10_lambda=1_dist=0.016219109296798706_d2=1.554163932800293.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=10_lambda=10_dist=0.028433382511138916_d2=1.816705346107483.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=10_lambda=100_dist=0.029317259788513184_d2=1.8892021179199219.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=10_lambda=1000_dist=0.03318724036216736_d2=2.132869005203247.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 10}
+	\label{cw_DSSIM-ws10}
 \end{figure}
 
+V Obrázku \ref{cw_DSSIM-ws10} lze potom nahlédnout na vzorky vygenerované CW útokem za použití metriky vizuální podobnosti
+DSSIM s parametrem velikosti výpočetního podokna $10$.
+Lze vidět, že tyto obrázky jsou mnohem uhlazenější, než obrázky vygenerované za použití metriky DSSIM s velikostí podokna $5$.
+
+\subsection{Velikost výpočetního podokna 20}
+
+% DSSIM-ws=20
+\begin{figure}
+    \centering
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_DSSIM-ws=20_lambda=0.001_dist=0.0002536475658416748_d2=0.2619484066963196.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=20_lambda=0.01_dist=0.05227923393249512_d2=3.586812973022461.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=20_lambda=0.1_dist=0.06815275549888611_d2=4.063248634338379.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=20_lambda=1_dist=0.0890173614025116_d2=4.722400188446045.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=20_lambda=10_dist=0.06364130973815918_d2=3.9932949542999268.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=20_lambda=100_dist=0.0853385329246521_d2=4.742477893829346.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=20_lambda=1000_dist=0.0804310142993927_d2=4.547694206237793.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_DSSIM-ws=20_lambda=0.001_dist=0.0007454156875610352_d2=0.2676762044429779.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=20_lambda=0.01_dist=0.012452870607376099_d2=1.4461766481399536.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=20_lambda=0.1_dist=0.01756301522254944_d2=1.7218313217163086.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=20_lambda=1_dist=0.017003566026687622_d2=1.7202914953231812.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=20_lambda=10_dist=0.0216372013092041_d2=1.992215633392334.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=20_lambda=100_dist=0.027839094400405884_d2=2.202068328857422.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=20_lambda=1000_dist=0.03605261445045471_d2=2.4640982151031494.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_DSSIM-ws=20_lambda=0.001_dist=7.274746894836426e-05_d2=0.12097795307636261.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=20_lambda=0.01_dist=0.013227671384811401_d2=1.9472262859344482.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=20_lambda=0.1_dist=0.01752626895904541_d2=2.248422145843506.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=20_lambda=1_dist=0.016385912895202637_d2=2.1885485649108887.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=20_lambda=10_dist=0.01826539635658264_d2=2.300792694091797.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=20_lambda=100_dist=0.023336023092269897_d2=2.6493306159973145.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=20_lambda=1000_dist=0.030865520238876343_d2=3.1120152473449707.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_DSSIM-ws=20_lambda=0.001_dist=5.3495168685913086e-05_d2=0.11688616871833801.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_DSSIM-ws=20_lambda=0.01_dist=0.02042633295059204_d2=2.405867576599121.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=20_lambda=0.1_dist=0.028211981058120728_d2=2.823099374771118.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=20_lambda=1_dist=0.0243205726146698_d2=2.6722304821014404.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=20_lambda=10_dist=0.03502354025840759_d2=3.238971710205078.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=20_lambda=100_dist=0.031292229890823364_d2=3.046889066696167.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=20_lambda=1000_dist=0.03934502601623535_d2=3.4120032787323.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_DSSIM-ws=20_lambda=0.001_dist=0.00010576844215393066_d2=0.1138145700097084.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=20_lambda=0.01_dist=0.019063591957092285_d2=1.7591419219970703.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=20_lambda=0.1_dist=0.029934555292129517_d2=2.279686450958252.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=20_lambda=1_dist=0.02082541584968567_d2=1.8923890590667725.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=20_lambda=10_dist=0.028116434812545776_d2=2.1299054622650146.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=20_lambda=100_dist=0.035455524921417236_d2=2.406920909881592.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=20_lambda=1000_dist=0.048074185848236084_d2=2.8166542053222656.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=20_lambda=0.001_dist=0.00028893351554870605_d2=0.2715969681739807.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=20_lambda=0.01_dist=0.0005349516868591309_d2=0.38237038254737854.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=20_lambda=0.1_dist=0.0008066296577453613_d2=0.4562113583087921.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=20_lambda=1_dist=0.05349186062812805_d2=3.563622236251831.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=20_lambda=10_dist=0.0727250874042511_d2=4.283256530761719.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=20_lambda=100_dist=0.08257243037223816_d2=4.570023059844971.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=20_lambda=1000_dist=0.1032477617263794_d2=5.008537292480469.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_DSSIM-ws=20_lambda=0.001_dist=0.00023999810218811035_d2=0.25963878631591797.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=20_lambda=0.01_dist=0.020062893629074097_d2=2.282846689224243.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=20_lambda=0.1_dist=0.024713784456253052_d2=2.6404504776000977.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=20_lambda=1_dist=0.026410281658172607_d2=2.7093589305877686.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=20_lambda=10_dist=0.0341305136680603_d2=3.0598204135894775.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=20_lambda=100_dist=0.03563907742500305_d2=3.1036391258239746.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=20_lambda=1000_dist=0.05019453167915344_d2=3.7255473136901855.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_DSSIM-ws=20_lambda=0.001_dist=9.146332740783691e-05_d2=0.1178731620311737.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=20_lambda=0.01_dist=0.013421237468719482_d2=1.954052209854126.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=20_lambda=0.1_dist=0.03714904189109802_d2=2.848768711090088.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=20_lambda=1_dist=0.0450916588306427_d2=3.2110743522644043.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=20_lambda=10_dist=0.04645398259162903_d2=3.1877267360687256.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=20_lambda=100_dist=0.04811674356460571_d2=3.2384021282196045.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=20_lambda=1000_dist=0.06724599003791809_d2=3.8644540309906006.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=20_lambda=0.001_dist=0.0003052353858947754_d2=0.2603950798511505.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=20_lambda=0.01_dist=0.0003399848937988281_d2=0.262408047914505.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=20_lambda=0.1_dist=0.032473206520080566_d2=2.756079912185669.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=20_lambda=1_dist=0.03551363945007324_d2=2.9440250396728516.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=20_lambda=10_dist=0.050937652587890625_d2=3.4137957096099854.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=20_lambda=100_dist=0.05226027965545654_d2=3.610316276550293.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=20_lambda=1000_dist=0.0578746497631073_d2=3.809668779373169.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_DSSIM-ws=20_lambda=0.001_dist=0.00024375319480895996_d2=0.2611492872238159.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=20_lambda=0.01_dist=0.0039331912994384766_d2=1.051363468170166.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=20_lambda=0.1_dist=0.005749255418777466_d2=1.2325890064239502.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=20_lambda=1_dist=0.008408814668655396_d2=1.5102806091308594.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=20_lambda=10_dist=0.009465336799621582_d2=1.6464368104934692.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=20_lambda=100_dist=0.011113911867141724_d2=1.7896323204040527.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=20_lambda=1000_dist=0.011532217264175415_d2=1.7933346033096313.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 20}
+	\label{cw_DSSIM-ws20}
+\end{figure}
+
+\subsection{Velikost výpočetního podokna jako velikost celého obrázku}
+
+% DSSIM-ws=28
+\begin{figure}
+    \centering
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_DSSIM-ws=28_lambda=0.001_dist=0.0006527602672576904_d2=0.2597068250179291.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_DSSIM-ws=28_lambda=0.01_dist=0.041407614946365356_d2=3.6191041469573975.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=28_lambda=0.1_dist=0.04590708017349243_d2=3.772212505340576.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=28_lambda=1_dist=0.05505719780921936_d2=4.110447883605957.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=28_lambda=10_dist=0.06139412522315979_d2=4.339127063751221.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=28_lambda=100_dist=0.06363588571548462_d2=4.417396068572998.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_DSSIM-ws=28_lambda=1000_dist=0.07012525200843811_d2=4.609143257141113.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_DSSIM-ws=28_lambda=0.001_dist=7.051229476928711e-05_d2=0.09435642510652542.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=28_lambda=0.01_dist=0.0073160529136657715_d2=1.1654866933822632.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=28_lambda=0.1_dist=0.01363179087638855_d2=1.5549908876419067.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=28_lambda=1_dist=0.01316174864768982_d2=1.5603022575378418.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=28_lambda=10_dist=0.026003897190093994_d2=2.113497734069824.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=28_lambda=100_dist=0.02598714828491211_d2=2.1596240997314453.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_DSSIM-ws=28_lambda=1000_dist=0.03694593906402588_d2=2.533818483352661.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_DSSIM-ws=28_lambda=0.001_dist=0.00010123848915100098_d2=0.1404988318681717.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=28_lambda=0.01_dist=0.012032747268676758_d2=1.8962154388427734.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=28_lambda=0.1_dist=0.01553162932395935_d2=2.141655206680298.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=28_lambda=1_dist=0.018947452306747437_d2=2.345529556274414.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=28_lambda=10_dist=0.022246092557907104_d2=2.5183136463165283.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=28_lambda=100_dist=0.026773184537887573_d2=2.765101909637451.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_DSSIM-ws=28_lambda=1000_dist=0.03136235475540161_d2=2.9739797115325928.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_DSSIM-ws=28_lambda=0.001_dist=0.0004795193672180176_d2=0.25358501076698303.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=28_lambda=0.01_dist=0.018101096153259277_d2=2.54963755607605.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=28_lambda=0.1_dist=0.020111531019210815_d2=2.6727077960968018.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=28_lambda=1_dist=0.022642463445663452_d2=2.8139758110046387.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=28_lambda=10_dist=0.02468252182006836_d2=2.938100814819336.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=28_lambda=100_dist=0.025828152894973755_d2=3.023090124130249.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_DSSIM-ws=28_lambda=1000_dist=0.03609591722488403_d2=3.511007785797119.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_DSSIM-ws=28_lambda=0.001_dist=0.00012534856796264648_d2=0.12401768565177917.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=28_lambda=0.01_dist=0.014248698949813843_d2=1.6364364624023438.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=28_lambda=0.1_dist=0.026106446981430054_d2=2.1877503395080566.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=28_lambda=1_dist=0.02153158187866211_d2=1.9933834075927734.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=28_lambda=10_dist=0.029590904712677002_d2=2.2752604484558105.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=28_lambda=100_dist=0.03629648685455322_d2=2.513145923614502.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_DSSIM-ws=28_lambda=1000_dist=0.03464081883430481_d2=2.489288091659546.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=28_lambda=0.001_dist=0.0009191930294036865_d2=0.34530267119407654.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=28_lambda=0.01_dist=0.0011218786239624023_d2=0.45758673548698425.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=28_lambda=0.1_dist=0.001177072525024414_d2=0.5635843873023987.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=28_lambda=1_dist=0.049429893493652344_d2=3.6456172466278076.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=28_lambda=10_dist=0.06304094195365906_d2=4.077995300292969.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=28_lambda=100_dist=0.07135656476020813_d2=4.322898864746094.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_DSSIM-ws=28_lambda=1000_dist=0.07862269878387451_d2=4.500265121459961.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_DSSIM-ws=28_lambda=0.001_dist=7.259845733642578e-05_d2=0.11978789418935776.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_DSSIM-ws=28_lambda=0.01_dist=0.009091168642044067_d2=1.6406724452972412.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=28_lambda=0.1_dist=0.018837273120880127_d2=2.2993242740631104.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=28_lambda=1_dist=0.021842241287231445_d2=2.453716993331909.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=28_lambda=10_dist=0.02902156114578247_d2=2.8137245178222656.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=28_lambda=100_dist=0.03589361906051636_d2=3.118530035018921.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_DSSIM-ws=28_lambda=1000_dist=0.036865800619125366_d2=3.1457228660583496.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_DSSIM-ws=28_lambda=0.001_dist=0.00012105703353881836_d2=0.1295614242553711.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=28_lambda=0.01_dist=0.017879962921142578_d2=2.0136446952819824.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=28_lambda=0.1_dist=0.033293455839157104_d2=2.6896750926971436.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=28_lambda=1_dist=0.04566633701324463_d2=3.0668554306030273.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=28_lambda=10_dist=0.04543134570121765_d2=3.096625328063965.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=28_lambda=100_dist=0.061637431383132935_d2=3.5399670600891113.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_DSSIM-ws=28_lambda=1000_dist=0.06797045469284058_d2=3.644491672515869.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=28_lambda=0.001_dist=0.0009506642818450928_d2=0.26098692417144775.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=28_lambda=0.01_dist=0.00011157989501953125_d2=0.1376025378704071.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_DSSIM-ws=28_lambda=0.1_dist=0.001003265380859375_d2=0.26215821504592896.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=28_lambda=1_dist=0.031706303358078_d2=2.874894618988037.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=28_lambda=10_dist=0.03915989398956299_d2=3.176405191421509.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=28_lambda=100_dist=0.048934370279312134_d2=3.4788928031921387.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_DSSIM-ws=28_lambda=1000_dist=0.05626785755157471_d2=3.752417802810669.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_DSSIM-ws=28_lambda=0.001_dist=0.00010079145431518555_d2=0.1375729739665985.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=28_lambda=0.01_dist=0.004255950450897217_d2=1.1294628381729126.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=28_lambda=0.1_dist=0.006579577922821045_d2=1.3868383169174194.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=28_lambda=1_dist=0.006243288516998291_d2=1.3543237447738647.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=28_lambda=10_dist=0.010649830102920532_d2=1.7357609272003174.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=28_lambda=100_dist=0.012982308864593506_d2=1.91720449924469.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=28_lambda=1000_dist=0.014223664999008179_d2=2.018277883529663.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM bez omezení velikosti výpočetního podokna}
+	\label{cw_DSSIM-ws28}
+\end{figure}
+
+\section{Adversariální útok za použití aproximace Wassersteinovy vzdálenosti}
+
+\subsection{Hodnota regularizace 5}
+
+% WassersteinAproximation-reg=5
+\begin{figure}
+    \centering
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=0.8862981796264648_d2=6.621276378631592.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=0.8844916820526123_d2=6.604877948760986.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=1.746572494506836_d2=9.347614288330078.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.7554618120193481_d2=9.780027389526367.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.6617238521575928_d2=9.297603607177734.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.9210896492004395_d2=10.047322273254395.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=5_lambda=1000_dist=2.0439541339874268_d2=10.062275886535645.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=5_lambda=0.001_dist=1.6001088619232178_d2=7.229477405548096.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=5_lambda=0.01_dist=1.8065619468688965_d2=7.638077259063721.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=1.7932322025299072_d2=7.659536838531494.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.8347406387329102_d2=7.810190677642822.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.8884750604629517_d2=7.846939563751221.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.7712972164154053_d2=7.6636433601379395.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=5_lambda=1000_dist=2.0329620838165283_d2=7.960882663726807.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=0.7207291722297668_d2=6.495874404907227.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=0.7455974817276001_d2=6.6258039474487305.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=0.9346767663955688_d2=7.651573657989502.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.01240074634552_d2=8.008554458618164.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.1604641675949097_d2=8.32709789276123.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.2171125411987305_d2=8.265971183776855.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.3288006782531738_d2=8.623159408569336.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=0.7064793109893799_d2=5.797385215759277.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=0.7255828976631165_d2=5.761415004730225.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=0.883672833442688_d2=7.01281213760376.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=5_lambda=1_dist=0.9370800256729126_d2=7.2437334060668945.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.028261661529541_d2=7.445345401763916.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.0912973880767822_d2=7.880997657775879.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.0974570512771606_d2=7.845635414123535.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=1.152281641960144_d2=8.504473686218262.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=1.0886719226837158_d2=8.41270637512207.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=1.504589557647705_d2=9.654913902282715.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.707051157951355_d2=9.938911437988281.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.8592612743377686_d2=9.99897575378418.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.9510226249694824_d2=10.389008522033691.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.8023929595947266_d2=9.980759620666504.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=5_lambda=0.001_dist=0.974415123462677_d2=6.935202121734619.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=5_lambda=0.01_dist=0.9394680261611938_d2=6.760026931762695.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=0.9472461938858032_d2=6.899412155151367.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.218666434288025_d2=8.18005084991455.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.3873517513275146_d2=8.578278541564941.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.522538661956787_d2=9.003381729125977.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.5393439531326294_d2=9.149836540222168.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=0.7040831446647644_d2=6.098762512207031.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=0.7758547067642212_d2=6.474674224853516.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=1.098243236541748_d2=7.602115631103516.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.166723370552063_d2=7.857276916503906.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.3166545629501343_d2=8.06698226928711.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.3633860349655151_d2=8.223560333251953.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.5184831619262695_d2=8.504654884338379.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=1.0781508684158325_d2=7.453847408294678.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=1.1558363437652588_d2=7.546934127807617.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=1.3628909587860107_d2=8.825139999389648.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.6203213930130005_d2=9.559967041015625.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.711950421333313_d2=9.672384262084961.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.852337121963501_d2=10.029085159301758.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.8840830326080322_d2=10.007537841796875.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=0.9412094354629517_d2=7.188952922821045.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=0.9253320097923279_d2=7.168346881866455.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=5_lambda=0.1_dist=0.8753965497016907_d2=6.975978851318359.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=5_lambda=1_dist=1.2502835988998413_d2=8.090779304504395.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=5_lambda=10_dist=1.2026729583740234_d2=8.05639934539795.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.4140923023223877_d2=8.620211601257324.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.4863154888153076_d2=8.523412704467773.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_WassersteinAproximation-reg=5_lambda=0.001_dist=0.8400753736495972_d2=6.549287796020508.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_WassersteinAproximation-reg=5_lambda=0.01_dist=0.8164393901824951_d2=6.4759321212768555.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=5_lambda=0.1_dist=0.8751378655433655_d2=6.777065753936768.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=5_lambda=1_dist=0.927515983581543_d2=6.75361442565918.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=5_lambda=10_dist=0.9205065965652466_d2=6.996230602264404.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=5_lambda=100_dist=1.008904218673706_d2=7.302231788635254.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.166729211807251_d2=7.623620986938477.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 5}
+	\label{cw_WassersteinAproximation-reg5}
+\end{figure}
+
+\subsection{Hodnota regularizace 10}
+
+% WassersteinAproximation-reg=10
+\begin{figure}
+    \centering
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=0.49875760078430176_d2=4.042243957519531.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.4470485746860504_d2=4.007230758666992.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=10_lambda=0.1_dist=1.329219937324524_d2=5.684685230255127.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=10_lambda=1_dist=1.823926568031311_d2=6.444972038269043.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=10_lambda=10_dist=2.3914222717285156_d2=7.7327423095703125.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=10_lambda=100_dist=1.9283006191253662_d2=6.730199813842773.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=10_lambda=1000_dist=2.242249011993408_d2=7.370129108428955.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=2.3906989097595215_d2=5.376044750213623.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=2.214829683303833_d2=5.00247859954834.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_WassersteinAproximation-reg=10_lambda=0.1_dist=2.281398296356201_d2=5.007546424865723.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=10_lambda=1_dist=2.2871501445770264_d2=5.195126056671143.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=10_lambda=10_dist=2.5467324256896973_d2=5.664461135864258.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=10_lambda=100_dist=2.634004831314087_d2=5.599124431610107.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=10_lambda=1000_dist=2.630786418914795_d2=5.757565975189209.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=0.49907684326171875_d2=3.89208984375.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.5230024456977844_d2=3.9841666221618652.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=10_lambda=0.1_dist=0.9485723376274109_d2=4.9350409507751465.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=10_lambda=1_dist=1.3024182319641113_d2=5.59326171875.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=10_lambda=10_dist=1.500659465789795_d2=5.67573881149292.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=10_lambda=100_dist=1.6768299341201782_d2=5.970950603485107.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=10_lambda=1000_dist=1.756676197052002_d2=6.1211066246032715.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=0.28386425971984863_d2=3.7090365886688232.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.27864742279052734_d2=3.8571319580078125.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=10_lambda=0.1_dist=0.9210320711135864_d2=4.713179111480713.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=10_lambda=1_dist=1.2545310258865356_d2=5.349193096160889.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=10_lambda=10_dist=1.4782726764678955_d2=5.578304290771484.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=10_lambda=100_dist=1.381104588508606_d2=5.355315685272217.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=10_lambda=1000_dist=1.4125714302062988_d2=5.507597923278809.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=1.1661067008972168_d2=5.274242877960205.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=1.1673269271850586_d2=5.3889288902282715.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=10_lambda=0.1_dist=1.7421364784240723_d2=6.0461812019348145.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=10_lambda=1_dist=2.35145902633667_d2=7.096654415130615.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=10_lambda=10_dist=2.603091239929199_d2=7.473100662231445.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=10_lambda=100_dist=2.140554428100586_d2=6.625599384307861.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=10_lambda=1000_dist=2.545319080352783_d2=7.309466361999512.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=0.6734079122543335_d2=4.185022354125977.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.6070631742477417_d2=4.10546875.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=10_lambda=0.1_dist=0.7865304946899414_d2=4.11659049987793.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=10_lambda=1_dist=1.4098690748214722_d2=5.2995734214782715.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=10_lambda=10_dist=1.8048670291900635_d2=6.465092658996582.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=10_lambda=100_dist=2.052163600921631_d2=6.978931427001953.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=10_lambda=1000_dist=2.415290117263794_d2=7.424310207366943.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=0.5409093499183655_d2=3.9378883838653564.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.5373295545578003_d2=4.0853118896484375.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=10_lambda=0.1_dist=1.0296634435653687_d2=5.046149730682373.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=10_lambda=1_dist=1.4920668601989746_d2=5.749179363250732.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=10_lambda=10_dist=1.573744773864746_d2=6.058708190917969.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=10_lambda=100_dist=1.9643218517303467_d2=6.5924201011657715.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=10_lambda=1000_dist=1.6735055446624756_d2=6.326022148132324.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=1.0112519264221191_d2=5.117827415466309.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.9995285272598267_d2=5.1946797370910645.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=10_lambda=0.1_dist=1.229805588722229_d2=5.587657928466797.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=10_lambda=1_dist=2.132517099380493_d2=7.44140625.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=10_lambda=10_dist=2.337754487991333_d2=7.7580108642578125.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=10_lambda=100_dist=2.396231174468994_d2=7.773212909698486.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=10_lambda=1000_dist=2.565417528152466_d2=8.18581771850586.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=0.6906300783157349_d2=4.5449395179748535.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.6893510818481445_d2=4.501634120941162.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=10_lambda=0.1_dist=0.727256715297699_d2=4.639832973480225.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=10_lambda=1_dist=0.61420077085495_d2=4.472245216369629.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=10_lambda=10_dist=1.560650110244751_d2=6.336246967315674.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=10_lambda=100_dist=2.019660472869873_d2=7.015212059020996.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=10_lambda=1000_dist=2.0401647090911865_d2=6.997659206390381.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_WassersteinAproximation-reg=10_lambda=0.001_dist=0.5984200835227966_d2=4.2249650955200195.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_WassersteinAproximation-reg=10_lambda=0.01_dist=0.45858535170555115_d2=3.8876800537109375.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=10_lambda=0.1_dist=0.8434391617774963_d2=4.484480381011963.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=10_lambda=1_dist=0.9657995700836182_d2=4.727212905883789.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=10_lambda=10_dist=1.206110954284668_d2=5.11575174331665.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=10_lambda=100_dist=1.262525200843811_d2=5.1963090896606445.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=10_lambda=1000_dist=1.27431058883667_d2=5.530047416687012.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 10}
+	\label{cw_WassersteinAproximation-reg10}
+\end{figure}
+
+\subsection{Hodnota regularizace 15}
+
+% WassersteinAproximation-reg=15
+\begin{figure}
+    \centering
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=0.8298942446708679_d2=1.9349915981292725.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=0.7008703351020813_d2=1.7978129386901855.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=15_lambda=0.1_dist=1.6196465492248535_d2=4.744505405426025.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=15_lambda=1_dist=2.5564746856689453_d2=6.329913139343262.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=15_lambda=10_dist=1.9542837142944336_d2=5.229459762573242.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=15_lambda=100_dist=2.65517258644104_d2=6.540858745574951.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/0/002_adv_WassersteinAproximation-reg=15_lambda=1000_dist=2.497119188308716_d2=5.968153476715088.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=3.1161561012268066_d2=4.360712051391602.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=2.9965054988861084_d2=4.16669225692749.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=15_lambda=0.1_dist=2.995302438735962_d2=4.178413391113281.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=15_lambda=1_dist=3.1603646278381348_d2=4.5152201652526855.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=15_lambda=10_dist=3.1231441497802734_d2=4.514317989349365.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=15_lambda=100_dist=3.4042203426361084_d2=4.984385967254639.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/1/004_adv_WassersteinAproximation-reg=15_lambda=1000_dist=3.3880951404571533_d2=4.757922172546387.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=0.648094117641449_d2=1.8529436588287354.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=0.5322950482368469_d2=1.6756058931350708.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=15_lambda=0.1_dist=1.1899198293685913_d2=3.4532253742218018.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=15_lambda=1_dist=1.471059799194336_d2=3.627131462097168.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=15_lambda=10_dist=1.7156561613082886_d2=4.1162028312683105.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=15_lambda=100_dist=2.173845052719116_d2=5.002262592315674.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/2/006_adv_WassersteinAproximation-reg=15_lambda=1000_dist=2.265805244445801_d2=4.703395843505859.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=0.18822795152664185_d2=1.35136079788208.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=0.18162015080451965_d2=1.276857614517212.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_ben_WassersteinAproximation-reg=15_lambda=0.1_dist=0.8501773476600647_d2=2.8917720317840576.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=15_lambda=1_dist=1.377572774887085_d2=3.871753692626953.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=15_lambda=10_dist=1.382768988609314_d2=3.8833370208740234.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=15_lambda=100_dist=1.9273271560668945_d2=4.426304340362549.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/3/008_adv_WassersteinAproximation-reg=15_lambda=1000_dist=1.7126461267471313_d2=4.171183109283447.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=1.762099027633667_d2=3.5359110832214355.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=1.587033987045288_d2=3.2972965240478516.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=15_lambda=0.1_dist=2.3099491596221924_d2=4.498388767242432.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=15_lambda=1_dist=3.1723339557647705_d2=5.308342456817627.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=15_lambda=10_dist=3.2359142303466797_d2=5.255656719207764.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=15_lambda=100_dist=3.5369436740875244_d2=5.61991548538208.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/4/003_adv_WassersteinAproximation-reg=15_lambda=1000_dist=3.0574047565460205_d2=4.9546284675598145.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=0.6619990468025208_d2=1.6650960445404053.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=0.7902990579605103_d2=1.8999168872833252.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=15_lambda=0.1_dist=1.112866759300232_d2=2.454253911972046.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=15_lambda=1_dist=1.4761806726455688_d2=3.241023540496826.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=15_lambda=10_dist=2.586336612701416_d2=5.462883472442627.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=15_lambda=100_dist=2.6762359142303467_d2=5.686630725860596.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/5/001_adv_WassersteinAproximation-reg=15_lambda=1000_dist=3.243424892425537_d2=6.161437511444092.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=0.7618195414543152_d2=2.2141029834747314.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=0.8922436237335205_d2=2.4244282245635986.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=15_lambda=0.1_dist=1.4530130624771118_d2=3.8180131912231445.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=15_lambda=1_dist=1.8469021320343018_d2=4.48485803604126.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=15_lambda=10_dist=2.3012306690216064_d2=5.133731365203857.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=15_lambda=100_dist=2.352754592895508_d2=5.299928188323975.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/6/014_adv_WassersteinAproximation-reg=15_lambda=1000_dist=2.4794368743896484_d2=5.327220439910889.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=1.5303125381469727_d2=3.286651849746704.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=1.6126017570495605_d2=3.4538843631744385.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_ben_WassersteinAproximation-reg=15_lambda=0.1_dist=2.7235000133514404_d2=5.955409049987793.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=15_lambda=1_dist=3.2222049236297607_d2=6.398812294006348.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=15_lambda=10_dist=3.028773546218872_d2=6.054931163787842.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=15_lambda=100_dist=3.207646608352661_d2=6.408676624298096.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/7/038_adv_WassersteinAproximation-reg=15_lambda=1000_dist=3.3232333660125732_d2=6.430612087249756.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=1.020603895187378_d2=2.400005340576172.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=0.9559153318405151_d2=2.259371519088745.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_ben_WassersteinAproximation-reg=15_lambda=0.1_dist=1.0916095972061157_d2=2.4711053371429443.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=15_lambda=1_dist=1.9969748258590698_d2=4.6493401527404785.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=15_lambda=10_dist=2.2020554542541504_d2=4.951178550720215.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=15_lambda=100_dist=2.403334140777588_d2=5.231957912445068.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/8/082_adv_WassersteinAproximation-reg=15_lambda=1000_dist=2.5632855892181396_d2=5.51323127746582.jpg}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+        \centering
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_benign.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_WassersteinAproximation-reg=15_lambda=0.001_dist=0.767230749130249_d2=2.080338954925537.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_ben_WassersteinAproximation-reg=15_lambda=0.01_dist=0.8290738463401794_d2=2.2504405975341797.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=15_lambda=0.1_dist=1.072933554649353_d2=2.861384391784668.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=15_lambda=1_dist=1.3834439516067505_d2=3.2201082706451416.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=15_lambda=10_dist=1.5826025009155273_d2=3.5322365760803223.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=15_lambda=100_dist=1.5312292575836182_d2=3.2434282302856445.jpg}
+		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=15_lambda=1000_dist=1.5346121788024902_d2=3.5601041316986084.jpg}
+	\end{subfigure}
+	\centering
+	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 15}
+	\label{cw_WassersteinAproximation-reg15}
+\end{figure}
 
 
 \chapter*{Závěr}
