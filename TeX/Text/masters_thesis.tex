@@ -1383,14 +1383,14 @@ Všechny tyto testy byly úspěšně splněny a potvrdily korektnost implementac
 
 V minulých kapitolách jsme představili různé metriky vizuální podobnosti.
 Tyto metriky se od sebe navzájem liší, a to jak v matematické podstatě,
-tak ve svých vlastnostech, jako jsou výpočetní časová složitost či
-robustnost těchto metrik vůči běžným transformacím obrázků,
-které lidské oko vyhodnotí jako nezávažné změny a informaci,
-kterou obrázek nese, nepoškodí.
-
+tak ve svých vlastnostech, jako je například výpočetní časová složitost.
+% či
+% robustnost těchto metrik vůči běžným transformacím obrázků,
+% které lidské oko vyhodnotí jako nezávažné změny a informaci,
+% kterou obrázek nese, nepoškodí.
 Proto se v této kapitole podívejme, jak je která metrika časově výpočetně náročná.
-Dále pak srovnejme implementované metriky podle toho, jak reagují na šum v obrázku
-a na transformace, kterými mohou být translace či rotace.
+% Dále pak srovnejme implementované metriky podle toho, jak reagují na šum v obrázku
+% a na transformace, kterými mohou být translace či rotace.
 
 \section{Časová náročnost výpočtu}
 
@@ -1464,7 +1464,63 @@ Tato metrika je tedy velmi drahá ve smyslu délky výpočetního času.
 
 % \subsection{Změna jasu}
 
-% \section{Porovnání implementací s implementacemi veřejných knihoven}
+\section{Porovnání implementací s implementacemi veřejných knihoven}
+
+Mezi netriviální implementace metrik vizuální podobnosti jistě patří
+aproximace Wassersteinovy vzdálenosti a metrika DSSIM.
+Proto se podívejme, jaké přístupy k implementaci zvolili jiné knihovny.
+
+\subsection{Aproximace Wassersteinovy vzdálenosti}
+
+Mezi všemi implementacemi Wassersteinovy vzdálenosti, resp. její aproximace
+je význačná ta v knihovně \emph{GeomLoss} \cite{geomloss}.
+Její význačnost spočívá v tom, že je navržená, aby byla kompatibilní s knihovnou PyTorch \cite{pytorch},
+což je i v našem úsilí.
+Proto naši implementaci srovnejme s implementací, již lze nalézt právě v knihovně GeomLoss.
+
+Knihovna GeomLoss bohužel nepodporuje přímý výpočet aproximace Wassersteinovy vzdálenosti
+mezi dvěma obrázky.
+Přístup knihovny GeomLoss je totiž takový, že počítá vzdálenost
+mezi dvěma rozděleními pravděpodobnosti, jež jsou odhadnuta
+na základě realizací náhodných veličin popsaných těmito rozděleními.
+Této knihovně se tedy předávají tzv. \emph{mraky bodů} (z angl. \emph{cloud of points}).
+Konverze mezi obrázkem (tedy vlastně histogramem takovéhoto rozdělení) a mrakem bodů
+samozřejmě možná je, ovšem následný výpočet, byť pro malé šedotónové obrázky,
+je velmi paměťově náročný.
+
+Výhodou implementace knihovny GeomLoss ovšem je, že je lépe přizpůsobená běhu na grafické kartě.
+Toto potom je obrovským plusem, který naše implementace nemá.
+Vzpomeneme-li si na numerický algoritmus pro výpočet aproximace Wassersteinovy vzdálenosti,
+který je uvedený ve druhé kapitole,
+zjistíme, že pro výpočet vzdálenosti mezi vektory $\mu$ a $\nu$ nejprve určujeme,
+které prvky vektoru $\mu$ jsou nulové, a následně s těmito nulovými prvky již nepočítáme.
+Nyní si uvědomme, že každý takovýto vstup $\mu$ může mít počet nulových prvků různý od ostatních vstupů.
+Tedy potřebovali bychom do paměti uložit vícerozměrné pole, které ve druhé dimenzi má různou délku.
+To ale knihovna PyTorch pro svůj datový typ \emph{Tensor}, pomocí kterého vlastně vzdálenosti počítáme,
+neumožňuje.
+Proto jsme se uchýlili k výpočtu metrik mezi páry obrázků v sekvenčním módu,
+tedy v módu, který nedokáže plně využít potenciál akcelerátorů grafických karet.
+
+\subsection{DSSIM}
+
+Chceme-li porovnat naši implementaci metriky vizuální podobnosti založené na indexu SSIM, tedy metriky DSSIM,
+máme k dispozici možnost porovnat ji s implementací, jež byla použita pro testování,
+totiž s implementací knihovny \emph{scikit-image} \cite{skimage}.
+Ta ovšem nepodporuje datové typy vlastní knihovně PyTorch.
+
+Další možností je např. knihovna \emph{pytorch-msssim}.
+Tato knihovna je specializovaná na výpočet právě indexu SSIM,
+a to za použití datových typů dostupných v knihovně PyTorch.
+
+Další knihovnou, se kterou lze naši implementaci srovnat, je \emph{pytorch-ignite} \cite{ignite},
+která je svou podstatou nadstavba pro trénovánní neuronových sítí pomocí knihovny PyTorch.
+Součástí této knihovny je také implementace metriky SSIM.
+
+Po stránce výpočetního času jsou obě knihovny, které jsou napsány nad knihovnou PyTorch,
+efektivnější. A to zhruba dvacetkrát.
+Zatímco naše implementace působí pro dávku o tisíci párech obrázků v řádu středních jednotek sekund pro malou velikost podokna,
+jak implementace knihovny pytorch-msssim, tak implementace knihovny pytorch-ignite to samé vypočtou
+za nižší desetiny sekundy.
 
 
 % Samotnou výslednou implementaci v podobě kódu v jazyce \emph{Python} lze nalézt v příloze v části týkající se souboru \emph{metrics.py}.
@@ -2860,6 +2916,14 @@ Journal of Control and Decision 5, 42-60, 2018.
 \bibitem{numpy}C. R. Harris, K. J. Millman, S. J. van der Walt, et al.:
 \emph{Array programming with NumPy}.
 Nature 585, 357–362, 2020.
+
+\bibitem{geomloss}J. Feydy, T. S{\'e}journ{\'e}, F. Vialard, S. Amari, A. Trouve, G. Peyr{\'e}:
+\emph{Interpolating between Optimal Transport and MMD using Sinkhorn Divergences}.
+The 22nd International Conference on Artificial Intelligence and Statistics, 2681--2690, 2019.
+
+\bibitem{ignite}V. Fomin, J. Anmol, S. Desroziers, J. Kriss, A. Tejani:
+\emph{High-level library to help with training neural networks in PyTorch}.
+GitHub repository, GitHub, 2020.
 
 
 \end{thebibliography}
