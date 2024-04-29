@@ -191,7 +191,7 @@
 \end{lyxlist}
 \newpage{}
 
-\includepdf{zadani_dp.pdf}
+\includepdf{zadani_dp2.pdf}
 
 \includepdf[page=2]{zadani_dp.pdf}
 
@@ -231,7 +231,7 @@ jsem všechnu použitou literaturu.
 
 \bigskip{}
 
-\noindent \emph{Obor:} Matematická informatika\bigskip{}
+\noindent \emph{Studijní program:} Matematická informatika\bigskip{}
 
 \bigskip{}
 
@@ -240,10 +240,8 @@ jsem všechnu použitou literaturu.
 \bigskip{}
 
 \noindent \emph{Vedoucí práce:} Mgr. Lukáš Adam, Ph.D.,
-Katedra počítačů,
-Fakulta elektrotechnická,
-České vysoké učení technické v Praze,
-Karlovo náměstí 13, 121 35 Praha 2.
+Ministerstvo životního prostředí České republiky,
+Vršovická 1442/65, Vršovice, 100 10 Praha 10
 
 \bigskip{}
 
@@ -269,13 +267,11 @@ proces tvorby adversariálních vzorků a jejich podobu.
 \noindent \emph{Klíčová slova:}
 Adversariální vzorky,
 CW útok,
-Foolbox,
 $l_p$ norma,
 metrika vizuální podobnosti,
 neuronová síť,
 PSNR,
 robustní strojové učení,
-RobustBench,
 SSIM,
 Wassersteinova metrika.
 
@@ -298,10 +294,10 @@ Wassersteinova metrika.
 \noindent \emph{Abstract:}
 There exists a problem in the field of machine learning called adversarial examples.
 This is a phenomenon where even a small change of the input to a machine learning model
-causes a big difference in the model output, which is in most cases unwanted.
+causes a big difference in the model output, which is unwanted in most cases.
 In this work we study the questions concerning visual similarity metrics
 and that in the context of existence and crafting of adversarial examples in the problem of image classification.
-Our goal is to enlighten hte way how such a visual similarity metric affects
+Our goal is to enlighten the way how such a visual similarity metric affects
 the crafting process of adversarial examples and their final look.
 
 \bigskip{}
@@ -309,12 +305,10 @@ the crafting process of adversarial examples and their final look.
 \noindent \emph{Key words:}
 Adversarial examples,
 CW attack,
-Foolbox,
 $l_p$ norm,
 neural network,
 PSNR,
 robust machine learning,
-RobustBench,
 SSIM,
 visual similarity metric,
 Wasserstein metric.
@@ -337,37 +331,54 @@ a to v kontextu strojového učení,
 konrétně v oblasti existence a tvorby adversariálnich vzorků.
 Zkoumáme, jaký vliv má volba takové metriky na tvorbu a podobu adversariálních vzorků.
 
-V první kapitole představujeme samotné metriky vizuální podobnosti.
-Jelikož obrázky v počítači, s nimiž pracujeme, lze chápat jako tenzory,
-lze se podívat na obrázky v klasické $l_p$ normě.
-Část této kapitoly se proto věnuje formální definici těchto $l_p$ norem
-a toho, jak z nich zkonstruovat metriku.
-Zmiňujeme i metriky založené na průměrování rozdílů prvků vektorů,
-tedy metriky MSE (\emph{mean squared error}) a RMSE (\emph{root mean squared error}),
-dále i jejich logaritmickou transformaci známou pod zkratkou PSNR (\emph{peak signal to noise ratio}).
-Další konstrukce, které představujeme jsou SSIM, tedy \emph{Structural Similarity Index Measure},
-a \emph{Wassersteinova metrika}, která se na obrázky dívá jako na pravděpodobnostní rozdělení.
+Jelikož vizuální vjemy, tedy obrázky, reprezentujeme v počítači jako tenzory,
+lze na ně nahlédnout okem matematika, a to i na rozdíly mezi dvěma obrázky.
+Proto přejímáme klasické zavedení pojmu metrika,
+které vyjadřuje, jak jsou si dva objekty v jistém metrickém prostoru vzdáleny,
+či naopak jak jsou si blízko, případně jak jsou si podobny.
 
-V druhé kapitole pak narážímme na výpočetní limity a fakt, že ne všechny metriky vizuální podobnosti
-jsou metriky podle matematické definice.
-Proto uvedeme alternativu k PSNR, transformaci SSIM a regularizaci Wassersteinovy metriky,
-které pomohou překonat tyto problémy pro praktickou tvorbu adversariálních vzorků.
+Od této matematické definice přecházíme
+k relaxovanému pojmu metriky vizuální podobnosti,
+který zde pro jeho šíři formálně nedefinujeme.
+Podaří se nám ovšem zahrnout pod tento pojem i formálně nemetrické vzdálenosti
+jako je například index \emph{DSSIM} (\emph{structural dissimilarity}),
+který je šitý obrázkům na míru a při svém výpočtu nenahlíží na obrázky,
+jako na tenzory, jejichž složky jsou na sobě nezávislé,
+jako to například činí metriky založené na $l_p$ normách.
 
-Třetí kapitola potom pojednává o samotné problematice adversariálních vzorků,
-o jejich definici a o jednom z mnoha přístupů k jejich praktické tvorbě.
-Nastiňujeme také rozdíl mezi \emph{cíleným} (angl. \emph{targeted}) a \emph{necíleným} (angl. \emph{untargeted})
-adversariálním útokem.
+Ohledně samotné problematiky existence adversariálních vzorků
+lze říci, že se jedná o jev, který je obecně typický pro metody strojového učení.
+My jsme se rozhodli jej zkoumat v kontextu \emph{neuronových sítí}.
+Ve zkratce lze říci, že se jedná o fakt, že malá změna vstupu do modelu strojového učení
+zapříčiní velikou změnu výstupu tohoto modelu.
+Pro definici pojmu malá změna vstupu potom používáme právě ony metriky vizuální podobnosti,
+neboť se pohybujeme na poli počítačového vidění.
+Pro uvedení termínu veliká změna výstupu na pravou míru využijeme povahu námi řešeného klasifikačního problému,
+tedy veliká změna výstupu odpovídá změně v rozhodnutí klasifikátoru.
 
-Ve čtvrté kapitole pak uvádíme samotné výsledky použití vybraných metrik vizuální podobnosti
-pro tvorbu adversariálních vzorků pomocí necíleného \emph{CW} útoku.
-Porovnáváme, jak procentuální úspěšnost útoku v dané metrice,
-tak průměrnou $l_2$ vzdálenost výsledků procedury s původními vzorky.
+Proto vzniklo odvětví robustního strojového učení, neboť takové chování
+algoritmů strojového učení je ze zřejmých důvodů nežádoucí.
+Toto odvětví se pak snaží existenci adversariálních vzorků zabránit,
+a to různými úpravami samotných algoritmů strojového učení,
+resp. v modifikaci dat, na kterých se daný model učí.
 
-Poslední pátá kapitola pak nastiňuje problematiku robustního strojového učení,
-tedy disciplíny, která se snaží existenci adversariálních vzorků zabránit
-vhodnými metodami pro daný algoritmus strojového učení.
-Uvádíme také, jak se jakousi robustnost obzvlášť neuronových sítí vůči adversariálním útokům
-snaží měřit programovací knihovny \emph{Foolbox} a \emph{RobustBench}.
+Na základě těchto vědomostí se potom ptáme,
+zda má vliv volba metriky vizuální podobnosti na tvorbu adversariálních vzorků.
+
+Stěžejní součástí této práce potom je i samotná implementace uvedených metrik vizuální podobnosti,
+tak aby mohly být tyto metriky použity pro tvorbu adversariálních vzorků.
+Tyto metriky jsou potom zpřístupněny na veřejném úložišti včetně dokumentace.
+
+% Ve čtvrté kapitole pak uvádíme samotné výsledky použití vybraných metrik vizuální podobnosti
+% pro tvorbu adversariálních vzorků pomocí necíleného \emph{CW} útoku.
+% Porovnáváme, jak procentuální úspěšnost útoku v dané metrice,
+% tak průměrnou $l_2$ vzdálenost výsledků procedury s původními vzorky.
+
+% Poslední pátá kapitola pak nastiňuje problematiku robustního strojového učení,
+% tedy disciplíny, která se snaží existenci adversariálních vzorků zabránit
+% vhodnými metodami pro daný algoritmus strojového učení.
+% Uvádíme také, jak se jakousi robustnost obzvlášť neuronových sítí vůči adversariálním útokům
+% snaží měřit programovací knihovny \emph{Foolbox} a \emph{RobustBench}.
 
 \pagestyle{headings}
 
@@ -1134,7 +1145,22 @@ které se ve své podstatě snaží při učení neuronové sítě
 danou neuronovou síť naučit tak, aby, pokud možno, k existenci adversariálních vzorků nedocházelo.
 Obor robustního strojového učení potom nabízí řadu metod,
 které k tomu mohou dopomoci.
-Otázkou ale je, jak takovou metodu zařadit mezi ostatní ve smyslu jejího srovnání s ostatními metodami.
+
+Jednou z takovýchto metod je úprava účelové funkce optimalizované při učení dané neuronové sítě
+v následujícím smyslu.
+Vyjděme z předpokladu, že trénovací datová sada obsahuje takové vzorky,
+že jsou správně klasifikovány příslušnou značkou nejen samotné vzorky,
+ale i jejich bezprostřední kulová okolí s poloměrem $\kappa$, a to vzhledem k nějeké metrice $\rho$.
+Potom lze problém hledání optimálních parametrů neuronové sítě $\hat{\theta}$ přeformulovat následovně:
+\begin{equation}
+	\hat{\theta} = \operatornamewithlimits{argmin}_{\theta} \frac{1}{N} \sum_{i = 1}^N
+	\max_{\rho(\hat{x}, x^{(i)}) \leq \kappa} L\left(y^{(i)}, F_\theta (\hat{x})\right).
+\end{equation}
+
+
+Existuje samozřejmě více metod robustního strojového učení.
+Otázkou ovšem je, jak takové metody zařadit mezi ostatní.
+Tak jinak, jak lze srovnat danou metodu robustního strojového učení s ostatními metodami?
 Potřebujeme proto ideálně číselné vyjádření toho,
 jak si na tom daná neuronová síť, která byla učena daným algoritmem robustního strojového učení,
 stojí ve smyslu náchylnosti na přítomnost jevu adversariálních vzorků.
@@ -1195,7 +1221,6 @@ následně \emph{black-box square attack} \cite{SquareAttack}.
 Následně se výsledky agregují v již zmíněnou adversariální úspěšnost.
 Tímm pádem lze metody robustního strojového učení mezi sebou porovnávat.
 
-\subsection{Robustní učení}
 
 
 \chapter{Implementace metrik vizuální podobnosti}
@@ -1429,17 +1454,17 @@ jejíž výpočet pro deset párů probíhal zhruba deset sekund.
 Tato metrika je tedy velmi drahá ve smyslu délky výpočetního času.
 
 
-\section{Robustnost metrik vůči šumu v obrázku}
+% \section{Robustnost metrik vůči šumu v obrázku}
 
-\section{Robustnost metrik vůči transformacímm obrázku}
+% \section{Robustnost metrik vůči transformacímm obrázku}
 
-\subsection{Translace}
+% \subsection{Translace}
 
-\subsection{Rotace}
+% \subsection{Rotace}
 
-\subsection{Změna jasu}
+% \subsection{Změna jasu}
 
-\section{Porovnání implementací s implementacemi veřejných knihoven}
+% \section{Porovnání implementací s implementacemi veřejných knihoven}
 
 
 % Samotnou výslednou implementaci v podobě kódu v jazyce \emph{Python} lze nalézt v příloze v části týkající se souboru \emph{metrics.py}.
@@ -1464,34 +1489,26 @@ která je v komunitě strojového učení notoricky známá.
 Pro řešení původního problému klasifikace jsme natrénovali (algoritmem \emph{RMSProp} \cite{RMSProp})
 jednoduchou konvoluční neuronovou síť,
 která na testovací datové sadě dosáhla úspěšnosti $96,9 \%$.
-Inicializace startovního bodu znaménkového gradientního sestupu probíhala v dvojím režimu:
-V normálním a speciálním.
-Normální inicializace spočívala v náhodné inicializaci každého pixelu v okolí hodnoty $0,5$
+Inicializace startovního bodu znaménkového gradientního sestupu probíhala následovně:
+Inicializace spočívala v náhodné inicializaci každého pixelu v okolí hodnoty $0,5$
 na základě realizace náhodné veličiny s rovnoměrným rozdělením $U(0,3;0,8)$.
-Jak ale uvídíme z výsledků později, pro jednu z metrik je tato inicializace zcela nevyhovující,
-proto došlo i k implementaci speciální inicializace, kde byl za počáteční bod gradientního sestupu
-pro daný benigní vzorek $x$ vzat právě tento vzorek $x$.
 
 \section{Srovnání útoků pro různé metiky}
 
 Přistupme nyní k vyhodnocení experimentu, který spočíval v následujícím:
 Pro vybranou metriku vizuální podobnosti a pevně zvolené $\lambda$, které se v logaritmu mění lineárně,
 tj. prochází hodnoty $\lambda \in \left\{10^{-3}, 10^{-2}, 10^{-1}, 1, 10, 10^2, 10^3\right\}$,
-spustit generování adversariálních vzorků pro $20$ benigních vzorků
-z datové sady MNIST a zjistit pro danou metriku a dané $\lambda$ průměrnou úspěšnost útoku,
+jsme spustili generování adversariálních vzorků pro $1000$ benigních vzorků
+z datové sady MNIST a zjistili pro danou metriku vizuální podobnosti a dané $\lambda$ průměrnou úspěšnost útoku,
 dále ale i pro všechny metriky průměrnou $l_2$ vzdálenost vygenerovaných vzorků
-od původních benigních.
-
-Tento experiment vyžaduje, aby implementace dané metriky byla automaticky derivovatelná nástroji,
-které nabízí knihovna \emph{PyTorch}.
-To bohužel nesplňuje Wassersteinova vzdálenost, resp. její modifikace duální Sinkhornovy metriky,
-a to z důvodu jejího iterativního charakteru.
-Proto byla tato metrika vynechána z následujícího experimentu.
+od původních benigních vzorků.
+Jen poznamenejme, že pro aproximaci Wassersteinovy vzdálenosti bylo použito z důvodu výpočetní náročnosti vzorků $200$.
 
 V Tabulce \ref{cw_success_table} jsou již uvedena čísla reprezentující výše představenou úspěšnost útoku.
 V Tabulce \ref{cw_l_2_table} jsou potom hodnoty odpovídající průměrům $l_2$ vzdáleností získaných v experimentu.
 Jelikož metrika vizuální podobnosti DSSIM je založena na indexu SSIM, který je počítán postupně v podoknech
-a následně agregován, je u názvu této metriky uvedena i velikost tohoto podokna.
+a následně agregován, je u názvu této metriky uvedena i velikost tohoto podokna, a to pokud je menší než velikost rozměry obrázku.
+Dále u aproximace Wassersteinovy vzdálenosti uvádíme i velikost regularizačního parametru $\xi$.
 
 \begin{table}
     \centering
@@ -1499,15 +1516,15 @@ a následně agregován, je u názvu této metriky uvedena i velikost tohoto pod
         \hline
         \multirow{2}{7em}{Metrika} & \multicolumn{7}{c|}{Hodnota parametru $\lambda$} \\
         & $10^{-3}$ & $10^{-2}$ & $10^{-1}$ & $1$ & $10$ & $10^{2}$ & $10^{3}$ \\ \hline \hline
-        DSSIM 5 & 42.9 \% & 92.3 \% & 96.4 \% & 99.5 \% & 99.9 \% & 99.9 \% & 100.0 \% \\ \hline
-        DSSIM 10 & 1.5 \% & 65.6 \% & 92.6 \% & 97.3 \% & 99.9 \% & 100.0 \% & 100.0 \% \\ \hline
-        DSSIM 20 & 2.4 \% & 72.2 \% & 92.4 \% & 96.9 \% & 99.9 \% & 100.0 \% & 100.0 \% \\ \hline
-        DSSIM    & 2.6 \% & 82.0 \% & 94.3 \% & 98.9 \% & 99.9 \% & 100.0 \% & 100.0 \% \\ \hline
         $l_1$ & 0.1 \% & 0.0 \% & 0.1 \% & 0.5 \% & 89.8 \% & 95.1 \% & 99.4 \% \\ \hline
         $l_2$ & 0.4 \% & 0.1 \% & 0.1 \% & 87.9 \% & 98.1 \% & 100.0 \% & 100.0 \% \\ \hline
-        Wasserstein 5.0 & 19.5 \% & 24.5 \% & 90.5 \% & 96.5 \% & 99.5 \% & 100.0 \% & 100.0 \% \\ \hline
-        Wasserstein 10.0 & 3.0 \% & 5.0 \% & 80.5 \% & 96.5 \% & 100.0 \% & 100.0 \% & 100.0 \% \\ \hline
-        Wasserstein 15.0 & 7.0 \% & 6.5 \% & 66.5 \% & 99.0 \% & 100.0 \% & 100.0 \% & 100.0 \% \\ \hline
+        $DSSIM$    & 2.6 \% & 82.0 \% & 94.3 \% & 98.9 \% & 99.9 \% & 100.0 \% & 100.0 \% \\ \hline
+        $DSSIM_5$ & 42.9 \% & 92.3 \% & 96.4 \% & 99.5 \% & 99.9 \% & 99.9 \% & 100.0 \% \\ \hline
+        $DSSIM_{10}$ & 1.5 \% & 65.6 \% & 92.6 \% & 97.3 \% & 99.9 \% & 100.0 \% & 100.0 \% \\ \hline
+        $DSSIM_{20}$ & 2.4 \% & 72.2 \% & 92.4 \% & 96.9 \% & 99.9 \% & 100.0 \% & 100.0 \% \\ \hline
+        $Wasserstein_5$ & 19.5 \% & 24.5 \% & 90.5 \% & 96.5 \% & 99.5 \% & 100.0 \% & 100.0 \% \\ \hline
+        $Wasserstein_{10}$ & 3.0 \% & 5.0 \% & 80.5 \% & 96.5 \% & 100.0 \% & 100.0 \% & 100.0 \% \\ \hline
+        $Wasserstein_{15}$ & 7.0 \% & 6.5 \% & 66.5 \% & 99.0 \% & 100.0 \% & 100.0 \% & 100.0 \% \\ \hline
     \end{tabular}
     \caption{Úspěšnost CW útoku v závislosti na zvolené metrice a hodnotě parametru $\lambda$} \label{cw_success_table}
 \end{table}
@@ -1518,21 +1535,19 @@ a následně agregován, je u názvu této metriky uvedena i velikost tohoto pod
         \hline
         \multirow{2}{7em}{Metrika} & \multicolumn{7}{c|}{Hodnota parametru $\lambda$} \\
         & $10^{-3}$ & $10^{-2}$ & $10^{-1}$ & $1$ & $10$ & $10^{2}$ & $10^{3}$ \\ \hline \hline
-        DSSIM 5 & 3.557 & 7.598 & 8.49 & 8.98 & 9.154 & 9.216 & 9.251 \\ \hline
-        DSSIM 10 & 0.2525 & 1.71 & 2.613 & 3.071 & 3.412 & 3.642 & 3.872 \\ \hline
-        DSSIM 20 & 0.1893 & 1.201 & 1.939 & 2.311 & 2.604 & 2.848 & 3.091 \\ \hline
-        DSSIM & 0.2005 & 1.412 & 1.958 & 2.308 & 2.531 & 2.748 & 2.973 \\ \hline
         $l_1$ & 0.1464 & 0.1464 & 0.1463 & 0.1495 & 2.043 & 2.559 & 2.874 \\ \hline
         $l_2$ & 0.1462 & 0.146 & 0.1474 & 1.567 & 2.107 & 2.345 & 2.545 \\ \hline
-        Wasserstein 5 & 6.531 & 6.553 & 7.248 & 7.604 & 7.828 & 8.031 & 8.182 \\ \hline
-        Wasserstein 10 & 4.359 & 4.35 & 5.06 & 5.575 & 5.873 & 6.021 & 6.208 \\ \hline
-        Wasserstein 15 & 2.697 & 2.721 & 3.795 & 4.51 & 4.754 & 4.963 & 5.117 \\ \hline
+        $DSSIM$ & 0.2005 & 1.412 & 1.958 & 2.308 & 2.531 & 2.748 & 2.973 \\ \hline
+        $DSSIM_5$ & 3.557 & 7.598 & 8.49 & 8.98 & 9.154 & 9.216 & 9.251 \\ \hline
+        $DSSIM_{10}$ & 0.2525 & 1.71 & 2.613 & 3.071 & 3.412 & 3.642 & 3.872 \\ \hline
+        $DSSIM_{20}$ & 0.1893 & 1.201 & 1.939 & 2.311 & 2.604 & 2.848 & 3.091 \\ \hline
+        $Wasserstein_5$ & 6.531 & 6.553 & 7.248 & 7.604 & 7.828 & 8.031 & 8.182 \\ \hline
+        $Wasserstein_{10}$ & 4.359 & 4.35 & 5.06 & 5.575 & 5.873 & 6.021 & 6.208 \\ \hline
+        $Wasserstein_{15}$ & 2.697 & 2.721 & 3.795 & 4.51 & 4.754 & 4.963 & 5.117 \\ \hline
     \end{tabular}
     \caption{Průměrná $l_2$ vzdálenost vzorku z CW útoku v závislosti na zvolené metrice a hodnotě parametru $\lambda$} \label{cw_l_2_table}
 \end{table}
 
-Ohledně počtu generovaných vzorků v experimentu lze poznamenat,
-že kvůli výpočetní náročnosti DSSIM na dostupných výpočetních zařízeních nebylo možné toto číslo navýšit.
 
 \section{Adversariální útok za použití metriky indukované $l_2$ normou}
 
@@ -2186,6 +2201,12 @@ Lze vidět, že tyto obrázky jsou mnohem uhlazenější, než obrázky vygenero
 	\label{cw_DSSIM-ws20}
 \end{figure}
 
+V Obrázku \ref{cw_DSSIM-ws20} vidíme vzorky vygenerované CW útokem za použití metriky vizuální podobnosti
+DSSIM s parametrem velikosti výpočetního podokna $20$.
+Je patrné, že tyto obrázky jsou velice podobné těm,
+jež jsou vygenerované za použití metriky DSSIM s velikostí podokna $10$.
+
+
 \subsection{Velikost výpočetního podokna jako velikost celého obrázku}
 
 % DSSIM-ws=28
@@ -2306,9 +2327,25 @@ Lze vidět, že tyto obrázky jsou mnohem uhlazenější, než obrázky vygenero
 	\label{cw_DSSIM-ws28}
 \end{figure}
 
+Na Obrázku \ref{cw_DSSIM-ws28} lze spatřit vzorky vygenerované CW útokem za použití metriky vizuální podobnosti
+DSSIM s neomezeným parametrem velikosti výpočetního podokna, resp. s velikostí $28$, jež je velikostí obázků.
+Obdobně jako v předchozím případě jsou tyto obrázky velice podobné těm,
+jež jsou vygenerované za použití metriky DSSIM s velikostí podokna $10$,
+a tedy i za použití metriky DSSIM s velikostí výpočetního podokna $20$.
+
 \section{Adversariální útok za použití aproximace Wassersteinovy vzdálenosti}
 
-\subsection{Hodnota regularizace 5}
+Podíváme-li se po řadě na Obrázky \ref{cw_WassersteinAproximation-reg5}, \ref{cw_WassersteinAproximation-reg10}
+a \ref{cw_WassersteinAproximation-reg15},
+kde jsou zobrazeny vzorky vygenerované CW útokem za použití aproximace Wassersteinovy vzdálenosti
+s hodnotami regularizačního parametru $\xi$ po řadě $5$, $10$ a $15$,
+uvidíme, že tyto vzorky jsou velice odlišné od vzorků předchozích,
+a to obzvlášť pro hodnotu regularizace $5$.
+Obrázky, které vznikly CW útokem za použití této metriky, jsou totiž jakoby rozmazané.
+S rostoucím regularizačním parametrem $\xi$ potom tento efekt mizí
+a jeví se na obrázcích již povědomé artefakty v okolí číslice.
+
+% \subsection{Hodnota regularizace 5}
 
 % WassersteinAproximation-reg=5
 \begin{figure}
@@ -2428,7 +2465,9 @@ Lze vidět, že tyto obrázky jsou mnohem uhlazenější, než obrázky vygenero
 	\label{cw_WassersteinAproximation-reg5}
 \end{figure}
 
-\subsection{Hodnota regularizace 10}
+
+
+% \subsection{Hodnota regularizace 10}
 
 % WassersteinAproximation-reg=10
 \begin{figure}
@@ -2548,7 +2587,9 @@ Lze vidět, že tyto obrázky jsou mnohem uhlazenější, než obrázky vygenero
 	\label{cw_WassersteinAproximation-reg10}
 \end{figure}
 
-\subsection{Hodnota regularizace 15}
+
+
+% \subsection{Hodnota regularizace 15}
 
 % WassersteinAproximation-reg=15
 \begin{figure}
@@ -2669,6 +2710,8 @@ Lze vidět, že tyto obrázky jsou mnohem uhlazenější, než obrázky vygenero
 \end{figure}
 
 
+
+
 \chapter*{Závěr}
 
 \pagestyle{plain}
@@ -2687,24 +2730,19 @@ Dále jsme s pomocí knihovny \emph{PyTorch} \cite{pytorch} natrénovali jednodu
 pro klasifikaci číslic a tuto síť použili jako cíl námi implementovaného CW útoku
 s možností volby užité metriky vizuální podobnosti.
 
-Pro ovlivnění tvorby adversariálních vzorků se ukázal jako nežádoucí
-iterativní charakter výpočtu aproximace Wassersteinovy vzdálenosti,
-který nedovolil použít CW útok ke konstrukci adversariálních vzorků pomocí této metriky.
-Další negativní dopad na tvorbu v podobě vysoké výpočetní náročnosti měla volba metriky založené na SSIM.
+Na základě výsledků lze říci, že na volbě metriky vizuální podobnosti záleží.
+Viděli jsme, že obrázky vygenerované CW útokem za použití aproximace Wassersteinovy vzdálenosti
+s menším regularizačním parametrem jsou v zásadě rozmazané původní obrázky.
+Dále jsme nahlédli na fakt, že CW útok využívající metriku vizuální podobnosti DSSIM s velikostí
+výpočetního podokna $5$ vede na značné artefakty v okolí číslice,
+nikoliv však na poškození čitelnosti samotné číslice.
+Též se ukázal rozdíl mezi metrikami založenými na $l_1$ a $l_2$ normě,
+neboť obrázky vzniklé CW útokem využívajícím metriku založenou na $l_2$ normě jsou
+na pohled uhlazenější.
 
-Ohledně samotné podoby vzorků vygenerovaných CW útokem lze říci,
-že vzorky generované $l_\infty$ CW útokem byly velice poškozené,
-jelikož derivace metriky indukované $l_\infty$ normou podle jedné z proměnných nezáleží na té dané proměnné,
-leč na jednom jediném prvku.
-
-S podobným problémem se bylo možné setkat při použití metriky vizuální podobnosti SSIM
-s relativně malou velikostí podokna (vzhledem k celkové velikosti obrázku).
-Takto vygenerované vzorky vykazovaly značně velkou přítomnost artefaktů v obrázku,
-až na bezprostředně blízké okolí číslice.
-
-Závěrem tedy lze říci, že na volbě metriky vizuální podobnosti záleží
-a do budoucna lze tuto práci rozšířit jednak o další metriky vizuální podobnosti,
-či o výsledky těch samých experimentů za použití jiné (bohatší) datové sady.
+Nakonec poznamenejme, že riziko spjaté s existencí adversariálních vzorků
+v kontextu neuronových sítí je třeba brát v potaz, a to obzvlášť
+při aplikaci těchto technologií v kritických oblastech.
 
 
 \begin{thebibliography}{1}
