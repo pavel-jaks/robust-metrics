@@ -185,3 +185,22 @@ Special case of `Metric` class which computes the approxiamtion of Wasserstein d
   * Parameter `tolerance` of type `float` to be used as a possible stopping criterion.
 * Implements `compute` method to compute the distances of two batches of images both stored in `torch.Tensor` object.
   * Returns `torch.Tensor` object that contains a batch of distances.
+
+## Usage
+
+```Python
+# import of PyTorch library
+import torch
+# import of desired metric
+from metrics import WassersteinApproximation
+
+# random images (scaled to [0, 1] interval)
+# tensor of shape: Batch x channels x width x height
+image1 = torch.rand(1, 1, 20, 20)
+image2 = torch.rand(1, 1, 20, 20)
+# metric instantiation
+metric = WassersteinApproximation(regularization=5)
+
+# the actual metric computation
+distance = metric(image1 , image2)
+```

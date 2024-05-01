@@ -607,7 +607,7 @@ které jsou definovány jako metrika jasu
 \end{equation}
 metrika kontrastu
 \begin{equation}
-    c(x, \tilde{x}) = \frac{2 \sigma_x \sigma_{\tilde{x}} + C^{(2)}}{\sigma_x^2 + \sigma_{\tilde{x}}^2 + C^{(2)}},
+    c(x, \tilde{x}) = \frac{2 \sigma_x \sigma_{\tilde{x}} + C^{(2)}}{\sigma_x^2 + \sigma_{\tilde{x}}^2 + C^{(2)}}
 \end{equation}
 a metrika struktury
 \begin{equation}
@@ -885,7 +885,7 @@ Detaily k tomuto algoritmu a rozbor jeho konvergence lze pak nalézt v \cite{sin
 Ale jelikož původní problém nespočívá v nalezení matice, jež je dvojitě stochastická,
 nýbrž jež se nachází v $U(\mu, \nu)$, tak lze tyto iterace ještě upravit,
 aby výsledkem byla hledaná matice $P$, potažmo její Frobeniův součin s maticí cen,
-jež je hodnotou duální Sinkhornovy metriky.
+jenž je hodnotou duální Sinkhornovy metriky.
 
 V \cite{wass_computation} potom lze nalézt onen algoritmus pro výpočet duální Sinkhornovy metriky:
 Na vstupu algoritmus dostává pravděpodobnostní rozdělení $\mu$ a $\nu$, jejichž vzdálenost je hledaná,
@@ -2799,6 +2799,131 @@ na pohled uhlazenější.
 Nakonec poznamenejme, že riziko spjaté s existencí adversariálních vzorků
 v kontextu neuronových sítí je třeba brát v potaz, a to obzvlášť
 při aplikaci těchto technologií v kritických oblastech.
+
+
+\chapter{Příloha: Důkazy}
+% \addcontentsline{toc}{chapter}{Příloha: Důkazy}
+
+\section{Metrické vlastnosti Wassersteinovy vzdálenosti}
+
+\emph{Tvrzení:} Mějme metrický prostor $(X, \rho)$, dále pak mějme $p \in [1, +\infty)$.
+Nazvěme jako $p$-tou Wassersteinovu metriku mezi dvěma pravděpodobnostními rozděleními $\mu$, $\nu$ na $X$
+s konečnými $p$-tými momenty číslo:
+\begin{equation} \label{wass_def_prf}
+	W_p (\mu, \nu) = \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \mathbb{E}_{(x, y) \sim \gamma} \rho (x, y)^p \right)^{\frac{1}{p}},
+\end{equation}
+kde $\Gamma (\mu, \nu)$ je množina všech sdružených pravděpodobnostních rozdělení na $X \times X$,
+které mají za marginální rozdělení právě $\mu$ a $\nu$.
+Potom $W_p$ je korektně definovaná metrika na prostoru pravděpodobnostních rozdělení na $X$.
+
+\emph{Důkaz:}
+Začněme s nezáporností $W_p$.
+Ta vyplývá z nezápornosti $\rho$.
+Jelikož $\rho$ je sama o sobě metrika, jež je tedy i nezáporná,
+i její $p$-tá mocnina je nezáporná.
+Tato její $p$-tá mocnina potom hraje roli náhodné veličiny, jejíž střední hodnotu ve výrazu v (\ref{wass_def_prf}) hledáme.
+Střední hodnota je potom integrál dané veličiny vzhledem k pravděpodobnostní míře, která je opět nezáporná.
+$W_p$ je tedy infimum z nezáporných čísel, tedy opět nezáporné číslo.
+
+Dalším bodem, který chceme dokázat, je:
+\begin{equation}
+	W_p(\mu, \nu) = 0 \iff \mu = \nu.
+\end{equation}
+Rozebereme tuto ekvivalenci jako dvě implikace.
+Nejprve dokažme, že
+\begin{equation}
+	\mu = \nu \implies W_p(\mu, \nu) = 0.
+\end{equation}
+Zvolme $\mu$ libovolně pevně.
+Jistě platí, že když nalezneme takové $\tilde{\gamma} \in \Gamma(\mu, \mu)$, že $\mathbb{E}_{(x, y) \sim \tilde{\gamma}} \rho (x, y)^p = 0$,
+potom i infimum těchto hodnot pro všechna $\gamma \in \Gamma(\mu, \mu)$ bude $0$.
+Definujme proto
+\begin{equation}
+	\tilde{\gamma} (x, y) = 1_{x = y} \cdot \mu (x).
+\end{equation}
+Pod označením $1_{x = y}$ myslíme v podstatě Diracovu delta funkci s nosičem $\{x\}$.
+Proto:
+\begin{align}
+	\int_X \tilde{\gamma} (x,y) d x &= \mu (y), \\
+	\int_X \tilde{\gamma} (x,y) d y &= \mu (x).
+\end{align}
+Což znamená, že $\tilde{\gamma} \in \Gamma (\mu, \mu)$.
+Po dosazení do střední hodnoty:
+\begin{align}
+	\mathbb{E}_{(x, y) \sim \tilde{\gamma}} \rho (x, y)^p &= \int_X \int_X \rho (x, y)^p \cdot 1_{x = y} \cdot \mu(x) d x d y, \\
+	&= 0.
+\end{align}
+Hodnota integrálu bude $0$, neboť integrujeme nulovou funkci.
+
+Druhou implikaci
+\begin{equation}
+	W_p (\mu, \nu) = 0 \implies \mu = \nu
+\end{equation}
+dokažme sporem.
+Pro spor předpokládejme, že $W_p (\mu, \nu) = 0$, ale $\mu \neq \nu$.
+Potom z druhého z předpokladů plyne, že existuje $r \in X$ takové,
+že $\mu (r) \neq \nu (r)$, bez újmy na obecnosti předpokládejme, že $\mu (r) > \nu (r)$,
+a že existuje jiné $s \in X$ takové,
+že $\mu(s) < \nu (s)$,
+poněvadž integrál obou měr musí být roven $1$.
+Pak ale pro každé $\gamma \in \Gamma (\mu, \nu)$ platí, že
+\begin{equation}
+	\mathbb{E}_{(x, y) \sim \gamma} \rho (x, y)^p = \int_X \int_X \rho(x, y)^p \gamma(x, y) dx dy \geq \delta,
+\end{equation}
+pro nějaké $\delta > 0$,
+protože funkce $\rho(x, y)$ je kladná minimálně na množině nenulové míry.
+Tedy infimum z takovýchto hodnot neklesne pod práh $\delta$,
+a tudíž dostáváme spor s prvním z předpokladů.
+
+Nyní se zaměřme na symetrii $W_p$.
+Ta snadno plyne ze symetrie metriky $\rho$ a symetrie použití písmen $\mu$ a $\nu$ v (\ref{wass_def_prf}).
+
+Posledním bodem k ověření je trojúhelníková nerovnost,
+tedy
+\begin{equation}
+	W_p (\mu, \eta) \leq W_p (\mu, \nu) + W_p (\nu, \eta).
+\end{equation}
+Jelikož $W_p (\mu, \nu)$ je infimum z jistých hodnot,
+existuje jistě takové $\gamma_1 \in \Gamma (\mu, \nu)$, že
+\begin{equation}
+	\int_X \int_X \rho (x, y)^p \gamma_1 (x, y) dx dy < W_p (\mu, \nu)^p + \varepsilon \label{inf1}
+\end{equation}
+pro libovoně malé $\varepsilon > 0$.
+Obdobně existuje $\gamma_2 \in \Gamma (\nu, \eta)$, že
+\begin{equation}
+	\int_X \int_X \rho (y, z)^p \gamma_2 (y, z) dy dz < W_p (\nu, \eta)^p + \varepsilon. \label{inf2}
+\end{equation}
+Pak definujme $\gamma_3 \in \Gamma (\mu, \eta)$:
+\begin{equation}
+	\gamma_3 (x, z) = \int_X \frac{\gamma_1 (x, y) \cdot \gamma_2 (y, z)}{\nu (y)} dy.
+\end{equation}
+To, že skutečně $\gamma_3 \in \Gamma(\mu, \eta)$,
+vyplývá z:
+\begin{align}
+	\int_X \gamma_3 (x, z) dz &= \int_X \int_X \frac{\gamma_1 (x, y) \cdot \gamma_2 (y, z)}{\nu (y)} dy dz \\
+	&= \int_X \frac{\gamma_1 (x, y) \cdot \nu(y)}{\nu (y)} dy \\
+	&= \mu(x) \\
+	\int_X \gamma_3 (x, z) dx &= \int_X \int_X \frac{\gamma_1 (x, y) \cdot \gamma_2 (y, z)}{\nu (y)} dy dx \\
+	&= \int_X \frac{\nu (y) \cdot \gamma_2 (y, z)}{\nu (y)} dy \\
+	&= \eta(z).
+\end{align}
+Pak platí:
+\begin{eqnarray}
+	\left[\int_X \int_X \rho (x, z)^p \gamma_3 (x, z) dx dz\right]^\frac{1}{p} &\leq& \left[\int_X \int_X \left[ \rho(x,y) + \rho(y,z) \right]^p \gamma_3 (x, z) dx dz \right]^\frac{1}{p} \label{metric} \\
+	&\leq& \left[\int_X \int_X \int_X \frac{\rho (x, y)^p \cdot \gamma_1 (x, y) \cdot \gamma_2 (y,z)}{\nu (y)} dz dx dy \right]^\frac{1}{p}  \label{Minkowski} \\
+	& & + \left[\int_X \int_X \int_X \frac{\rho (y, z)^p \cdot \gamma_1 (x, y) \cdot \gamma_2 (y,z)}{\nu (y)} dx dy dz \right]^\frac{1}{p} \label{Minkowski_2} \\
+	&\leq& \left[W_p(\mu, \nu)^p + \varepsilon \right]^\frac{1}{p} + \left[ W_p (\nu, \eta)^p + \varepsilon\right]^\frac{1}{p}. \label{After_Mink}
+\end{eqnarray}
+Nerovnost v (\ref{metric}) vychází z metrických vlastností $\rho$.
+Dále jsme při přechodu na řádky (\ref{Minkowski}) a (\ref{Minkowski_2}) využili Minkowského nerovnost.
+Nakonec jsme pro získání výrazu v (\ref{After_Mink}) dosadili z (\ref{inf1}) a (\ref{inf2}).
+Nyní, jelikož jsme volili $\mu, \nu, \eta$ libovolně a jelikož $\varepsilon$ je libovolně malé, lze napsat:
+\begin{eqnarray}
+	W_p(\mu, \eta) &\leq& W_p(\mu, \nu) + W_p (\nu, \eta).
+\end{eqnarray}
+\qed
+
+
 
 
 \begin{thebibliography}{1}
