@@ -350,7 +350,7 @@ Ohledně samotné problematiky existence adversariálních vzorků
 lze říci, že se jedná o jev, který je obecně typický pro metody strojového učení.
 My jsme se rozhodli jej zkoumat v kontextu \emph{neuronových sítí}.
 Ve zkratce lze říci, že se jedná o fakt, že malá změna vstupu do modelu strojového učení
-zapříčiní velikou změnu výstupu tohoto modelu.
+zapříčiní velikou změnu výstupu tohoto modelu \cite{adv_opt,advances}.
 Pro definici pojmu malá změna vstupu potom používáme právě ony metriky vizuální podobnosti,
 neboť se pohybujeme na poli počítačového vidění.
 Pro uvedení termínu veliká změna výstupu na pravou míru využijeme povahu námi řešeného klasifikačního problému,
@@ -522,6 +522,8 @@ jako:
 \end{equation}
 kde $\Gamma(\mu, \nu)$ je množina všech sdružených pravděpodobnostních měr na $M \times M$,
 které mají po řadě $\mu$ a $\nu$ za marginální pravděpodobnostní míry \cite{vaserstejn}.
+Na fakt, že se jedná o metriku ve smyslu definice v úvodu této kapitoly,
+lze nahlédnout v kapitole Příloha: Důkazy.
 
 Jak to souvisí s obrázky?
 Přes dopravní problém.
@@ -1532,7 +1534,7 @@ za nižší desetiny sekundy.
 
 Pro předvedení adversariálního útoku jsme zvolili metodu \emph{CW} s pevným parametrem $\lambda$.
 Pro připomenutí: Metoda útoku CW je založena na řešení problému
-\begin{equation}
+\begin{equation} \label{cw_in_results}
     \tilde{x} = \operatornamewithlimits{argmin}_{\hat{x}} \rho(x, \hat{x}) - \lambda \cdot L(y, F_\theta (\hat{x})).
 \end{equation}
 Tento problém jsme se rozhodli řešit \emph{znaménkovým gradientním sestupem}
@@ -1603,6 +1605,26 @@ Dále u aproximace Wassersteinovy vzdálenosti uvádíme i velikost regularizač
     \end{tabular}
     \caption{Průměrná $l_2$ vzdálenost vzorku z CW útoku v závislosti na zvolené metrice a hodnotě parametru $\lambda$} \label{cw_l_2_table}
 \end{table}
+
+
+Jak je vidět z Tabulky \ref{cw_success_table},
+různé metriky jsou ve smyslu úspěšnosti útoku různě citlivé na hodnotu parametru $\lambda$.
+Pro nízké hodnoty parametru $\lambda$ totiž útoky využívající metriky založené na normách $l_1$ a $l_2$
+jsou velice neúspěšné.
+Jinými slovy, v (\ref{cw_in_results}) je kladen příliš velký důraz na podobnost vzorků
+oproti různosti klasifikací.
+Respektive gradient účelové funkce v (\ref{cw_success_table}) je tvořen převážně gradientem metriky vizuální podobnosti.
+Naopak pro jiné metriky vizuální podobnosti je jejich gradient menší, co do srovnání s gradientem ztrátové funkce $L$.
+Proto vidíme např. pro útok využívající metriku vizuální podobnosti DSSIM s velikostí výpočetního podokna $5$
+úspěšnost tohoto útoku skoro $43 \%$ i pro nejmenší z hodnot parametru $\lambda$.
+
+Dalším jevem, se kterým se setkáváme, je jistý očekávaný trend, totiž že s rostoucím $\lambda$ bude úspěšnost
+adversariálního útoku větší.
+Je to dáno přirozeně tím, že při optimalizaci v (\ref{cw_in_results}) se s vetším $\lambda$ klade větší důraz
+nesprávnost klasifikace vzorku neuronovou sítí.
+
+Podobný trend lze pozorovat i v Tabulce \ref{cw_l_2_table}.
+
 
 
 \section{Adversariální útok za použití metriky indukované $l_2$ normou}
@@ -1722,7 +1744,7 @@ Dále u aproximace Wassersteinovy vzdálenosti uvádíme i velikost regularizač
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L2_lambda=1000_dist=1.5453290939331055_d2=1.5453290939331055.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití metriky indukované $l_2$ normou}
+	\caption{Vzorky generované CW útokem za použití metriky indukované $l_2$ normou; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_L2}
 \end{figure}
 
@@ -1735,7 +1757,7 @@ Tato hodnota parametru $\lambda$ je potom po řadě $10^{-3}$, $10^{-2}$, $10^{-
 V takovémto formátu potom jsou prezentovány i další obrázky.
 
 Z Obrázku \ref{cw_L2} si lze odnést jednoznačně potvrzení prezentované matematické intuice
-ohledně volby parametru $\lambda$ v CW útoku, který spočívá v řešení (\ref{adv_cw}).
+ohledně volby parametru $\lambda$ v CW útoku, který spočívá v řešení (\ref{cw_in_results}).
 Čím větší je totiž parametr $\lambda$,
 tím menší důraz je kladen na minimalizaci metriky vizuální podobnosti mezi původním benigním vzorkem a generovaným vzorkem.
 Proto s rostoucí hodnotou parametru $\lambda$ narůstá míra vizuálního poškození oproti původnímu obrázku.
@@ -1856,7 +1878,7 @@ Proto s rostoucí hodnotou parametru $\lambda$ narůstá míra vizuálního poš
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_L1_lambda=1000_dist=13.054327011108398_d2=1.8567101955413818.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití metriky indukované $l_1$ normou}
+	\caption{Vzorky generované CW útokem za použití metriky indukované $l_1$ normou; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_L1}
 \end{figure}
 
@@ -1990,7 +2012,7 @@ Proto se věnujme různým velikostem výpočetního podokna zvlášť.
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=5_lambda=1000_dist=0.22423532605171204_d2=9.380809783935547.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 5}
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 5; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_DSSIM-ws5}
 \end{figure}
 
@@ -2129,7 +2151,7 @@ Ta je ovšem dostatečně malá, aby byla převážena druhým členem gradientu
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=10_lambda=1000_dist=0.03318724036216736_d2=2.132869005203247.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 10}
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 10; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_DSSIM-ws10}
 \end{figure}
 
@@ -2253,7 +2275,7 @@ Lze vidět, že tyto obrázky jsou mnohem uhlazenější, než obrázky vygenero
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=20_lambda=1000_dist=0.011532217264175415_d2=1.7933346033096313.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 20}
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM s velikostí výpočetního podokna 20; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_DSSIM-ws20}
 \end{figure}
 
@@ -2379,7 +2401,7 @@ jež jsou vygenerované za použití metriky DSSIM s velikostí podokna $10$.
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_DSSIM-ws=28_lambda=1000_dist=0.014223664999008179_d2=2.018277883529663.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM bez omezení velikosti výpočetního podokna}
+	\caption{Vzorky generované CW útokem za použití metriky vizuální podobnosti DSSIM bez omezení velikosti výpočetního podokna; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_DSSIM-ws28}
 \end{figure}
 
@@ -2517,7 +2539,7 @@ a jeví se na obrázcích již povědomé artefakty v okolí číslice.
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=5_lambda=1000_dist=1.166729211807251_d2=7.623620986938477.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 5}
+	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 5; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_WassersteinAproximation-reg5}
 \end{figure}
 
@@ -2639,7 +2661,7 @@ a jeví se na obrázcích již povědomé artefakty v okolí číslice.
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=10_lambda=1000_dist=1.27431058883667_d2=5.530047416687012.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 10}
+	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 10; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_WassersteinAproximation-reg10}
 \end{figure}
 
@@ -2761,7 +2783,7 @@ a jeví se na obrázcích již povědomé artefakty v okolí číslice.
 		\includegraphics[width=0.1\textwidth]{Images/final/9/084_adv_WassersteinAproximation-reg=15_lambda=1000_dist=1.5346121788024902_d2=3.5601041316986084.jpg}
 	\end{subfigure}
 	\centering
-	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 15}
+	\caption{Vzorky generované CW útokem za použití aproximace Wassersteinovy metriky s hodnotou regularizace 15; v řádku po řadě původní benigní vzorek, dále vzorky vygenerované s rostoucí hodnotou parametru $\lambda$}
 	\label{cw_WassersteinAproximation-reg15}
 \end{figure}
 
@@ -2937,9 +2959,9 @@ MIT Press, 2016.
 \emph{Advances in adversarial attacks and defenses in computer vision: A survey}.
 IEEE Access 9, 2021, 155161-155196.
 
-\bibitem{projected}W. Eric, F. Schmidt, Z. Kolter:
-\emph{Wasserstein adversarial examples via projected sinkhorn iterations}.
-International Conference on Machine Learning, PMLR, 2019.
+% \bibitem{projected}W. Eric, F. Schmidt, Z. Kolter:
+% \emph{Wasserstein adversarial examples via projected sinkhorn iterations}.
+% International Conference on Machine Learning, PMLR, 2019.
 
 \bibitem{foolbox}J. Rauber, R. Zimmermann, M. Bethge, W. Brendel:
 \emph{Foolbox: A Python toolbox to benchmark the robustness of machine learning models}.
