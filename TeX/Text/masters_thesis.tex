@@ -328,7 +328,7 @@ Wasserstein metric.
 
 V této práci se věnujeme problematice metrik vizuální podobnosti,
 a to v kontextu strojového učení,
-konrétně v oblasti existence a tvorby adversariálnich vzorků.
+konrétně v oblasti existence a tvorby adversariálnich vzorků \cite{adv_opt}.
 Zkoumáme, jaký vliv má volba takové metriky na tvorbu a podobu adversariálních vzorků.
 
 Jelikož vizuální vjemy, tedy obrázky, reprezentujeme v počítači jako tenzory,
@@ -348,19 +348,47 @@ jako to například činí metriky založené na $l_p$ normách.
 
 Ohledně samotné problematiky existence adversariálních vzorků
 lze říci, že se jedná o jev, který je obecně typický pro metody strojového učení.
-My jsme se rozhodli jej zkoumat v kontextu \emph{neuronových sítí}.
-Ve zkratce lze říci, že se jedná o fakt, že malá změna vstupu do modelu strojového učení
-zapříčiní velikou změnu výstupu tohoto modelu \cite{adv_opt,advances}.
+My jsme se rozhodli jej zkoumat v kontextu \emph{neuronových sítí},
+a to v oblasti počítačového vidění.
+Ve zkratce lze povědět, že se jedná o fakt, že malá změna vstupu do modelu strojového učení,
+v oblasti počítačového vidění tedy malá změna vstupního obrázku,
+zapříčiní velikou změnu výstupu tohoto modelu.
 Pro definici pojmu malá změna vstupu potom používáme právě ony metriky vizuální podobnosti,
-neboť se pohybujeme na poli počítačového vidění.
+neboť se pohybujeme právě na poli počítačového vidění.
 Pro uvedení termínu veliká změna výstupu na pravou míru využijeme povahu námi řešeného klasifikačního problému,
 tedy veliká změna výstupu odpovídá změně v rozhodnutí klasifikátoru.
 
+K objevu existence adversariálních vzorků došlo v roce 2013 \cite{adv_opt}.
+V tehdější době panovalo v komunitě počítačového vidění přesvědčení,
+že hluboké modely konvolučních neuronových sítí \cite{CNN} jsou bezchybné,
+poněvadž dosahovaly rekordních hodnot skóre \cite{Krizhevsky} na těžkých klasifikačních úlohách,
+jako je např. \emph{ImageNet} \cite{ImageNet}.
+Tyto úspěchy konvolučních neuronových sítí vedly k jejich nasazení v nejrůznějších odvětvích,
+jako jsou např. samořiditelná auta či rozpoznávání obličeje \cite{advances}.
+
+Zajímavostí, která umocňuje nebezpečí skrytá v adversariálních vzorcích,
+potom je, že adversariální perturbace, které dokážou zmást jeden daný model,
+často zvládnou zmást i jiný model \cite{transfer1,transfer2}.
+
+Objev tohoto fenoménu dal vzniknout různým typům adversariálních útoků.
+Patří sem vůbec nejjednodušší metoda \emph{FGSM} (zkratka z angl. \emph{fast gradient sign method}),
+která byla představena v roce 2015 \cite{harness},
+dále od tohoto odvozené metody iterativního charakteru
+jako je \emph{I-FGSM} (\cite{IFGSM}, 2016) či PGD (\cite{PGD}, 2017).
+
+Jev existence adversariálních vzorků ale potom přirozeně dává vznik
+obavám o bezpečnost zařízení využívajících takovýchto technologií.
 Proto vzniklo odvětví robustního strojového učení, neboť takové chování
 algoritmů strojového učení je ze zřejmých důvodů nežádoucí.
 Toto odvětví se pak snaží existenci adversariálních vzorků zabránit,
 a to různými úpravami samotných algoritmů strojového učení,
 resp. v modifikaci dat, na kterých se daný model učí.
+
+Jedním z prvních pokusů o robustní chování sítě byla potom
+tzv. \emph{obraná destilace} (z angl. \emph{defensive distillation}; \cite{distillation}, 2016),
+která ovšem byla záhy ukázána jako nefunkční proti útoku typu \emph{CW} (\cite{cw}, 2017).
+Základní metodou pro robustní chování sítě pak je tzv. adversariální trénink (\cite{PGD}, 2017).
+Tato metoda spočívá v přidání adversariálních vzorků mezi vzorky trénovací množiny.
 
 Na základě těchto vědomostí se potom ptáme,
 zda má vliv volba metriky vizuální podobnosti na tvorbu adversariálních vzorků.
@@ -379,6 +407,49 @@ Tyto metriky jsou potom zpřístupněny na veřejném úložišti včetně dokum
 % vhodnými metodami pro daný algoritmus strojového učení.
 % Uvádíme také, jak se jakousi robustnost obzvlášť neuronových sítí vůči adversariálním útokům
 % snaží měřit programovací knihovny \emph{Foolbox} a \emph{RobustBench}.
+
+V první kapitole představujeme samotné metriky vizuální podobnosti.
+Jelikož obrázky v pocítači, lze chápat jako tenzory,
+je možné se podívat na obrázky v klasické $l_p$ normě.
+Část této kapitoly se proto věnuje formální definici těchto $l_p$ norem a toho,
+jak z nich zkonstuovat metriku.
+Zmiňujeme i metriky založené na průmerování rozdílů prvků vektorů, tedy metriky \emph{MSE}
+(zkratka angl. \emph{mean squared error})
+a \emph{RMSE} (zkratka angl. \emph{root mean squared error}),
+dále i jejich logaritmickou transformaci známou pod zkratkou \emph{PSNR} (zkratka angl. \emph{peak signal to noise ratio}).
+Další konstrukce, které představujeme jsou \emph{SSIM} (zkratka angl. \emph{structural similarity index measure}, \cite{ssim})
+a \emph{Wassersteinova metrika}, která se na obrázky dívá jako na pravdepodobnostní rozdělení \cite{vaserstejn}.
+
+Druhá kapitola potom nabízí koncepty potřebné k tomu,
+abychom představené metriky vizuální podobnosti mohli použít k hledání advesariálních vzorků.
+Toto zahrnuje pokusy o zrychlení výpočtu Wassersteinovy metriky, a to byť za cenu ztráty přesnosti.
+Jedná se totiž o přechod od původní Wassersteinovy metriky k tzv. duální Sinkhornově metrice,
+již lze snáze spočíst na počítači.
+Dále se zde pak nachází přechod od indexu SSIM k jeho transformaci v podobě DSSIM,
+který dává možnost použít tento konstrukt pro hledání adversariálních vzorků klasickými metodami.
+
+Ve třetí kapitole uvádíme výtah z literatury, který se týká samotného generování adversariálních vzorků.
+Nachází se zde samotná definice adversariálních vzorků
+jakožto i detailní popis jedné z metod jejich generování.
+
+Stěžejním přínosem této práce je potom kapitola čtvrtá,
+resp. to o čem tato kapitola mluví.
+Jedná se o samotnou implementaci metrik vizuální podobnosti v jazyce \emph{Python} \cite{python}
+za pomocí knihovny \emph{PyTorch} \cite{pytorch}.
+Tato implementace je pak veřejně dostupná v repozitáři, na který se v této kapitole odkazujeme.
+
+Pátá kapitola přináší pororvnání naimplementovaných metrik mezi sebou, co se výpočetní náročnosti týče.
+Dále dáváme k dispozici informace o jiných implementacích metrik vizuální podobnosti,
+jež jsou dostupné v různých veřejně dostupných knihovnách, jako je např. \emph{GeomLoss} \cite{geomloss}
+nebo \emph{pytorch-ignite} \cite{ignite}.
+
+Šestá kapitola pak využívá naimplementované metriky vizuální podobnosti pro tvorbu adversariálních vzorků.
+Z pohledu vygenerovaných vzorků jsou tyto metriky srovnány,
+a to co do úspěšnosti adversariálního útoku, tak i co do vizuální podoby vygenerovaných vzorků.
+
+Nakonec uveďme, že součástí této práce je i příloha která obsahuje matematické důkazy k použitým tvrzením
+v kapitolách, jež se zabývají teorií.
+
 
 \pagestyle{headings}
 
@@ -2959,6 +3030,23 @@ MIT Press, 2016.
 \emph{Advances in adversarial attacks and defenses in computer vision: A survey}.
 IEEE Access 9, 2021, 155161-155196.
 
+\bibitem{Krizhevsky}A. Krizhevsky, I. Sutskever, G. E. Hinton:
+\emph{Imagenet classification with deep convolutional neural networks}.
+In Advances in neural information processing systems, pp. 1097–1105, 2012.
+
+\bibitem{CNN}Y. LeCun, B. Boser, J. S. Denker, D. Henderson, R. E. Howard,
+W. Hubbard, L. D. Jackel:
+\emph{Backpropagation applied to handwritten zip code recognition}.
+Neural computation, vol. 1, no. 4, pp. 541–551, 1989.
+
+\bibitem{transfer1}H. Zheng, Z. Zhang, J. Gu, H. Lee, A. Prakash:
+\emph{Efficient adversarial training with transferable adversarial examples}.
+In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 1181–1190, 2020.
+
+\bibitem{transfer2}W. Zhou, X. Hou, Y. Chen, M. Tang, X. Huang, X. Gan, Y. Yang:
+\emph{Transferable adversarial perturbations}.
+In Proceedings of the European Conference on Computer Vision (ECCV), pp. 452–467, 2018.
+
 % \bibitem{projected}W. Eric, F. Schmidt, Z. Kolter:
 % \emph{Wasserstein adversarial examples via projected sinkhorn iterations}.
 % International Conference on Machine Learning, PMLR, 2019.
@@ -2979,22 +3067,34 @@ Problemy Peredači Informacii 5, 1969.
 \emph{Image Quality Assessment: From Error Visibility to Structural Similarity}.
 IEEE Transactions on Image Processing, ročník 13, č. 4, April 2004: s. 600–612.
 
-\bibitem{wass_computation} M. Cuturi,
+\bibitem{wass_computation} M. Cuturi:
 \emph{Sinkhorn Distances: Lightspeed Computation of Optimal Transport}.
 Advances in Neural Information Processing Systems 26, 2013.
 
-\bibitem{adv_opt} C. Szegedy, W. Zaremba, I. Sutskever, J. Bruna, D. Erhan, I. Goodfellow, R. Fergus,
+\bibitem{adv_opt} C. Szegedy, W. Zaremba, I. Sutskever, J. Bruna, D. Erhan, I. Goodfellow, R. Fergus:
 \emph{Intriguing properties of neural networks}.
 arXiv, 2014.
 
-\bibitem{cw} N. Carlini, D. Wagner,
+\bibitem{harness} I. Goodfellow, J. Shlens, C. Szegedy:
+\emph{Explaining and Harnessing Adversarial Examples}.
+In International Conference on Learning Representations, ICLR 2015.
+
+\bibitem{IFGSM}A. Kurakin, I. Goodfellow, S. Bengio:
+\emph{Adversarial examples in the physical world}.
+arXiv 2016.
+
+\bibitem{distillation}N. Papernot, P. McDaniel, X. Wu, S. Jha, A. Swami:
+\emph{Distillation as a defense to adversarial perturbations against deep neural networks}.
+In 2016 IEEE Symposium on Security and Privacy (SP). IEEE, pp. 582–597, 2016.
+
+\bibitem{cw} N. Carlini, D. Wagner:
 \emph{Towards evaluating the robustness of neural networks}.
 IEEE Symposium on Security and Privacy (SP), IEEE, 2017.
 
-\bibitem{MNIST} Y. Lecun, C. Cortes, C. J. Burges,
+\bibitem{MNIST} Y. Lecun, C. Cortes, C. J. Burges:
 \emph{The mnist database of handwritten digits}. 1998.
 
-\bibitem{RMSProp} G. Hinton,
+\bibitem{RMSProp} G. Hinton:
 \emph{Neural networks for machine learning}.
 Coursera, video lectures, 2012.
 
