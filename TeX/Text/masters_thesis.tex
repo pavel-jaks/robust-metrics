@@ -139,7 +139,8 @@
 \usepackage{babel}
 
 \newtheorem{theorem}{Tvrzení}[section]
-\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}{Definice}[section]
+\newtheorem{lemma}[definition]{Lemma}
 
 \begin{document}
 \def\documentdate{10. května 2024}
@@ -746,7 +747,7 @@ dostaneme tedy, co lze nazvat noise to peak signal ratio (NPSR):
 Při dvou obrázcích blížících se k sobě bude tedy NPSR klesat, a to neomezeně.
 
 
-\section{Modifikace Wassersteinovy vzdálenosti}
+\section{Modifikace Wassersteinovy vzdálenosti} \label{modif_wass}
 
 Abychom mohli s Wassersteinovou metrikou nakládat například v počítači, je nutné tuto metriku spočíst.
 Podíváme-li se do definice (\ref{wass_def}), znamená to vyřešit optimalizační problém.
@@ -756,9 +757,10 @@ Bohužel takovou výpočetní kapacitu, která by toto zvládla rychle pro námi
 Proto se podívejme, jak Wassersteinovu vzdálenost spočíst rychleji, byť za cenu ztráty přesnosti.
 
 V následujících odstavcích textu uvažujme, že chceme spočítat vzdálenost mezi diskrétními rozděleními,
-jejichž pravděpodobnostními vektory jsou $\mu \in \mathbb{R}^q$ a $\nu \in \mathbb{R}^q$, kde $q \in \mathbb{N}$.
+jejichž pravděpodobnostními vektory jsou $\mu \in \mathbb{R}^q$ a $\nu \in \mathbb{R}^q$, kde $q \in \mathbb{N}$,
+a o nichž platí, že $\mu_i, \nu_j > 0$.
 Dále označme $1_q$ vektor, jehož hodnoty v každé souřadnici jsou rovny $1$ a má dimenzi udanou v indexu.
-Platí tedy $\mu^T 1_q = \nu^T 1_q = 1$ a $\forall i \; \mu_i \geq 0$ a $\forall j \; \nu_j \geq 0$.
+Platí tedy $\mu^T 1_q = \nu^T 1_q = 1$ a $\forall i \; \mu_i > 0$ a $\forall j \; \nu_j > 0$.
 Označme jako $U(\mu, \nu)$ množinu všech matic $P \in \mathbb{R}^{q \times q}, P_{i,j} \geq 0$
 takových, že $P 1_q = \mu$ a $P^T 1_q = \nu$.
 Jako matici $C$ označme zadanou matici cen, která splňuje, že reprezentuje metriku.
@@ -811,13 +813,17 @@ Sinkhornova metrika je tedy horním odhadem Wassersteinovy metriky.
 Zde se tedy při hledání optimálního řešení $P^* = \operatornamewithlimits{argmin}_{P \in U_\alpha(\mu, \nu)} \langle P, C \rangle$
 omezíme na ta řešení, která nesou dostatečně malou vzájemnou informaci mezi rozděleními $\mu$ a $\nu$.
 Na výraz $KL(P \| \mu \nu^T)$ lze ale nahlédnout též následovně:
-\begin{align}
+\begin{align} \label{rewrite_kullback}
     KL(P \| \mu \nu^T) &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \frac{P_{i, j}}{ \mu_i \nu_j}, \\
     &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} P_{i, j} -  \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \mu_i - \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} \nu_j, \\
     &= \sum_{i = 1}^q \sum_{j = 1}^q P_{i, j} \operatorname{log} P_{i, j} -  \sum_{i = 1}^q \mu_i \operatorname{log} \mu_i - \sum_{j = 1}^q \nu_j \operatorname{log} \nu_j, \\
     &= - H(P) + H(\mu) + H(\nu), \label{rewrite_constraint}
 \end{align}
-kde $H$ značí entropii.
+kde $H$ značí entropii definovanou pro pravděpodobnostní rozdělení $p$ jako
+\begin{equation}
+	H(p) = - \mathbb{E}_{x \sim p} \operatorname{log}(p(x)),
+\end{equation}
+kde $\mathbb{E}$ značí střední hodnotu.
 Odtud můžeme vidět, že podmínka $KL(P \| \mu \nu^T) \leq \alpha$ znamená i to, že požadujeme po sdruženém rozdělení $P$,
 aby mělo velkou entropii. Tedy:
 \begin{equation}
@@ -844,7 +850,8 @@ dále Kullback-Leiblerova divergence je vzhledem ke svému prvnímu argumentu op
 což plyne z konvexity funkce $x \operatorname{ln} x$. To lze snadno ověřit výpočtem druhé derivace této funkce.
 A nakonec sám definiční obor je konvexní množina, jak již bylo poznamenáno.
 Dále uvažme, že $\mu \nu^T \in U(\mu, \nu)$ a zároveň $KL(\mu \nu^T \| \mu \nu^T) = 0$.
-Z tohoto vyplývá podle \cite{slater}, že pro tento problém platí silná dualita.
+Z tohoto vyplývá podle podmínek regularity \cite{slater}, že pro tento problém platí silná dualita,
+jak je detailněji rozebráno v samostatné sekci přílohy, a to sekci \ref{proof2}.
 
 Lagrangeova funkce tohoto problému vypadá následovně:
 \begin{equation}
@@ -3109,9 +3116,181 @@ Nyní, jelikož jsme volili $\mu, \nu, \eta$ libovolně a jelikož $\varepsilon$
 \end{proof}
 
 
-\section{Silná dualita optimalizačního problému Sinkhornovy metriky}
+\section{Silná dualita optimalizačního problému Sinkhornovy metriky} \label{proof2}
+
+Při odvození algoritmu pro výpočet aproximace Wassersteinovy vzdálenosti v sekci \ref{modif_wass}
+jsme se setkali s potřebou vlastnosti silné duality optimalizačního problému Sinkhornovy metriky (Rovnice \ref{sinkhorn_def})
+pro účely zavedení duální Sinkhornovy metriky, jež je výpočetně méně náročná než samotná Wassersteinova vzdálenost.
+
+Než se však pustíme do samotného tvrzení, uveďme několik definic a lemmat, které nám pomohou s důkazem.
+
+\begin{definition} \label{defU}
+	Mějme $\mu, \nu \in \mathbb{R}^q$, kde $q \in \mathbb{N}$, takové, že
+	$\mu_i, \nu_j \geq 0$ a $\sum_{i=1}^{q} m_i = \sum_{j=1}^{q} \nu_j = 1$.
+	Pak definujeme
+	\begin{equation}
+		U(\mu, \nu) = \left\{ P \in \mathbb{R}^{q \times q} \, | \, P_{i, j} \geq 0 \land \sum_{i=1}^{q} P_{i, j} = \nu_j \land \sum_{j=1}^{q} P_{i, j} = \mu_i \right\}.
+	\end{equation}
+\end{definition}
+
+Ztotožněme nyní $\mu$ a $\nu$ s pravděpodobnostními rozděleními, které z vlastností v Definici \ref{defU} představují.
+Dále ztožněme matice $P$ se sdruženým pravděpodobnostním rozdělením, které má $\mu$ a $\nu$ za marginální.
+Pak mezi takovými maticemi $P$ z $U(\mu, \nu)$ figuruje jako zvláštní matice $\mu \nu^T$,
+která reprezentuje sdružené rozdělení takové, že rozdělení $\mu$ a $\nu$ jsou nezávislá.
+Lze i zavést Kullback-Leiblerovu divergenci mezi $P, \hat{P} \in U(\mu, \nu)$ jako:
+\begin{equation}
+	KL(P \, \| \, \hat{P}) = \sum_{i, j} P_{i, j} \operatorname{log}\left(\frac{P_{i, j}}{\hat{P}_{i, j}}\right).
+\end{equation}
+Pak podle úprav (\ref{rewrite_kullback}) až (\ref{rewrite_constraint}) v sekci \ref{modif_wass}
+napišme
+\begin{equation}
+	KL(P \, \| \, \mu\nu^T) = - H(P) + H(\mu) + H(\nu), \label{alternate}
+\end{equation}
+kde $H$ značí informační entropii.
+Tato informační entropie pak je pro takové matice $P$ definována jako
+\begin{equation}
+	H(P) = - \sum_{i, j} P_{i, j} \operatorname{log}\left(P_{i, j}\right),
+\end{equation}
+kde pro případ, že $P_{i, j} = 0$, dodefinujme $P_{i, j} \operatorname{log}\left(P_{i, j}\right) = 0$,
+což je dle hodnoty limity $\lim_{x \rightarrow 0+}x \operatorname{log}x = 0$ spojitá definice.
+Dodejme, že se jedná o součet (spojitá funkce) spojitých funkcí, proto je $H$ sama o sobě spojitá.
 
 
+\begin{lemma} \label{lemma1}
+	Mějme $\alpha > 0$. Množina definovaná jako
+	\begin{equation}
+		U^\alpha (\mu, \nu) = \left\{ P \in U(\mu, \nu) \, | \, KL(P \, \| \, \mu\nu^T) \leq \alpha \right\}
+	\end{equation}
+	je kompaktní podmnožinou $\mathbb{R}^{q \times q}$.
+\end{lemma}
+
+\begin{proof}
+	Jelikož se nacházíme v $R^{q \times q}$ se standardní topologií, stačí ověřit,
+	že $U^{\alpha} (\mu, \nu)$ je uzavřená a omezená, a to podle Heine-Borelovy věty.
+	
+	\emph{Omezenost:} Omezenost snadno plyne z faktu, že $U^{\alpha} (\mu, \nu)$ je jakožto
+	množina diskrétních sdružených pravděpodobnostních rozdělení sama podmnožinou $\left[0, 1\right]^{q \times q}$,
+	což je s metrikou indukovanou euklidovskou normou sama omezená množina.
+
+	\emph{Uzavřenost:} Podle (\ref{alternate}) platí
+	\begin{equation}
+		H(P) \geq H(\mu) + H(\nu) - \alpha.
+	\end{equation}
+	Nyní, množina je uzavřená, pokud je rovna svému uzávěru.
+	Pro spor přepdpokládejme, že existuje $P \in \overline{U^{\alpha}(\mu, \nu)} \setminus U^{\alpha} (\mu, \nu)$.
+	Tedy podle alternativního vyjádření definice uzávěru, které říká,
+	že uzávěr množiny je obohacen o hromadné body množiny, platí, že $P$ je hromadným bodem $U^\alpha(\mu, \nu)$.
+	To znamená, že pro každé $\varepsilon$-okolí $U_\varepsilon(P)$ bodu $P$ existuje bod $Q$ v průniku množin
+	$U_\varepsilon (P) \setminus \{P\}$ a $U^\alpha(\mu, \nu)$.
+	Proto existuje posloupnost $Q^{(n)}$, která vznikne položením $\varepsilon = \frac{1}{n}$.
+	Pak platí:
+	\begin{eqnarray}
+		Q_{i, j}^{(n)} &\geq& 0, \\
+		Q^{(n)} 1_q &=& \mu, \\
+		\left(Q^{(n)}\right)^T 1_q &=& \nu, \\
+		H(Q^{(n)}) &\geq& H(\mu) + H(\nu) - \alpha,
+	\end{eqnarray}
+	kde $1_q$ značí vektor jedniček rozměru $q$.
+	Ze spojitosti funkcí identity, transpozice, násobení vektoru maticí a ze spojitosti informační entropie
+	plyne, že tyto vlastnosti uvedené výše o $Q^{(n)}$ platí i pro limitní bod, kterým je $P$.
+	Poznamenejme ještě, že by toto neplatilo, byla-li by některá z nerovností ostrá.
+	Z tohoto důvodu platí, že i $P \in U^\alpha(\mu, \nu)$, což je kýžený spor.
+\end{proof}
+
+\begin{lemma} \label{lemma2}
+	Množina $U(\mu, \nu)$ je konvexní.
+\end{lemma}
+
+\begin{proof}
+	Chceme dokázat, že pro všechna $P, Q \in U(\mu, \nu)$ a pro všechna $\beta \in \left[0, 1\right]$ platí
+	\begin{equation}
+		\beta P + (1 - \beta) Q \in U(\mu, \nu).
+	\end{equation}
+	Berme $P, Q \in U(\mu, \nu)$ a $\beta \in \left[0, 1\right]$ libovolně.
+	Pak chceme:
+	\begin{eqnarray}
+		(\beta P + (1 - \beta) Q)_{i, j} &\geq& 0, \\
+		(\beta P + (1 - \beta) Q) 1_q &=& \mu, \\
+		\left(\beta P + (1 - \beta) Q\right)^T 1_q &=& \nu.
+	\end{eqnarray}
+	A toto platí, neboť:
+	\begin{eqnarray}
+		(\beta P + (1 - \beta) Q)_{i, j} &=& \beta P_{i, j} + (1 - \beta) Q_{i, j} \geq 0, \\
+		(\beta P + (1 - \beta) Q) 1_q &=& \beta P 1_q + (1 - \beta) Q 1_q = \beta \mu + (1 - \beta) \mu = \mu, \\
+		\left(\beta P + (1 - \beta) Q\right)^T 1_q &=& \beta P^T 1_q + (1 - \beta) Q^T 1_q = \beta \nu + (1 - \beta) \nu = \nu.
+	\end{eqnarray}
+	Proto je $U(\mu, \nu)$ konvexní.
+
+\end{proof}
+
+\begin{lemma} \label{lemma3}
+	Funkce záporná k funkci informační entropie je na $U(\mu, \nu)$ konvexní.
+\end{lemma}
+
+\begin{proof}
+	Chceme ověřit, že funkce $f(P) = \sum_{i, j} P_{i, j} \operatorname{log} \left(P_{i, j}\right)$
+	je konvexní na $U(\mu, \nu)$.
+	Začněme poznámkou, že tato úloha je v pořádku, neboť podle Lemmatu \ref{lemma2} je $U(\mu, \nu)$ konvexní.
+	Podíváme-li se na funkční předpis $f$, vidíme, že se jedná o součet funkcí.
+	Kdyby tyto dílčí funkce byly konvexní, pak je i z vlastností součtu konvexní celá funkce.
+	A tyto dílčí funkce konvexní jsou, neboť se jedná o tu samou konvexní funkci $g(x) = x \operatorname{log} x$
+	aplikovanou na prvek v jiné souřadnici.
+	A funkce $g$ je konvexní podle nezápornosti hodnoty druhé derivace:
+	\begin{eqnarray}
+		\frac{d g}{d x} (x) &=& \operatorname{log}x + 1, \\
+		\frac{d^2 g}{d x^2} (x) &=& \frac{1}{x} > 0.
+	\end{eqnarray}
+\end{proof}
+
+\begin{theorem}
+	Mějme dvě diskrétní pravděpodobnostní rozdělení,
+	jejichž vektory pravděpodobností jsou $\mu$ a $\nu$ nad stejným metrickým prostorem $X$ o $q \in \mathbb{N}$ prvcích,
+	a nechť $\mu_i > 0$ a $\nu_j > 0$. 
+	Nechť matice $C \in \mathbb{R}^{q \times q}$ splňuje, že má na diagonále nuly, že mimo diagonálu má kladná čísla,
+	že je symetrická a že platí $C_{i, k} \leq C_{i, j} + C_{j, k}$, tedy že matice $C$ definuje metriku na $X$.
+	Pak optimalizační problém
+	\begin{eqnarray}
+		W^\alpha (\mu, \nu) &=& \min_{P \in U(\mu, \nu)} \langle P, C \rangle, \\
+		& & KL(P \, \| \, \mu \nu^T) - \alpha \leq 0,
+	\end{eqnarray}
+	kde $\alpha > 0$ a $\langle P, C \rangle$ je Frobeniův součin matic,
+	splňuje podmínky regularity pro silnou dualitu.
+\end{theorem}
+
+\begin{proof}
+	Začněme přeformulováním Slaterových podmínek regularity pro náš problém.
+	Tyto podmínky vyžadují, aby náš problém byl instance konvexního programování,
+	tedy aby jednak účelová funkce, tedy Frobeniův součin matic, byla konvexní.
+	Tato podmínka je splněna z linearity Forobeniova součinu v prvním argumentu.
+	(Jelikož jsme nad reálnými čísly, Frobeniův součin je lineární v obou argumentech.)
+	
+	Dále aby všechny funkce definující vazby pomocí nerovností byly také konvexní.
+	Mezi tyto vazby patří i triviálně konvexní funkce z podmínek, že $- P_{i, j} \leq 0$,
+	kde roli zkoumané funkce hraje funkce $g(x) = -x$, která je z linearity snadno konvexní.
+	Potom sem patří ale i vazebná podmínka, která vypadá jako:
+	\begin{equation}
+		KL(P \, \| \, \mu \nu^T) - \alpha = - H(P) + H(\mu) + H(\nu) - \alpha \leq 0.
+	\end{equation}
+	Tedy funkcí, jež má být konvexní je funkce $h(P) = - H(P) + H(\mu) + H(\nu) - \alpha$,
+	a tato funkce konvexní je, neboť se jedná o funkci informační entropie vzatou s opačným znaménkem
+	v součtu s konstantami, přičemž o záporně vzaté informační entropii jsme v Lemmatu \ref{lemma3} ukázali,
+	že je na $U(\mu, \nu)$ konvexní.
+
+	Další podmínkou je, aby vazebné podmínky s rovnostmi byly lineární.
+	A to jsou z linearity hraničních podmínek množiny $U(\mu, \nu)$.
+
+	Nyní jsme ověřili podmínky, že optimalizační problém je instance konvexního programování.
+	Pro tento typ úloh pak stačí ověřit, že existuje bod $\tilde{P}$, který je striktně přípustný,
+	a omezenost účelové funkce na přípustné množině.
+	Jako $\tilde{P}$ zvolme $\tilde{P} = \mu \nu^T$. Pak platí,
+	že $KL(\mu \nu^T \, \| \, \mu \nu^T) = 0$.
+	Tedy podmínka na striktní přípustnost přechází v $- \alpha < 0$,
+	což je splněno, neboť $\alpha > 0$.
+	Dále se striktní přípustnost vyžaduje při této volbě $\tilde{P}$ v podobě $\mu_i \nu_j > 0$.
+	Toto je zajištěno díky předpokladům.
+	A vzhledem ke spojitosti Frobeniova součinu máme i omezenost účelové funkce na kompaktu $U(\mu, \nu)$.
+	Proto pro tento problém platí silná dualita.
+\end{proof}
 
 
 
