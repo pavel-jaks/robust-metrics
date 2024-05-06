@@ -137,6 +137,10 @@
 \makeatother
 
 \usepackage{babel}
+
+\newtheorem{theorem}{Tvrzení}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+
 \begin{document}
 \def\documentdate{10. května 2024}
 
@@ -362,7 +366,7 @@ K objevu existence adversariálních vzorků došlo v roce 2013 \cite{adv_opt}.
 V tehdější době panovalo v komunitě počítačového vidění přesvědčení,
 že hluboké modely konvolučních neuronových sítí \cite{CNN} jsou bezchybné,
 poněvadž dosahovaly rekordních hodnot skóre \cite{Krizhevsky} na těžkých klasifikačních úlohách,
-jako je např. \emph{ImageNet} \cite{ImageNet}.
+jako je např. \emph{Imagenet} \cite{ImageNet}.
 Tyto úspěchy konvolučních neuronových sítí vedly k jejich nasazení v nejrůznějších odvětvích,
 jako jsou např. samořiditelná auta či rozpoznávání obličeje \cite{advances}.
 
@@ -372,9 +376,13 @@ potom je, že adversariální perturbace, které dokážou zmást jeden daný mo
 
 Objev tohoto fenoménu dal vzniknout různým typům adversariálních útoků.
 Patří sem vůbec nejjednodušší metoda \emph{FGSM} (zkratka z angl. \emph{fast gradient sign method}),
-která byla představena v roce 2015 \cite{harness},
-dále od tohoto odvozené metody iterativního charakteru
-jako je \emph{I-FGSM} (\cite{IFGSM}, 2016) či PGD (\cite{PGD}, 2017).
+která byla představena v roce 2015 \cite{harness}
+a spočívá v přičtení násobku znaménkové funkce gradientu účelové funkce,
+se kterou byla daná síť trénována, k původnímu benignímu obrázku.
+Dále sem patří od tohoto odvozené metody iterativního charakteru
+jako je \emph{I-FGSM} (\cite{IFGSM}, 2016) či PGD (\cite{PGD}, 2017),
+které iterativně přičítají menší násobky znaménkové funkce gradientu
+účelové funkce k předchozí iteraci.
 
 Jev existence adversariálních vzorků ale potom přirozeně dává vznik
 obavám o bezpečnost zařízení využívajících takovýchto technologií.
@@ -385,17 +393,13 @@ a to různými úpravami samotných algoritmů strojového učení,
 resp. v modifikaci dat, na kterých se daný model učí.
 
 Jedním z prvních pokusů o robustní chování sítě byla potom
-tzv. \emph{obraná destilace} (z angl. \emph{defensive distillation}; \cite{distillation}, 2016),
+tzv. \emph{obranná destilace} (z angl. \emph{defensive distillation}; \cite{distillation}, 2016),
 která ovšem byla záhy ukázána jako nefunkční proti útoku typu \emph{CW} (\cite{cw}, 2017).
 Základní metodou pro robustní chování sítě pak je tzv. adversariální trénink (\cite{PGD}, 2017).
 Tato metoda spočívá v přidání adversariálních vzorků mezi vzorky trénovací množiny.
 
 Na základě těchto vědomostí se potom ptáme,
 zda má vliv volba metriky vizuální podobnosti na tvorbu adversariálních vzorků.
-
-Stěžejní součástí této práce potom je i samotná implementace uvedených metrik vizuální podobnosti,
-tak aby mohly být tyto metriky použity pro tvorbu adversariálních vzorků.
-Tyto metriky jsou potom zpřístupněny na veřejném úložišti včetně dokumentace.
 
 % Ve čtvrté kapitole pak uvádíme samotné výsledky použití vybraných metrik vizuální podobnosti
 % pro tvorbu adversariálních vzorků pomocí necíleného \emph{CW} útoku.
@@ -437,8 +441,11 @@ resp. to o čem tato kapitola mluví.
 Jedná se o samotnou implementaci metrik vizuální podobnosti v jazyce \emph{Python} \cite{python}
 za pomocí knihovny \emph{PyTorch} \cite{pytorch}.
 Tato implementace je pak veřejně dostupná v repozitáři, na který se v této kapitole odkazujeme.
+% Stěžejní součástí této práce potom je i samotná implementace uvedených metrik vizuální podobnosti,
+% tak aby mohly být tyto metriky použity pro tvorbu adversariálních vzorků.
+% Tyto metriky jsou potom zpřístupněny na veřejném úložišti včetně dokumentace.
 
-Pátá kapitola přináší pororvnání naimplementovaných metrik mezi sebou, co se výpočetní náročnosti týče.
+Pátá kapitola přináší porovnání naimplementovaných metrik mezi sebou, co se výpočetní náročnosti týče.
 Dále dáváme k dispozici informace o jiných implementacích metrik vizuální podobnosti,
 jež jsou dostupné v různých veřejně dostupných knihovnách, jako je např. \emph{GeomLoss} \cite{geomloss}
 nebo \emph{pytorch-ignite} \cite{ignite}.
@@ -447,8 +454,13 @@ nebo \emph{pytorch-ignite} \cite{ignite}.
 Z pohledu vygenerovaných vzorků jsou tyto metriky srovnány,
 a to co do úspěšnosti adversariálního útoku, tak i co do vizuální podoby vygenerovaných vzorků.
 
-Nakonec uveďme, že součástí této práce je i příloha která obsahuje matematické důkazy k použitým tvrzením
+Uveďme i, že součástí této práce je i příloha, která obsahuje matematické důkazy k použitým tvrzením
 v kapitolách, jež se zabývají teorií.
+
+Práce tedy kombinuje odvození teoretických konceptů metrik vizuální podobnosti
+a tvorby adversariálních vzorků
+s algoritmickou implementací těchto konceptů za účelem provedení adversariálních útoků
+na klasifikační neuronovou síť.
 
 
 \pagestyle{headings}
@@ -584,7 +596,9 @@ Toto odpovídá tomu, že šum v pokažení $\tilde{x}$ je nulový.
 
 \section{Wassersteinova vzdálenost}
 
-Buď $(M, \rho)$ metrický prostor. Zvolme $p \in [1, + \infty)$.
+Buď $(M, \rho)$ metrický prostor, který je zároveň Radonovým topologickým prostorem.
+Komentář k vlastnosti býti Radonův lze nalézt v kapitole Příloha: Důkazy.
+Zvolme $p \in [1, + \infty)$.
 Potom máme \emph{Wassersteinovu $p$-vzdálenost} mezi dvěma pravděpodobnostními mírami $\mu$ a $\nu$ na $M$,
 které mají konečné $p$-té momenty,
 jako:
@@ -594,7 +608,7 @@ jako:
 kde $\Gamma(\mu, \nu)$ je množina všech sdružených pravděpodobnostních měr na $M \times M$,
 které mají po řadě $\mu$ a $\nu$ za marginální pravděpodobnostní míry \cite{vaserstejn}.
 Na fakt, že se jedná o metriku ve smyslu definice v úvodu této kapitoly,
-lze nahlédnout v kapitole Příloha: Důkazy.
+lze nahlédnout v kapitole \ref{proofs} v sekci \ref{proof1}.
 
 Jak to souvisí s obrázky?
 Přes dopravní problém.
@@ -641,12 +655,14 @@ Zde lze uplatnit následující dva přístupy:
     a následně vybrat nějakou statistiku výsledných vzdáleností, např. průměr.
 \end{enumerate}
 
-\section{Structural similarity index measure}
+\section{Structural similarity index measure} \label{ssim_thry}
 
 Zkratka \emph{SSIM} pochází z anglického \emph{structural similarity index measure}.
-Tato metrika se při výpočtu indexu dvou obrázků $x$ a $\tilde{x}$ dívá na podokna,
-ze kterých vybere jisté statistiky a z nich vytvoří index pro daná podokna obrázků.
-Potom se jako celkový index bere průměr přes tato okna.
+Tato metrika se při výpočtu indexu dvou obrázků $x$ a $\tilde{x}$ dívá na páry podoken stejných rozměrů,
+které se dívají na prvky tenzorů obrázků vždy na stejných souřadnicích v daném obrázku
+a ze kterých vybere jisté statistiky a z nich vytvoří index pro daný pár podoken obrázků.
+Potom se jako celkový index bere průměr přes tato okna,
+která postupně procházejí všechna možná podokna v obrázku zadané velikosti.
 Uveďme vzorce pro výpočet indexu SSIM pro případ, že máme jediné okno, které splývá s obrázkem,
 které pro jednoduchost zvolme jednokanálové, tedy černobílé.
 Označme $N = W \times H$ počet pixelů v obrázku a indexujme prvky matice obrázku jediným číslem.
@@ -1612,6 +1628,14 @@ Tento problém jsme se rozhodli řešit \emph{znaménkovým gradientním sestupe
 (v angl. literatuře uváděný jako \emph{sign gradient descent}),
 a to s pevným počtem iterací ($100$) a s pevným krokem $10^{-2}$,
 který je pro obrázky lineárně přeškálované do intervalu $[0, 1]$ akorát dostačující.
+Tato iterativní metoda má předpis iterace:
+\begin{equation}
+	\hat{x}^{(i + 1)} = \hat{x}^{(i)} - \epsilon \cdot \operatorname{sign}
+	\left[\nabla_{\hat{x}^{(i)}} \left(\rho(x, \hat{x}^{(i)}) - \lambda \cdot L(y, F_\theta (\hat{x}^{(i)}))\right)\right],
+\end{equation}
+kde horní index v závorce značí číslo iterace a $\epsilon$ je krok (v našem případě $\epsilon = 10^{-2}$).
+Funkce $\operatorname{sign}$ potom značí znaménkovou funkci branou po prvcích.
+
 Jako ukázkovou úlohu jsme zvolili klasifikaci číslic na datové sadě \emph{MNIST} \cite{MNIST}
 (jednokanálové obrázky o rozměru $28 \times 28$),
 která je v komunitě strojového učení notoricky známá.
@@ -1636,7 +1660,7 @@ Jen poznamenejme, že pro aproximaci Wassersteinovy vzdálenosti bylo použito z
 V Tabulce \ref{cw_success_table} jsou již uvedena čísla reprezentující výše představenou úspěšnost útoku.
 V Tabulce \ref{cw_l_2_table} jsou potom hodnoty odpovídající průměrům $l_2$ vzdáleností získaných v experimentu.
 Jelikož metrika vizuální podobnosti DSSIM je založena na indexu SSIM, který je počítán postupně v podoknech
-a následně agregován, je u názvu této metriky uvedena i velikost tohoto podokna, a to pokud je menší než velikost rozměry obrázku.
+a následně agregován (podle sekce \ref{ssim_thry} textu práce), je u názvu této metriky uvedena i velikost tohoto podokna, a to pokud je menší než velikost rozměry obrázku.
 Dále u aproximace Wassersteinovy vzdálenosti uvádíme i velikost regularizačního parametru $\xi$.
 
 \begin{table}
@@ -2875,6 +2899,9 @@ a poskytnout přehled, jak volba této metriky ovlivňuje tvorbu či podobu adve
 
 Představili jsme tedy různé metriky vizuální podobnosti
 a provedli jejich implementaci v programovacím jazyce \emph{Python} \cite{python}.
+Tato implementace je dostupná va veřejném úložišti a je obohacena dokumentací.
+Součástí této práce je též matematické odození konceptů pro výpočet aproximace Wassersteinovy vzdálenosti.
+
 Dále jsme s pomocí knihovny \emph{PyTorch} \cite{pytorch} natrénovali jednoduchou neuronovou síť
 pro klasifikaci číslic a tuto síť použili jako cíl námi implementovaného CW útoku
 s možností volby užité metriky vizuální podobnosti.
@@ -2894,12 +2921,13 @@ v kontextu neuronových sítí je třeba brát v potaz, a to obzvlášť
 při aplikaci těchto technologií v kritických oblastech.
 
 
-\chapter{Příloha: Důkazy}
+\chapter{Příloha: Důkazy} \label{proofs}
 % \addcontentsline{toc}{chapter}{Příloha: Důkazy}
 
-\section{Metrické vlastnosti Wassersteinovy vzdálenosti}
+\section{Metrické vlastnosti Wassersteinovy vzdálenosti} \label{proof1}
 
-\emph{Tvrzení:} Mějme metrický prostor $(X, \rho)$, dále pak mějme $p \in [1, +\infty)$.
+\begin{theorem}
+Mějme metrický prostor $(X, \rho)$, který je též Radonovým topologickým prostorem, dále pak mějme $p \in [1, +\infty)$.
 Nazvěme jako $p$-tou Wassersteinovu metriku mezi dvěma pravděpodobnostními rozděleními $\mu$, $\nu$ na $X$
 s konečnými $p$-tými momenty číslo:
 \begin{equation} \label{wass_def_prf}
@@ -2908,8 +2936,27 @@ s konečnými $p$-tými momenty číslo:
 kde $\Gamma (\mu, \nu)$ je množina všech sdružených pravděpodobnostních rozdělení na $X \times X$,
 které mají za marginální rozdělení právě $\mu$ a $\nu$.
 Potom $W_p$ je korektně definovaná metrika na prostoru pravděpodobnostních rozdělení na $X$.
+\end{theorem}
 
-\emph{Důkaz:}
+Před samotným důkazem uveďme komentář k vlastnosti býti Radonův.
+To, že volíme jako podkladový prostor pro definici Wassersteinovy metriky právě Radonův prostor,
+znamená, že každá borelovská pravdepodobnostní míra na $X$ je vnitřně regulární.
+Spolu s přihlédnutím k faktu, že pravděpodobnostní míry jsou konečné, tedy, že míra celého prostoru je konečná (je rovna $1$),
+tak máme, že tyto míry jsou tzv. Radonovy.
+Má to například důležitou implikaci, totiž že ony míry jsou kompatibilní s metrikou ve smyslu že metrika je měřitelná funkce
+vzhledem k těmto pravděpodobnostním mírám.
+Dále zmiňme, že každý metrický prostor je normální,
+tedy volně řečeno že každé dvě disjunktní uzavřené podmnožiny takového prostoru jsou oddělitelné disjunktními otevřenými okolími.
+
+Zdůrazněme ještě význam vlastnosti pravdepodobnostní míry $\mu$ míti konečné $p$-té momenty.
+Znamená to, že pro každé $x_0 \in X$ platí:
+\begin{equation}
+	\int_X \rho(x, x_0)^p \mu(x) dx < + \infty.
+\end{equation}
+
+\begin{proof}
+	
+
 Začněme s nezáporností $W_p$.
 Ta vyplývá z nezápornosti $\rho$.
 Jelikož $\rho$ je sama o sobě metrika, jež je tedy i nezáporná,
@@ -2942,31 +2989,68 @@ Proto:
 \end{align}
 Což znamená, že $\tilde{\gamma} \in \Gamma (\mu, \mu)$.
 Po dosazení do střední hodnoty:
-\begin{align}
-	\mathbb{E}_{(x, y) \sim \tilde{\gamma}} \rho (x, y)^p &= \int_X \int_X \rho (x, y)^p \cdot 1_{x = y} \cdot \mu(x) d x d y, \\
-	&= 0.
-\end{align}
+\begin{equation}
+	\mathbb{E}_{(x, y) \sim \tilde{\gamma}} \rho (x, y)^p = \int_X \int_X \rho (x, y)^p \cdot 1_{x = y} \cdot \mu(x) d x d y = 0.
+\end{equation}
 Hodnota integrálu bude $0$, neboť integrujeme nulovou funkci.
 
 Druhou implikaci
 \begin{equation}
 	W_p (\mu, \nu) = 0 \implies \mu = \nu
 \end{equation}
-dokažme sporem.
-Pro spor předpokládejme, že $W_p (\mu, \nu) = 0$, ale $\mu \neq \nu$.
-Potom z druhého z předpokladů plyne, že existuje $r \in X$ takové,
-že $\mu (r) \neq \nu (r)$, bez újmy na obecnosti předpokládejme, že $\mu (r) > \nu (r)$,
-a že existuje jiné $s \in X$ takové,
-že $\mu(s) < \nu (s)$,
-poněvadž integrál obou měr musí být roven $1$.
-Pak ale pro každé $\gamma \in \Gamma (\mu, \nu)$ platí, že
+% dokažme sporem.
+% Pro spor předpokládejme, že $W_p (\mu, \nu) = 0$, ale $\mu \neq \nu$.
+% Potom z druhého z předpokladů plyne, že existuje $R \subset X$ taková,
+% že $\mu (R) \neq \nu (R)$, bez újmy na obecnosti předpokládejme, že $\mu (r) > \nu (r)$.
+% Dále volme tuto podmnožinu $R$ jako uzavřenou množinu.
+% Jelikož ale $\mu(X) = \nu(X) = 1$,
+% tak jistě existuje $S \subset X \setminus R$ taková,
+% že $\mu(S) < \nu (S)$.
+% Opět tuto $S$ volme uzavřenou.
+% Pak z normality $X$ plyne:
+% \begin{equation}
+% 	\inf \{\rho(r, s) | r \in R, s \in S\} \geq \delta > 0.
+% \end{equation}
+% Pak ale pro každé $\gamma \in \Gamma (\mu, \nu)$ platí, že
+% \begin{align}
+% 	\mathbb{E}_{(x, y) \sim \gamma} \rho (x, y)^p &= \int_X \int_X \rho(x, y)^p \gamma(x, y) dx dy \\
+% 	&\geq \int_R \int_S \rho(r, s)^p \gamma (r, s) dr ds \\
+% 	&\geq \delta^p 
+% \end{align}
+% pro nějaké $\delta > 0$,
+% protože funkce $\rho(x, y)$ je kladná minimálně na množině nenulové míry.
+% Tedy infimum z takovýchto hodnot neklesne pod práh $\delta$,
+% a tudíž dostáváme spor s prvním z předpokladů.
+dokažme opět přímo.
+Jelikož $W_p(\mu, \nu) = 0$, tak pro libovolně malé $\varepsilon > 0$ existuje $\gamma \in \Gamma(\mu ,\nu)$
+takové, že:
 \begin{equation}
-	\mathbb{E}_{(x, y) \sim \gamma} \rho (x, y)^p = \int_X \int_X \rho(x, y)^p \gamma(x, y) dx dy \geq \delta,
+	\int_{X \times X} \rho(x, y)^p d \gamma(x, y) < \varepsilon.
 \end{equation}
-pro nějaké $\delta > 0$,
-protože funkce $\rho(x, y)$ je kladná minimálně na množině nenulové míry.
-Tedy infimum z takovýchto hodnot neklesne pod práh $\delta$,
-a tudíž dostáváme spor s prvním z předpokladů.
+Pak na diagonále $D = \{(x, x) | x \in X\}$ platí, že metrika na dvojici z diagonály je nulová.
+Tedy:
+\begin{equation} \label{transport}
+	\int_{(X\times X) \setminus D} \rho(x, y)^p d \gamma(x, y) < \varepsilon.
+\end{equation}
+S přihlédnutím k faktu, že $\rho$ je funkce kladná na $(X \times X) \setminus D$,
+tak lze vidět, že pro zmenšující se $\varepsilon$ budeme mít vždy k dispozici takové $\gamma$,
+že bude měřit množinu $(X \times X) \setminus D$ na stále menší a menší číslo.
+Toto implikuje, že se pro klesající $\varepsilon$ míra $\gamma$ bude více a více podobat takové,
+že veškerá hustota pravděpodobnosti bude na diagonále $D$.
+Tedy, že:
+\begin{align}
+	\mu(R) &= \int_R \int_X 1 d \gamma(r, y) \label{a} \\
+	&= \gamma(R \times R) \label{b} \\
+	&= \int_R \int_X 1 d \gamma(x, r) \label{c} \\
+	&= \nu(R). \label{d}
+\end{align}
+Rovnost v (\ref{a}) je definice vlastnosti míti za marginální rozdělení.
+Dále pro přechod na (\ref{b}) jsme využili faktu, že veškerá hustota pravděpodobnosti je na diagonále.
+Pak jsme pro získání (\ref{c}) použili opět fakt, že veškerá hustota pravděpodobnosti je na diagonále,
+ovšem pro druhou z proměnných.
+A poslední rovnost (\ref{d}) je dána opět definicí vlastnosti míti za marginální rozdělení.
+Proto $\mu = \nu$.
+
 
 Nyní se zaměřme na symetrii $W_p$.
 Ta snadno plyne ze symetrie metriky $\rho$ a symetrie použití písmen $\mu$ a $\nu$ v (\ref{wass_def_prf}).
@@ -2977,11 +3061,10 @@ tedy
 	W_p (\mu, \eta) \leq W_p (\mu, \nu) + W_p (\nu, \eta).
 \end{equation}
 Jelikož $W_p (\mu, \nu)$ je infimum z jistých hodnot,
-existuje jistě takové $\gamma_1 \in \Gamma (\mu, \nu)$, že
+pak pro libovolně malé $\varepsilon > 0$ existuje jistě takové $\gamma_1 \in \Gamma (\mu, \nu)$, že
 \begin{equation}
-	\int_X \int_X \rho (x, y)^p \gamma_1 (x, y) dx dy < W_p (\mu, \nu)^p + \varepsilon \label{inf1}
+	\int_X \int_X \rho (x, y)^p \gamma_1 (x, y) dx dy < W_p (\mu, \nu)^p + \varepsilon. \label{inf1}
 \end{equation}
-pro libovoně malé $\varepsilon > 0$.
 Obdobně existuje $\gamma_2 \in \Gamma (\nu, \eta)$, že
 \begin{equation}
 	\int_X \int_X \rho (y, z)^p \gamma_2 (y, z) dy dz < W_p (\nu, \eta)^p + \varepsilon. \label{inf2}
@@ -3000,21 +3083,34 @@ vyplývá z:
 	&= \int_X \frac{\nu (y) \cdot \gamma_2 (y, z)}{\nu (y)} dy \\
 	&= \eta(z).
 \end{align}
+Pořadí integrace bylo možno zaměnit díky nezápornosti $\gamma_1$, $\gamma_2$ a $\nu$ a Tonelliho větě.
 Pak platí:
 \begin{eqnarray}
-	\left[\int_X \int_X \rho (x, z)^p \gamma_3 (x, z) dx dz\right]^\frac{1}{p} &\leq& \left[\int_X \int_X \left[ \rho(x,y) + \rho(y,z) \right]^p \gamma_3 (x, z) dx dz \right]^\frac{1}{p} \label{metric} \\
-	&\leq& \left[\int_X \int_X \int_X \frac{\rho (x, y)^p \cdot \gamma_1 (x, y) \cdot \gamma_2 (y,z)}{\nu (y)} dz dx dy \right]^\frac{1}{p}  \label{Minkowski} \\
-	& & + \left[\int_X \int_X \int_X \frac{\rho (y, z)^p \cdot \gamma_1 (x, y) \cdot \gamma_2 (y,z)}{\nu (y)} dx dy dz \right]^\frac{1}{p} \label{Minkowski_2} \\
+	\left[\int_X \int_X \rho (x, z)^p \gamma_3 (x, z) dx dz\right]^\frac{1}{p} 
+	&=& \left[\int_X \int_X \int_X \rho (x,z)^p \cdot \frac{\gamma_1 (x, y) \cdot \gamma_2 (y, z)}{\nu(y)} dy dx dz \right]^\frac{1}{p} \\
+	&\leq& \left[\int_X \int_X \int_X \left[ \rho(x,y) + \rho(y,z) \right]^p \cdot \frac{\gamma_1 (x, y) \cdot \gamma_2 (y, z)}{\nu(y)} dy dx dz \right]^\frac{1}{p} \label{metric} \\
+	% &\leq& \left[\int_X \int_X \rho(x,y)^p \gamma_3 (x, z) dx dz \right]^\frac{1}{p}  \label{post_Minkowski1} \\
+	% & & + \left[\int_X \int_X \rho(y,z)^p \gamma_3 (x, z) dx dz \right]^\frac{1}{p} \label{post_Minkowski2}  \\
+	&\leq& \left[\int_X \int_X \int_X \frac{\rho (x, y)^p \cdot \gamma_1 (x, y) \cdot \gamma_2 (y,z)}{\nu (y)} dz dx dy \right]^\frac{1}{p}  \label{gamma3a} \\
+	& & + \left[\int_X \int_X \int_X \frac{\rho (y, z)^p \cdot \gamma_1 (x, y) \cdot \gamma_2 (y,z)}{\nu (y)} dx dy dz \right]^\frac{1}{p} \label{gamma3b} \\
+	&=& \left[\int_X \int_X \rho (x, y)^p \cdot \gamma_1 (x, y) dx dy \right]^\frac{1}{p} \label{tonelli1} \\
+	& & + \left[\int_X \int_X \rho (y, z)^p \cdot \gamma_2 (y, z) dy dz \right]^\frac{1}{p} \label{tonelli2} \\
 	&\leq& \left[W_p(\mu, \nu)^p + \varepsilon \right]^\frac{1}{p} + \left[ W_p (\nu, \eta)^p + \varepsilon\right]^\frac{1}{p}. \label{After_Mink}
 \end{eqnarray}
-Nerovnost v (\ref{metric}) vychází z metrických vlastností $\rho$.
-Dále jsme při přechodu na řádky (\ref{Minkowski}) a (\ref{Minkowski_2}) využili Minkowského nerovnost.
+Nerovnost při přechodu na řádek (\ref{metric}) vychází z metrických vlastností $\rho$ a faktu, že $p \geq 1$.
+Dále jsme při přechodu na řádky (\ref{gamma3a}) a (\ref{gamma3b}) využili Minkowského nerovnost (opět s přihlédnutím k $p \geq 1$).
+Pro přechod na řádky (\ref{tonelli1}) a (\ref{tonelli2}) jsme využili nezápornost metriky a využili Tonelliho větu.
 Nakonec jsme pro získání výrazu v (\ref{After_Mink}) dosadili z (\ref{inf1}) a (\ref{inf2}).
 Nyní, jelikož jsme volili $\mu, \nu, \eta$ libovolně a jelikož $\varepsilon$ je libovolně malé, lze napsat:
 \begin{eqnarray}
 	W_p(\mu, \eta) &\leq& W_p(\mu, \nu) + W_p (\nu, \eta).
 \end{eqnarray}
-\qed
+
+\end{proof}
+
+
+\section{Silná dualita optimalizačního problému Sinkhornovy metriky}
+
 
 
 
@@ -3059,7 +3155,7 @@ Reliable Machine Learning in the Wild Workshop, 34th International Conference on
 \emph{RobustBench: a standardized adversarial robustness benchmark}.
 Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2), 2021
 
-\bibitem{vaserstejn} L. Vaserstein,
+\bibitem{vaserstejn} L. Vaserstein:
 \emph{Markov processes over denumerable products of spaces, describing large systems of automata}.
 Problemy Peredači Informacii 5, 1969.
 
