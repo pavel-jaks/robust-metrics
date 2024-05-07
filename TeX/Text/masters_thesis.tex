@@ -3153,7 +3153,7 @@ Tato informační entropie pak je pro takové matice $P$ definována jako
 \end{equation}
 kde pro případ, že $P_{i, j} = 0$, dodefinujme $P_{i, j} \operatorname{log}\left(P_{i, j}\right) = 0$,
 což je dle hodnoty limity $\lim_{x \rightarrow 0+}x \operatorname{log}x = 0$ spojitá definice.
-Dodejme, že se jedná o součet (spojitá funkce) spojitých funkcí, proto je $H$ sama o sobě spojitá.
+Dodejme, že se jedná o součet spojitých funkcí, proto je $H$ sama o sobě spojitá.
 
 
 \begin{lemma} \label{lemma1}
@@ -3224,7 +3224,11 @@ Dodejme, že se jedná o součet (spojitá funkce) spojitých funkcí, proto je 
 \end{proof}
 
 \begin{lemma} \label{lemma3}
-	Funkce záporná k funkci informační entropie je na $U(\mu, \nu)$ konvexní.
+	Funkce záporná k funkci informační entropie, tedy
+	\begin{equation}
+		f(P) = \sum_{i, j} P_{i, j} \operatorname{log} \left(P_{i, j}\right),
+	\end{equation}
+	je na $U(\mu, \nu)$ konvexní.
 \end{lemma}
 
 \begin{proof}
@@ -3245,7 +3249,7 @@ Dodejme, že se jedná o součet (spojitá funkce) spojitých funkcí, proto je 
 \begin{theorem}
 	Mějme dvě diskrétní pravděpodobnostní rozdělení,
 	jejichž vektory pravděpodobností jsou $\mu$ a $\nu$ nad stejným metrickým prostorem $X$ o $q \in \mathbb{N}$ prvcích,
-	a nechť $\mu_i > 0$ a $\nu_j > 0$. 
+	a nechť pro všechny indexy $i, j \in \{1, ..., q\}$ platí $\mu_i > 0$ a $\nu_j > 0$. 
 	Nechť matice $C \in \mathbb{R}^{q \times q}$ splňuje, že má na diagonále nuly, že mimo diagonálu má kladná čísla,
 	že je symetrická a že platí $C_{i, k} \leq C_{i, j} + C_{j, k}$, tedy že matice $C$ definuje metriku na $X$.
 	Pak optimalizační problém
@@ -3254,7 +3258,7 @@ Dodejme, že se jedná o součet (spojitá funkce) spojitých funkcí, proto je 
 		& & KL(P \, \| \, \mu \nu^T) - \alpha \leq 0,
 	\end{eqnarray}
 	kde $\alpha > 0$ a $\langle P, C \rangle$ je Frobeniův součin matic,
-	splňuje podmínky regularity pro silnou dualitu.
+	splňuje Slaterovy podmínky regularity pro silnou dualitu.
 \end{theorem}
 
 \begin{proof}
@@ -3288,7 +3292,8 @@ Dodejme, že se jedná o součet (spojitá funkce) spojitých funkcí, proto je 
 	což je splněno, neboť $\alpha > 0$.
 	Dále se striktní přípustnost vyžaduje při této volbě $\tilde{P}$ v podobě $\mu_i \nu_j > 0$.
 	Toto je zajištěno díky předpokladům.
-	A vzhledem ke spojitosti Frobeniova součinu máme i omezenost účelové funkce na kompaktu $U(\mu, \nu)$.
+	A vzhledem ke spojitosti Frobeniova součinu máme i omezenost účelové funkce na kompaktu $U^\alpha(\mu, \nu)$
+	(Lemma \ref{lemma1}).
 	Proto pro tento problém platí silná dualita.
 \end{proof}
 
