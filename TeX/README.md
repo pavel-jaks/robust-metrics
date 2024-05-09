@@ -2,6 +2,11 @@
 
 Directory to encapsulate all my LaTeX works including:
 
-- Notes
-- Research task
+Text:
+
+- Research task thesis
 - Diploma thesis
+
+Defense
+
+- The presentation used for theses defense

@@ -1,5 +1,39 @@
 # Metrics module documentation
 
+## Basic usage
+
+To use the code in this repository, please use this code (in the directory [metrics](../../code/metrics)) as a modul,
+meaning copy the directory to your project directory, install requirements using pip and the file [requirements.txt](../requirements.txt) and import the modul.
+
+To import, use `import metrics`, which imports everything from the file [metrics.py](./metrics.py).
+
+To use a specific metric, use it as `torch.nn.Module`.
+This means, you need to instatiate it first as an object using its' constructor while passing correct parameters to the constructor.
+Parameters of the constructors of each metric class are described bellow in the documentation.
+
+Having a metric object, you can call it with two parameters of type `torch.Tensor`.
+These contain the images in the shape of Batch \* Channels \* Width \* Height.
+Sometimes the metric accepts only single-channel images though.
+A proper calling of the metric object yields the batch of metrics computed by pairing the images as follows:
+the n-th result in a batch is the distance between the n-th image in the first tensor of images and the n-th image in the second tensor of images.
+
+Example of usage of the LpMetric:
+
+``` Python
+# imports
+import torch
+import metrics
+
+# creating a metric instance
+lp_metric = metrics.LpMetric(3)
+
+# generating random images (scaled to [0, 1])
+img1, img2 = torch.rand(50, 3, 100, 100), torch.rand(50, 3, 100, 100)
+
+# computation of the metric
+distances = lp_metric(img1, img2)
+```
+
 ## File metrics.py
 
 The file [metrics.py](metrics.py) contains the implementation of various metrics of visual similarity
@@ -186,7 +220,7 @@ Special case of `Metric` class which computes the approxiamtion of Wasserstein d
 * Implements `compute` method to compute the distances of two batches of images both stored in `torch.Tensor` object.
   * Returns `torch.Tensor` object that contains a batch of distances.
 
-## Usage
+## More usage examples
 
 ```Python
 # import of PyTorch library
@@ -200,6 +234,26 @@ image1 = torch.rand(1, 1, 20, 20)
 image2 = torch.rand(1, 1, 20, 20)
 # metric instantiation
 metric = WassersteinApproximation(regularization=5)
+
+# the actual metric computation
+distance = metric(image1 , image2)
+```
+
+```Python
+# import of PyTorch library
+import torch
+# import of metrics modul
+import metrics
+
+# random images (scaled to [0, 1] interval)
+# tensor of shape: Batch x channels x width x height
+image1 = torch.rand(1, 1, 20, 20)
+image2 = torch.rand(1, 1, 20, 20)
+# creating the metric instance
+metric = StructuralDissimilarity(
+    window_size = 5,
+    l = 1
+)
 
 # the actual metric computation
 distance = metric(image1 , image2)

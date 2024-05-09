@@ -171,7 +171,7 @@ class MetricFromNorm(Metric):
 
 class LpMetric(MetricFromNorm):
     """
-    Metric devived from a L_p norm
+    Metric devived from the L_p norm
     """
     
     def __init__(self, p: int, transform: Union[Transform, None] = None):
@@ -185,7 +185,7 @@ class LpMetric(MetricFromNorm):
 
 class L2Metric(LpMetric):
     """
-    Implementation of a L_2 metric derived from L_2 norm
+    Implementation of the L_2 metric derived from the L_2 norm
     """
     
     def __init__(self, transform: Union[Transform, None] = None):
@@ -194,7 +194,7 @@ class L2Metric(LpMetric):
 
 class L0Metric(MetricFromNorm):
     """
-    Implementation of a L_0 metric derived from L_0 norm
+    Implementation of the L_0 metric derived from the L_0 norm
     """
 
     def __init__(self, transform: Union[Transform, None] = None):
@@ -203,7 +203,7 @@ class L0Metric(MetricFromNorm):
 
 class LinfMetric(MetricFromNorm):
     """
-    Implementation of a L_infty metric derived from L_infty norm
+    Implementation of the L_infty metric derived from the L_infty norm
     """
 
     def __init__(self, transform: Union[Transform, None] = None):
